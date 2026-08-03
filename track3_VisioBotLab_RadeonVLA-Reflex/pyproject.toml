@@ -32,6 +32,8 @@ radeonvla-record = "radeonvla.record_dataset:main"
 radeonvla-train = "radeonvla.train_policy:main"
 radeonvla-evaluate = "radeonvla.evaluate:main"
 radeonvla-benchmark = "radeonvla.benchmark:main"
+radeonvla-validate-dataset = "radeonvla.validate_dataset:main"
+radeonvla-pipeline = "radeonvla.pipeline:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]

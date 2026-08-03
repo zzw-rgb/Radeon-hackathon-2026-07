@@ -1,5 +1,8 @@
 # RadeonVLA-Reflex
 
+> **Language:** English (official submission). Chinese version: [README.zh-CN.md](README.zh-CN.md).  
+> Contest materials and PR text must be in English per the official repository rules.
+
 RadeonVLA-Reflex is a Track 3 submission for the AMD AI DevMaster Hackathon by
 VisioBot Lab. The project targets **language-guided dual-bowl fruit sorting** with a
 Franka Panda in Genesis, fine-tuning **SmolVLA** via LeRobot. Beyond a standard
@@ -79,7 +82,8 @@ policy (they do not retrain the VLA).
 
 ```text
 track3_VisioBotLab_RadeonVLA-Reflex/
-├── README.md
+├── README.md                 # English (official)
+├── README.zh-CN.md           # Chinese companion
 ├── pyproject.toml
 ├── environment.local.yml
 ├── requirements.local.txt
@@ -89,17 +93,21 @@ track3_VisioBotLab_RadeonVLA-Reflex/
 │   ├── train.yaml
 │   └── eval.yaml
 ├── src/radeonvla/
-│   ├── scene.py            # Genesis dual-bowl scene
-│   ├── expert.py           # scripted sorting expert
-│   ├── record_dataset.py   # LeRobot dataset recording
-│   ├── train_policy.py     # SmolVLA / ACT training wrapper
-│   ├── evaluate.py         # closed-loop eval + interrupt + recovery
-│   ├── safety.py           # command session, safety, failures
-│   ├── benchmark.py        # throughput / latency
-│   ├── setup_assets.py     # populate robot/YCB assets
+│   ├── scene.py              # Genesis dual-bowl scene
+│   ├── expert.py             # scripted sorting expert
+│   ├── record_dataset.py     # LeRobot data collection (pre-train)
+│   ├── validate_dataset.py   # dataset QA before train
+│   ├── train_policy.py       # SmolVLA / ACT training wrapper
+│   ├── evaluate.py           # closed-loop eval + interrupt + recovery
+│   ├── safety.py             # command session, safety, failures
+│   ├── pipeline.py           # stage orchestrator / all-smoke
+│   ├── benchmark.py          # throughput / latency
+│   ├── setup_assets.py       # populate robot/YCB assets
 │   ├── check_env.py
 │   └── submission_audit.py
 ├── scripts/
+│   ├── run_pipeline_smoke.sh
+│   └── run_full_remote.sh
 ├── tests/
 ├── docs/
 ├── artifacts/
@@ -237,7 +245,34 @@ export HIP_VISIBLE_DEVICES=0
 bash scripts/check_remote_amd.sh
 ```
 
-## Implemented commands
+## End-to-end pipeline (implemented)
+
+All stages below are implemented as `python -m radeonvla.<module>` entry points.
+
+| Stage | Module | Purpose |
+|---|---|---|
+| Assets | `setup_assets` | Copy Franka + YCB meshes into `assets/` |
+| Env check | `check_env` | Torch / HIP / Genesis report |
+| Scene | `scene` | Dual-bowl Genesis smoke + optional frames |
+| Expert | `expert` | Scripted language-conditioned pick-and-place |
+| **Record** | **`record_dataset`** | **Collect LeRobot demos (required before train)** |
+| Validate | `validate_dataset` | Schema / NaN / image checks on the dataset |
+| Train | `train_policy` | SmolVLA / ACT via `lerobot-train` |
+| Evaluate | `evaluate` | Closed-loop policy + interrupt + recovery |
+| Benchmark | `benchmark` | Sim SPS / optional inference latency |
+| Pipeline | `pipeline` | Orchestrate stages (`all-smoke`, etc.) |
+
+### One-shot local smoke
+
+```bash
+bash scripts/run_pipeline_smoke.sh
+# equivalent:
+python -m radeonvla.pipeline all-smoke --backend cpu --episodes 1 --task banana_left
+```
+
+This runs assets → env → scene → expert(1) → **record(1)** → validate → train dry-run.
+
+### Step-by-step commands
 
 ```bash
 # Environment & assets
@@ -254,12 +289,24 @@ python -m radeonvla.scene --backend amdgpu --steps 100 --save-frames
 python -m radeonvla.expert --task banana_left --episodes 5 --backend cpu
 python -m radeonvla.expert --task plum_right --episodes 5 --backend amdgpu
 
-# M3 — record language-conditioned demonstrations
-python -m radeonvla.record_dataset --episodes 50 --backend amdgpu --overwrite
+# M3 — data collection (required before training)
+python -m radeonvla.record_dataset \
+  --episodes 50 \
+  --repo-id visiobot/radeonvla_reflex \
+  --dataset-root datasets/radeonvla_reflex \
+  --backend amdgpu \
+  --overwrite
+
+# Optional domain randomization while recording
 python -m radeonvla.record_dataset --episodes 100 --dr-appearance --dr-object-color \
   --dr-runtime --backend amdgpu --overwrite
 
-# M4/M5 — train SmolVLA
+# Validate dataset before train
+python -m radeonvla.validate_dataset \
+  --repo-id visiobot/radeonvla_reflex \
+  --dataset-root datasets/radeonvla_reflex
+
+# M4/M5 — train SmolVLA (needs a non-empty recorded dataset)
 python -m radeonvla.train_policy smolvla \
   --repo-id visiobot/radeonvla_reflex \
   --dataset-root datasets/radeonvla_reflex \
@@ -273,10 +320,23 @@ python -m radeonvla.evaluate \
   --episodes-per-task 10 --save-video --backend amdgpu
 
 # Interruptibility demo (injects a mid-episode command change on ep0)
-python -m radeonvla.evaluate ... --interrupt-demo --save-video
+python -m radeonvla.evaluate \
+  --policy-path outputs/train/smolvla_radeonvla_reflex/checkpoints/last/pretrained_model \
+  --repo-id visiobot/radeonvla_reflex \
+  --dataset-root datasets/radeonvla_reflex \
+  --interrupt-demo --save-video --backend amdgpu
 
 # Throughput / latency
 python -m radeonvla.benchmark --backend amdgpu --steps 500
+```
+
+### Full remote script (AMD)
+
+```bash
+export HIP_VISIBLE_DEVICES=0
+bash scripts/run_full_remote.sh
+# or customize:
+EPISODES=100 TRAIN_STEPS=10000 bash scripts/run_full_remote.sh
 ```
 
 Optional Docker (preferable for Track 3):

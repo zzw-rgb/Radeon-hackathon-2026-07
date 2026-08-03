@@ -2,6 +2,7 @@
 genesis-world==1.1.2
 lerobot[training,smolvla]==0.6.0
 numpy>=1.26.4,<2.3
+opencv-python-headless>=4.8
 imageio>=2.37
 imageio-ffmpeg>=0.6
 trimesh>=4.8

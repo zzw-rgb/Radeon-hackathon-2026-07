@@ -87,6 +87,7 @@ def load_policy(
     from lerobot.utils.device_utils import get_safe_torch_device
 
     device = get_safe_torch_device(device_str, log=True)
+    # Prefer metadata-only load; training used pyav for ROCm-friendly decoding.
     ds_meta = LeRobotDatasetMetadata(repo_id, root=dataset_root)
     cfg = PreTrainedConfig.from_pretrained(policy_path)
     cfg.pretrained_path = policy_path

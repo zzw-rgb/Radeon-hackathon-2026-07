@@ -8,6 +8,7 @@ from pathlib import Path
 
 REQUIRED_FILES = (
     "README.md",
+    "README.zh-CN.md",
     "THIRD_PARTY_NOTICES.md",
     "pyproject.toml",
     "requirements.local.txt",
@@ -17,6 +18,10 @@ REQUIRED_FILES = (
     "docs/MODEL_CARD.md",
     "artifacts/evaluation.schema.json",
     "reports/RadeonVLA-Reflex-Technical-Report.md",
+    "src/radeonvla/record_dataset.py",
+    "src/radeonvla/train_policy.py",
+    "src/radeonvla/evaluate.py",
+    "src/radeonvla/pipeline.py",
 )
 
 README_HEADINGS = (
