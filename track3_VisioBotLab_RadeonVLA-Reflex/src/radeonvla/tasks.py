@@ -66,6 +66,39 @@ class TaskSpec:
         return len(self.goals)
 
 
+# Side keys map to container entity names via f"{side}_bowl".
+# Sides: left, right, blue_left, blue_right.
+FRUIT_NAMES: tuple[str, ...] = ("banana", "lemon", "plum", "apple", "orange")
+SIDE_NAMES: tuple[str, ...] = ("left", "right", "blue_left", "blue_right")
+
+FRUIT_TRAIN_PHRASE: dict[str, str] = {
+    "banana": "the banana",
+    "lemon": "the lemon",
+    "plum": "the plum",
+    "apple": "the apple",
+    "orange": "the orange",
+}
+FRUIT_EVAL_PHRASE: dict[str, str] = {
+    "banana": "the yellow curved fruit",
+    "lemon": "the yellow round fruit",
+    "plum": "the purple fruit",
+    "apple": "the red round fruit",
+    "orange": "the orange citrus fruit",
+}
+SIDE_TRAIN_PHRASE: dict[str, str] = {
+    "left": "the left bowl",
+    "right": "the right bowl",
+    "blue_left": "the blue bowl on the left",
+    "blue_right": "the blue bowl on the right",
+}
+SIDE_EVAL_PHRASE: dict[str, str] = {
+    "left": "the container on the left",
+    "right": "the container on the right",
+    "blue_left": "the blue container toward the left",
+    "blue_right": "the blue container toward the right",
+}
+
+
 def _l1(fruit: str, side: str, training: tuple[str, ...], evaluation: tuple[str, ...]) -> TaskSpec:
     return TaskSpec(
         task_id=f"{fruit}_{side}",
@@ -75,6 +108,25 @@ def _l1(fruit: str, side: str, training: tuple[str, ...], evaluation: tuple[str,
         evaluation_instructions=evaluation,
         max_steps=600,
         description=f"Pick {fruit} into {side} bowl.",
+    )
+
+
+def _l1_auto(fruit: str, side: str) -> TaskSpec:
+    f_tr = FRUIT_TRAIN_PHRASE[fruit]
+    f_ev = FRUIT_EVAL_PHRASE[fruit]
+    s_tr = SIDE_TRAIN_PHRASE[side]
+    s_ev = SIDE_EVAL_PHRASE[side]
+    return _l1(
+        fruit,
+        side,
+        (
+            f"Pick {f_tr} and place it in {s_tr}.",
+            f"Sort {f_tr} into {s_tr}.",
+        ),
+        (
+            f"Move {f_ev} to {s_ev}.",
+            f"Put {f_tr} into {s_ev}.",
+        ),
     )
 
 
@@ -131,51 +183,10 @@ def _l4(
 
 
 # ---------------------------------------------------------------------------
-# L1 — basic named fruit × bowl (baseline, still required)
+# L1 — named fruit × container (5 fruits × 4 bowls = 20 tasks)
 # ---------------------------------------------------------------------------
 L1_TASKS: dict[str, TaskSpec] = {
-    "banana_left": _l1(
-        "banana",
-        "left",
-        ("Pick the banana and place it in the left bowl.", "Sort the banana into the left container."),
-        (
-            "Move the yellow curved fruit to the container on the left.",
-            "Put the banana into the bowl on the left side.",
-        ),
-    ),
-    "banana_right": _l1(
-        "banana",
-        "right",
-        ("Pick the banana and place it in the right bowl.", "Sort the banana into the right container."),
-        (
-            "Move the yellow curved fruit to the container on the right.",
-            "Put the banana into the bowl on the right side.",
-        ),
-    ),
-    "lemon_left": _l1(
-        "lemon",
-        "left",
-        ("Pick the lemon and place it in the left bowl.", "Sort the lemon into the left container."),
-        ("Put the yellow round fruit into the container on the left.", "Move the lemon to the left bowl."),
-    ),
-    "lemon_right": _l1(
-        "lemon",
-        "right",
-        ("Pick the lemon and place it in the right bowl.", "Sort the lemon into the right container."),
-        ("Put the yellow round fruit into the container on the right.", "Move the lemon to the right bowl."),
-    ),
-    "plum_left": _l1(
-        "plum",
-        "left",
-        ("Pick the plum and place it in the left bowl.", "Sort the plum into the left container."),
-        ("Move the purple fruit to the container on the left.", "Put the plum into the left bowl."),
-    ),
-    "plum_right": _l1(
-        "plum",
-        "right",
-        ("Pick the plum and place it in the right bowl.", "Sort the plum into the right container."),
-        ("Move the purple fruit to the container on the right.", "Put the plum into the right bowl."),
-    ),
+    f"{fruit}_{side}": _l1_auto(fruit, side) for fruit in FRUIT_NAMES for side in SIDE_NAMES
 }
 
 # ---------------------------------------------------------------------------
@@ -232,6 +243,32 @@ L2_TASKS: dict[str, TaskSpec] = {
         (
             "Move the fruit that is farthest from the manipulator into the right bowl.",
             "Place the farthest fruit into the right container.",
+        ),
+    ),
+    "leftmost_to_blue_left": _l2(
+        "leftmost_to_blue_left",
+        "leftmost",
+        "blue_left",
+        (
+            "Pick the leftmost fruit and put it in the blue bowl on the left.",
+            "Sort the left-most fruit into the left blue container.",
+        ),
+        (
+            "Move the fruit farthest left into the blue container on the left.",
+            "Place the leftmost fruit into the blue left bowl.",
+        ),
+    ),
+    "rightmost_to_blue_right": _l2(
+        "rightmost_to_blue_right",
+        "rightmost",
+        "blue_right",
+        (
+            "Pick the rightmost fruit and put it in the blue bowl on the right.",
+            "Sort the right-most fruit into the right blue container.",
+        ),
+        (
+            "Move the fruit farthest right into the blue container on the right.",
+            "Place the rightmost fruit into the blue right bowl.",
         ),
     ),
 }
@@ -301,6 +338,36 @@ L3_TASKS: dict[str, TaskSpec] = {
             "Complete the three-way sort: banana left, lemon left, plum right.",
         ),
     ),
+    "seq_apple_blue_left_orange_blue_right": _l3(
+        "seq_apple_blue_left_orange_blue_right",
+        (
+            SubGoalSpec(object_name="apple", container="blue_left_bowl"),
+            SubGoalSpec(object_name="orange", container="blue_right_bowl"),
+        ),
+        (
+            "First put the apple in the blue bowl on the left, then the orange in the blue bowl on the right.",
+            "Sort the apple into the left blue bowl and the orange into the right blue bowl.",
+        ),
+        (
+            "Red fruit into the left blue container, then the citrus fruit into the right blue container.",
+            "Complete both blue-bowl placements: apple then orange.",
+        ),
+    ),
+    "seq_orange_right_plum_blue_left": _l3(
+        "seq_orange_right_plum_blue_left",
+        (
+            SubGoalSpec(object_name="orange", container="right_bowl"),
+            SubGoalSpec(object_name="plum", container="blue_left_bowl"),
+        ),
+        (
+            "First put the orange in the right bowl, then put the plum in the blue bowl on the left.",
+            "Sort the orange right, then the plum into the left blue bowl.",
+        ),
+        (
+            "Citrus fruit to the right container, then the purple fruit to the left blue container.",
+            "Complete both steps: orange right, plum blue-left.",
+        ),
+    ),
 }
 
 # ---------------------------------------------------------------------------
@@ -336,6 +403,21 @@ L4_TASKS: dict[str, TaskSpec] = {
         (
             "Banana-like curved item left; spherical items right.",
             "Sort by shape: curved left, round right.",
+        ),
+    ),
+    "rule_red_blue_left_orange_blue_right": _l4(
+        "rule_red_blue_left_orange_blue_right",
+        (
+            SubGoalSpec(container="blue_left_bowl", grounding="named", attribute="red"),
+            SubGoalSpec(container="blue_right_bowl", grounding="named", attribute="orange"),
+        ),
+        (
+            "Put the red fruit into the blue bowl on the left and the orange fruit into the blue bowl on the right.",
+            "Color rule: red→left blue bowl, orange→right blue bowl.",
+        ),
+        (
+            "Red produce to the left blue container; orange produce to the right blue container.",
+            "Sort by color into the blue bowls: red left, orange right.",
         ),
     ),
 }

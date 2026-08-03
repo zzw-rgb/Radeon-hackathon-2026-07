@@ -43,16 +43,18 @@ RadeonVLA-Reflex 是 AMD AI DevMaster Hackathon **Track 3** 提交项目（团�
 
 | 层级 | 名称 | 策略需要完成的内容 | 示例 |
 |---|---|---|---|
-| **L1** | 基础命名 | 水果名 + 左/右碗 | `banana_left`、`plum_right` |
-| **L2** | 空间指代 | 随机化后解析 *最左/最右/最近/最远* | `leftmost_to_left`、`nearest_to_left` |
-| **L3** | 多步序列 | 同一局内完成**有序**多物体放置 | `seq_banana_left_lemon_right`、`seq_triple_sort` |
-| **L4** | 属性规则 | 将颜色/形状规则展开为多个子目标 | `rule_yellow_left_purple_right` |
+| **L1** | 基础命名 | 水果 × 碗（5 种水果 × 4 个碗） | `banana_left`、`apple_blue_left`、`orange_blue_right` |
+| **L2** | 空间指代 | 随机化后解析 *最左/最右/最近/最远* | `leftmost_to_left`、`leftmost_to_blue_left` |
+| **L3** | 多步序列 | 同一局内完成**有序**多物体放置 | `seq_banana_left_lemon_right`、`seq_apple_blue_left_orange_blue_right` |
+| **L4** | 属性规则 | 将颜色/形状规则展开为多个子目标 | `rule_yellow_left_purple_right`、`rule_red_blue_left_orange_blue_right` |
+
+场景物体：**香蕉、柠檬、李子、苹果、橙子**，以及 **四个碗**（左/右中性色 + 左/右蓝色）。
 
 套件（CLI `--suite`）：
 
 | 套件 | 内容 |
 |---|---|
-| `basic` | 仅 L1（6 个任务） |
+| `basic` | 仅 L1（20 个任务） |
 | `spatial` | L2 |
 | `multistep` | L3 |
 | `rules` | L4 |
@@ -151,6 +153,29 @@ PyTorch 需按执行平台单独安装，不与项目其余依赖混装：
 Track 3 starter 文档中给出了 ROCm 7.2.1 专用 wheel 集合。仅当远程实例报告
 ROCm 7.2.1 且 Python 3.12 时使用该集合；否则在安装 `requirements.remote.txt`
 前先选择匹配的官方 ROCm 轮子。
+
+## 仿真资产（复现必需）
+
+网格资产已**纳入本仓库**的 `assets/`（约 42 MB）。评委 `git clone` 后即可运行，
+无需额外私有网盘。
+
+| 路径 | 内容 |
+|---|---|
+| `assets/ycb/011_banana`、`013_apple`、`014_lemon`、`017_orange`、`018_plum`、`024_bowl` | YCB 网格 |
+| `assets/robots/franka/` | Franka Emika Panda MJCF |
+| `assets/SHA256SUMS` | 完整性校验 |
+
+```bash
+python -m radeonvla.setup_assets           # 已存在则跳过
+python -m radeonvla.setup_assets --verify  # 校验 SHA256
+python -m radeonvla.setup_assets --download # 缺失时的可选网络回退
+```
+
+来源与说明：[`assets/README.md`](assets/README.md)、[`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md)。
+
+- YCB Object and Model Set：https://www.ycbbenchmarks.com/object-models/
+- YCB 数据门户：http://ycb-benchmarks.s3-website-us-east-1.amazonaws.com/
+- Genesis（Franka 也可从已安装的 genesis 包恢复）：https://github.com/Genesis-Embodied-AI/Genesis
 
 ## 本地开发环境
 

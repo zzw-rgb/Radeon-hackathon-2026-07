@@ -15,14 +15,16 @@ import numpy as np
 from radeonvla.safety import entity_pos
 from radeonvla.tasks import SubGoalSpec, TaskSpec
 
-FRUITS = ("banana", "lemon", "plum")
+FRUITS = ("banana", "lemon", "plum", "apple", "orange")
 
 # Visual / semantic attributes used by L4 rule tasks.
 ATTRIBUTES: dict[str, frozenset[str]] = {
     "yellow": frozenset({"banana", "lemon"}),
     "purple": frozenset({"plum"}),
+    "red": frozenset({"apple"}),
+    "orange": frozenset({"orange"}),
     "curved": frozenset({"banana"}),
-    "round": frozenset({"lemon", "plum"}),
+    "round": frozenset({"lemon", "plum", "apple", "orange"}),
 }
 
 

@@ -13,16 +13,12 @@ def test_task_cycle_single_and_suite() -> None:
     args = parse_args(["--task", "banana_left"])
     assert _task_cycle(args) == ["banana_left"]
     args = parse_args(["--suite", "basic"])
-    assert set(_task_cycle(args)) == {
-        "banana_left",
-        "banana_right",
-        "lemon_left",
-        "lemon_right",
-        "plum_left",
-        "plum_right",
-    }
+    basic = set(_task_cycle(args))
+    assert len(basic) == 20
+    assert "banana_left" in basic and "apple_blue_left" in basic and "orange_blue_right" in basic
     args = parse_args(["--suite", "multistep"])
     assert "seq_triple_sort" in _task_cycle(args)
+    assert "seq_apple_blue_left_orange_blue_right" in _task_cycle(args)
 
 
 def test_training_instruction_comes_from_registry() -> None:

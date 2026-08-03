@@ -212,6 +212,8 @@ def build_scene(
         surface = None
         if recolor and name in DR_APPEARANCE_PRIORS:
             surface = gs.surfaces.Default(color=_sample_hsv_color(DR_APPEARANCE_PRIORS[name], rng))
+        elif layout.get("color") is not None:
+            surface = gs.surfaces.Default(color=tuple(layout["color"]))
         objects[name] = scene.add_entity(
             morph=gs.morphs.Mesh(
                 file=str(asset.mesh_path),

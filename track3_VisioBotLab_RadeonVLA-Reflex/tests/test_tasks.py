@@ -10,7 +10,11 @@ def test_registry_contains_all_tiers() -> None:
     assert set(L2_TASKS).issubset(TASKS)
     assert set(L3_TASKS).issubset(TASKS)
     assert set(L4_TASKS).issubset(TASKS)
-    assert len(TASKS) >= 16
+    # 5 fruits × 4 bowls = 20 L1 tasks, plus spatial / multi-step / rules.
+    assert len(L1_TASKS) == 20
+    assert "apple_blue_left" in L1_TASKS
+    assert "orange_blue_right" in L1_TASKS
+    assert len(TASKS) >= 30
 
 
 def test_suites_partition_is_consistent() -> None:
@@ -40,6 +44,16 @@ def test_l4_attribute_expansion() -> None:
     names = [g.object_name for g in expanded]
     assert "banana" in names and "lemon" in names and "plum" in names
     assert ATTRIBUTES["yellow"] == frozenset({"banana", "lemon"})
+    assert ATTRIBUTES["red"] == frozenset({"apple"})
+    assert ATTRIBUTES["orange"] == frozenset({"orange"})
+
+
+def test_new_fruits_and_blue_bowls_in_l1() -> None:
+    apple = get_task("apple_blue_left")
+    assert apple.target_object == "apple"
+    assert apple.target_container == "blue_left_bowl"
+    orange = get_task("orange_right")
+    assert orange.target_container == "right_bowl"
 
 
 def test_spatial_grounding_uses_table_axes() -> None:
@@ -56,7 +70,7 @@ def test_spatial_grounding_uses_table_axes() -> None:
 
 def test_unknown_task_fails_clearly() -> None:
     with pytest.raises(ValueError, match="Unknown task"):
-        get_task("apple_left")
+        get_task("kiwi_purple")
 
 
 def test_list_task_ids_suite() -> None:

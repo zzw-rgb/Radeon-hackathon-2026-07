@@ -19,8 +19,8 @@ from radeonvla.scene_config import (
 from radeonvla.tasks import TASKS, TaskSpec, get_task
 
 OVERLAP_MARGIN = 0.02
-FRUIT_NAMES = ("banana", "lemon", "plum")
-CONTAINER_NAMES = ("left_bowl", "right_bowl")
+FRUIT_NAMES = ("banana", "lemon", "plum", "apple", "orange")
+CONTAINER_NAMES = ("left_bowl", "right_bowl", "blue_left_bowl", "blue_right_bowl")
 
 
 @dataclass

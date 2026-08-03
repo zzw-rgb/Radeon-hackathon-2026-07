@@ -17,9 +17,13 @@ scene:
     - banana
     - lemon
     - plum
+    - apple
+    - orange
   containers:
     - left_bowl
     - right_bowl
+    - blue_left_bowl
+    - blue_right_bowl
   cameras:
     world:
       width: 320

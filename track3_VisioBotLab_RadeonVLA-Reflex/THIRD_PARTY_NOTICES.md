@@ -13,10 +13,21 @@ RadeonVLA-Reflex depends on or references the following upstream projects:
 Each dependency and asset remains subject to its own license and attribution
 requirements.
 
-The Franka Fruit-Pick Demo revision I inspected did not include a top-level license
-file. I keep that repository outside this submission tree and use it only as a
-workflow reference for Genesis + LeRobot on ROCm. This submission’s source is
-written for RadeonVLA-Reflex under VisioBot Lab.
+The Franka Fruit-Pick Demo is used only as a workflow reference for Genesis + LeRobot
+on ROCm and is not vendored as source code in this tree.
 
-Before redistributing robot or YCB-derived assets, I will record the original source,
-exact revision, license, modifications, and required citation in this file.
+### Bundled simulation assets under `assets/`
+
+| Asset | Bundled path | Upstream |
+|---|---|---|
+| Franka Emika Panda MJCF | `assets/robots/franka/` | Genesis World package assets |
+| YCB banana / apple / lemon / orange / plum / bowl | `assets/ycb/<id>/` | [YCB Object and Model Set](https://www.ycbbenchmarks.com/object-models/) |
+
+YCB project pages:
+
+- https://www.ycbbenchmarks.com/object-models/
+- http://ycb-benchmarks.s3-website-us-east-1.amazonaws.com/
+
+Integrity: `assets/SHA256SUMS` and `python -m radeonvla.setup_assets --verify`.
+Blue bowl appearance is applied in scene code (entity surface color), not by editing
+the upstream YCB texture files.

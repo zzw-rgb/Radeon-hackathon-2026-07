@@ -46,16 +46,18 @@ continuous robot actions, and executes them in a closed loop with safety and rec
 
 | Tier | Name | What the policy must do | Examples |
 |---|---|---|---|
-| **L1** | Basic named | Fruit name + left/right bowl | `banana_left`, `plum_right` |
-| **L2** | Spatial grounding | Resolve *leftmost / rightmost / nearest / farthest* after randomization | `leftmost_to_left`, `nearest_to_left` |
-| **L3** | Multi-step sequence | Complete **ordered** multi-object placements in one episode | `seq_banana_left_lemon_right`, `seq_triple_sort` |
-| **L4** | Attribute rules | Expand color/shape rules into multiple goals | `rule_yellow_left_purple_right` |
+| **L1** | Basic named | Fruit × bowl (5 fruits × 4 bowls) | `banana_left`, `apple_blue_left`, `orange_blue_right` |
+| **L2** | Spatial grounding | Resolve *leftmost / rightmost / nearest / farthest* after randomization | `leftmost_to_left`, `leftmost_to_blue_left` |
+| **L3** | Multi-step sequence | Complete **ordered** multi-object placements in one episode | `seq_banana_left_lemon_right`, `seq_apple_blue_left_orange_blue_right` |
+| **L4** | Attribute rules | Expand color/shape rules into multiple goals | `rule_yellow_left_purple_right`, `rule_red_blue_left_orange_blue_right` |
+
+Scene objects: **banana, lemon, plum, apple, orange** and **four bowls** (left/right neutral + blue left/right).
 
 Suites (CLI `--suite`):
 
 | Suite | Contents |
 |---|---|
-| `basic` | L1 only (6 tasks) |
+| `basic` | L1 only (20 tasks) |
 | `spatial` | L2 |
 | `multistep` | L3 |
 | `rules` | L4 |
@@ -157,6 +159,30 @@ Pinned core versions:
 The Track 3 starter currently documents a dedicated ROCm 7.2.1 wheel set. Use that set
 only when the remote instance reports ROCm 7.2.1 and Python 3.12. Otherwise select the
 matching official ROCm wheels before installing requirements.remote.txt.
+
+## Assets (required for reproduction)
+
+Mesh assets are **committed in this repository** under `assets/` (~42 MB) so a normal
+clone is enough to run the scene without private file shares:
+
+| Path | Content |
+|---|---|
+| `assets/ycb/011_banana`, `013_apple`, `014_lemon`, `017_orange`, `018_plum`, `024_bowl` | YCB meshes |
+| `assets/robots/franka/` | Franka Emika Panda MJCF |
+| `assets/SHA256SUMS` | Integrity checksums |
+
+```bash
+python -m radeonvla.setup_assets          # no-op when files already present
+python -m radeonvla.setup_assets --verify # check SHA256
+python -m radeonvla.setup_assets --download  # optional network fallback if files were deleted
+```
+
+Upstream sources and redistribution notes: [`assets/README.md`](assets/README.md),
+[`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md).
+
+- YCB Object and Model Set: https://www.ycbbenchmarks.com/object-models/
+- YCB data portal: http://ycb-benchmarks.s3-website-us-east-1.amazonaws.com/
+- Genesis (Franka model also recoverable from the installed package): https://github.com/Genesis-Embodied-AI/Genesis
 
 ## Local development setup
 

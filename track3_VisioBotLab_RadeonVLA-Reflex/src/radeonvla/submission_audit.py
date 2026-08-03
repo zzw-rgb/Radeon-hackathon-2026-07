@@ -29,6 +29,15 @@ REQUIRED_FILES = (
     "scripts/run_full_remote.sh",
     "scripts/lib.sh",
     "Makefile",
+    "assets/README.md",
+    "assets/SHA256SUMS",
+    "assets/robots/franka/panda.xml",
+    "assets/ycb/011_banana/textured.obj",
+    "assets/ycb/013_apple/textured.obj",
+    "assets/ycb/014_lemon/textured.obj",
+    "assets/ycb/017_orange/textured.obj",
+    "assets/ycb/018_plum/textured.obj",
+    "assets/ycb/024_bowl/textured.obj",
 )
 
 README_HEADINGS = (

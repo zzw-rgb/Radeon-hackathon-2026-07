@@ -66,12 +66,18 @@ FRUIT_YCB: dict[str, str] = {
     "banana": "011_banana",
     "lemon": "014_lemon",
     "plum": "018_plum",
+    "apple": "013_apple",
+    "orange": "017_orange",
 }
 BOWL_YCB = "024_bowl"
+# Four containers: two neutral bowls + two blue bowls (same mesh, painted blue).
 CONTAINER_TO_ENTITY: dict[str, str] = {
     "left_bowl": "left_bowl",
     "right_bowl": "right_bowl",
+    "blue_left_bowl": "blue_left_bowl",
+    "blue_right_bowl": "blue_right_bowl",
 }
+CONTAINER_SIDES: tuple[str, ...] = ("left", "right", "blue_left", "blue_right")
 
 
 def vector_feature(names: tuple[str, ...] = JOINT_NAMES) -> dict[str, Any]:

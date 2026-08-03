@@ -35,7 +35,5 @@ artifacts/*.png
 artifacts/*.mp4
 !artifacts/evaluation.schema.json
 docs/environment.*.json
-# Populated simulation assets (large binaries)
-assets/ycb/
-assets/robots/
-!assets/README.md
+# Simulation assets ARE tracked for contest reproducibility (~42MB).
+# Do not ignore assets/ycb or assets/robots.

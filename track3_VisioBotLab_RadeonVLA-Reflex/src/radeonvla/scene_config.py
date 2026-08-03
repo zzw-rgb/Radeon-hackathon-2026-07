@@ -1,8 +1,8 @@
-"""Scene layout for language-conditioned dual-bowl fruit sorting.
+"""Scene layout for language-conditioned multi-bowl fruit sorting.
 
 Layout choices:
-- two destination bowls (left / right) so language must disambiguate targets;
-- three pickable fruits spaced for reliable top-down grasps;
+- five pickable fruits (banana, lemon, plum, apple, orange);
+- four destination bowls: left/right neutral + blue left/right;
 - world + wrist cameras for policy observations, plus a cosmetic video camera.
 """
 
@@ -30,43 +30,80 @@ FRANKA_KV = (450, 450, 350, 350, 200, 200, 200, 10, 10)
 FRANKA_FORCE_MIN = (-87, -87, -87, -87, -12, -12, -12, -100, -100)
 FRANKA_FORCE_MAX = (87, 87, 87, 87, 12, 12, 12, 100, 100)
 
-# Reachable workspace clamp for pose jitter.
-REACH_X = (0.28, 0.52)
-REACH_Y = (-0.26, 0.28)
+# Reachable workspace clamp for pose jitter (slightly wider for denser clutter).
+REACH_X = (0.28, 0.50)
+REACH_Y = (-0.28, 0.28)
 
-# Entity layout: fruits + two bowls (same mesh, distinct entities).
+# Solid blue for the two blue bowls (RGBA).
+BLUE_BOWL_COLOR = (0.12, 0.38, 0.88, 1.0)
+# Slight off-white for neutral bowls so they read as non-blue under DR off.
+NEUTRAL_BOWL_COLOR = (0.82, 0.80, 0.76, 1.0)
+
+# Entity layout: five fruits + four bowls.
 OBJECT_LAYOUT: dict[str, dict] = {
+    # -- fruits (front / mid table, spaced for parallel-jaw grasps) --
     "banana": {
         "ycb": FRUIT_YCB["banana"],
-        "pos": (0.32, 0.18, 0.0),
+        "pos": (0.30, 0.18, 0.0),
         "euler": (0.0, 0.0, 35.0),
         "kind": "fruit",
     },
     "lemon": {
         "ycb": FRUIT_YCB["lemon"],
-        "pos": (0.36, -0.02, 0.0),
+        "pos": (0.33, 0.02, 0.0),
         "euler": (0.0, 0.0, 0.0),
         "friction": 1.0,
         "kind": "fruit",
     },
     "plum": {
         "ycb": FRUIT_YCB["plum"],
-        "pos": (0.44, 0.10, 0.0),
+        "pos": (0.36, -0.14, 0.0),
         "euler": (0.0, 0.0, 0.0),
         "friction": 1.0,
         "kind": "fruit",
     },
+    "apple": {
+        "ycb": FRUIT_YCB["apple"],
+        "pos": (0.40, 0.12, 0.0),
+        "euler": (0.0, 0.0, 10.0),
+        "friction": 1.0,
+        "kind": "fruit",
+    },
+    "orange": {
+        "ycb": FRUIT_YCB["orange"],
+        "pos": (0.41, -0.06, 0.0),
+        "euler": (0.0, 0.0, 0.0),
+        "friction": 1.0,
+        "kind": "fruit",
+    },
+    # -- containers (far +x edge of the table) --
     "left_bowl": {
         "ycb": BOWL_YCB,
-        "pos": (0.50, 0.22, 0.0),
+        "pos": (0.52, 0.24, 0.0),
         "euler": (0.0, 0.0, 0.0),
         "kind": "container",
+        "color": NEUTRAL_BOWL_COLOR,
     },
     "right_bowl": {
         "ycb": BOWL_YCB,
-        "pos": (0.50, -0.22, 0.0),
+        "pos": (0.52, -0.24, 0.0),
         "euler": (0.0, 0.0, 0.0),
         "kind": "container",
+        "color": NEUTRAL_BOWL_COLOR,
+    },
+    "blue_left_bowl": {
+        "ycb": BOWL_YCB,
+        "pos": (0.56, 0.10, 0.0),
+        "euler": (0.0, 0.0, 0.0),
+        "kind": "container",
+        "color": BLUE_BOWL_COLOR,
+    },
+    "blue_right_bowl": {
+        "ycb": BOWL_YCB,
+        "pos": (0.56, -0.10, 0.0),
+        "euler": (0.0, 0.0, 0.0),
+        "kind": "container",
+        "color": BLUE_BOWL_COLOR,
     },
 }
 
@@ -75,8 +112,13 @@ DR_APPEARANCE_PRIORS: dict[str, dict[str, tuple[float, float]]] = {
     "banana": {"hue": (48.0, 68.0), "sat": (0.55, 0.95), "val": (0.60, 0.90)},
     "lemon": {"hue": (48.0, 62.0), "sat": (0.60, 1.00), "val": (0.70, 0.95)},
     "plum": {"hue": (300.0, 345.0), "sat": (0.35, 0.80), "val": (0.25, 0.55)},
-    "left_bowl": {"hue": (0.0, 360.0), "sat": (0.00, 0.50), "val": (0.40, 0.90)},
-    "right_bowl": {"hue": (0.0, 360.0), "sat": (0.00, 0.50), "val": (0.40, 0.90)},
+    "apple": {"hue": (0.0, 25.0), "sat": (0.55, 0.95), "val": (0.40, 0.85)},
+    "orange": {"hue": (20.0, 40.0), "sat": (0.70, 1.00), "val": (0.55, 0.95)},
+    "left_bowl": {"hue": (20.0, 50.0), "sat": (0.00, 0.25), "val": (0.55, 0.90)},
+    "right_bowl": {"hue": (20.0, 50.0), "sat": (0.00, 0.25), "val": (0.55, 0.90)},
+    # Blue bowls stay in a blue band even under DR.
+    "blue_left_bowl": {"hue": (200.0, 240.0), "sat": (0.55, 0.95), "val": (0.40, 0.85)},
+    "blue_right_bowl": {"hue": (200.0, 240.0), "sat": (0.55, 0.95), "val": (0.40, 0.85)},
 }
 
 # Cameras: policy uses world + wrist at dataset resolution; video is cosmetic only.

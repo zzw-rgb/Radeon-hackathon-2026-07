@@ -50,6 +50,9 @@ PROFILES: dict[str, GraspProfile] = {
     "banana": GraspProfile(yaw_offset=90.0, grasp_hand_z=TABLE_TOP_Z + 0.105, close_force=-10.0),
     "lemon": GraspProfile(yaw_offset=0.0, close_force=-12.0, center_align=True),
     "plum": GraspProfile(yaw_offset=0.0, close_force=-12.0, center_align=True),
+    # Round produce: center-align jaws to the equator and clear the palm crossbar.
+    "apple": GraspProfile(yaw_offset=0.0, close_force=-12.0, center_align=True),
+    "orange": GraspProfile(yaw_offset=0.0, close_force=-12.0, center_align=True),
 }
 
 
