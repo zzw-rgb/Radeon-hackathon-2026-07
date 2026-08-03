@@ -1,7 +1,7 @@
 # Remote ROCm Setup
 
-This document deliberately separates environment detection from installation. Never
-install a wheel set before checking the remote instance.
+I separate environment detection from installation: check the remote instance first,
+then install wheels only if the existing HIP PyTorch build is missing or mismatched.
 
 ## Step 1: Record the untouched environment
 

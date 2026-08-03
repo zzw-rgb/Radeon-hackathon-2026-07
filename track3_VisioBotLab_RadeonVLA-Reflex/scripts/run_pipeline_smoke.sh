@@ -1,11 +1,19 @@
 #!/usr/bin/env bash
-# End-to-end local smoke: assets -> scene -> expert -> record 1 ep -> validate -> train dry-run
+# Fast end-to-end smoke (1 episode): assets -> scene -> expert -> record -> validate -> train dry-run
+#
+# Usage:
+#   bash scripts/run_pipeline_smoke.sh
+#   BACKEND=cpu bash scripts/run_pipeline_smoke.sh
 set -euo pipefail
-ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-cd "$ROOT"
+# shellcheck source=lib.sh
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/lib.sh"
+load_dotenv
 
 BACKEND="${BACKEND:-cpu}"
-python -m radeonvla.pipeline all-smoke \
+START=$(date +%s)
+
+section "Pipeline smoke (backend=$BACKEND)"
+run_py -m radeonvla.pipeline all-smoke \
   --backend "$BACKEND" \
   --episodes 1 \
   --task banana_left \
@@ -13,3 +21,5 @@ python -m radeonvla.pipeline all-smoke \
   --dataset-root datasets/radeonvla_reflex_smoke \
   --device cpu \
   --dry-run-train
+
+ok "Smoke finished in $(elapsed "$START")s"

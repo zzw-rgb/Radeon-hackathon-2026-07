@@ -1,12 +1,15 @@
 project: RadeonVLA-Reflex
 seed: 0
 
+# Task suites: basic | spatial | multistep | rules | advanced | full
+task_suite: full
+
 runtime:
   backend: amdgpu
   visible_gpu: 0
   control_hz: 20
   sim_hz: 100
-  max_episode_steps: 600
+  max_episode_steps: 1800
 
 scene:
   robot: franka_panda

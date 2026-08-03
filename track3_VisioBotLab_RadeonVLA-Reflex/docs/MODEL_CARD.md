@@ -1,6 +1,6 @@
 # RadeonVLA-Reflex Model Card
 
-> Status: template. Replace every TBD after selecting the final checkpoint.
+> Status: draft. Fill measured fields after the final checkpoint is selected.
 
 ## Model
 
@@ -40,16 +40,13 @@ Language-conditioned Franka fruit sorting in the submitted Genesis scene.
 
 ## Evaluation
 
-Link the model to the immutable raw evaluation revision and report:
-
-- tasks and episode counts;
-- first-attempt success;
-- final success;
-- recovery success;
-- inference latency;
-- known failure modes.
+I will link this card to the immutable evaluation JSON under `outputs/eval_results/` and
+record task/episode counts, first-attempt vs final success, recovery success, inference
+latency, and known failure modes after the remote AMD evaluation.
 
 ## Limitations
 
-Do not claim real-robot transfer. Describe simulation-only scope, language coverage,
-object coverage, camera assumptions, action-space limitations, and observed failures.
+This model is trained and evaluated in Genesis simulation only; I do not claim real-robot
+transfer. Coverage is limited to the registered language/task suite, dual RGB cameras at
+320×240, and 9-D absolute joint actions. Observed failure modes will be listed after the
+final evaluation run.

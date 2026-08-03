@@ -1,0 +1,48 @@
+# Scripts
+
+Shared helpers live in `lib.sh` (sourced by the others). Optional project-root `.env`
+is loaded automatically when present (see `.env.example`).
+
+| Script | Purpose |
+|---|---|
+| `run_all_local.sh` | **One-click local**: assets → scene → expert → record → validate |
+| `run_record.sh` | **One-click recording** only (local or remote backend) |
+| `run_expert_demo.sh` | Scripted demos across basic / hard tasks |
+| `run_pipeline_smoke.sh` | Fast 1-episode smoke + train dry-run |
+| `run_full_remote.sh` | **Full AMD path**: check → record → train → eval → benchmark |
+| `check_local.sh` | Env + audit + pytest + ruff |
+| `check_remote_amd.sh` | Strict ROCm gate + scene/benchmark |
+
+## Common environment variables
+
+| Variable | Default | Used by |
+|---|---|---|
+| `BACKEND` | `cpu` (local) / `amdgpu` (remote) | most runners |
+| `EPISODES` | `5` / `20` / `100` | record scripts |
+| `SUITE` | `basic` or `full` | record / remote |
+| `TASK` | empty | pin a single task id |
+| `REPO_ID` / `DATASET_ROOT` | suite-based | record / train |
+| `DR` | `0` local / `1` remote | domain randomization |
+| `TRAIN_STEPS` | `10000` | full remote |
+| `CKPT` | auto under `outputs/train/...` | eval when `SKIP_TRAIN=1` |
+| `HIP_VISIBLE_DEVICES` | `0` | remote AMD |
+| `PYTHON` | auto (`conda run -n radeonvla-dev` if present) | all |
+
+## Examples
+
+```bash
+# Local: collect 10 basic episodes on CPU
+EPISODES=10 SUITE=basic bash scripts/run_record.sh
+
+# Local: full one-click (record + validate)
+EPISODES=5 bash scripts/run_all_local.sh
+
+# Hard expert demos
+MODE=hard bash scripts/run_expert_demo.sh
+
+# Remote AMD full stack
+EPISODES=100 SUITE=full bash scripts/run_full_remote.sh
+
+# Remote: only re-eval an existing checkpoint
+SKIP_TRAIN=1 CKPT=outputs/train/.../pretrained_model bash scripts/run_full_remote.sh
+```

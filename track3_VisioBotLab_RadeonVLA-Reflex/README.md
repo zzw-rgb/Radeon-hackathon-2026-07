@@ -3,23 +3,27 @@
 > **Language:** English (official submission). Chinese version: [README.zh-CN.md](README.zh-CN.md).  
 > Contest materials and PR text must be in English per the official repository rules.
 
-RadeonVLA-Reflex is a Track 3 submission for the AMD AI DevMaster Hackathon by
-VisioBot Lab. The project targets **language-guided dual-bowl fruit sorting** with a
-Franka Panda in Genesis, fine-tuning **SmolVLA** via LeRobot. Beyond a standard
-scripted-to-learned pick-and-place demo, it adds:
+RadeonVLA-Reflex is my Track 3 submission for the AMD AI DevMaster Hackathon
+(team VisioBot Lab). I built a **language-guided dual-bowl fruit sorting** stack on
+Genesis + Franka Panda, fine-tuning **SmolVLA** with LeRobot, all intended to run on a
+single AMD Radeon GPU under ROCm.
 
-1. **Language-disambiguated targets** — three fruits × left/right bowls (six tasks);
-2. **Interruptible command execution** — mid-episode language changes invalidate stale action chunks;
-3. **Failure-aware recovery** — empty-grasp / timeout detection with one deterministic retry;
-4. **Safety monitor** — joint bounds and rate limiting before actions enter Genesis;
-5. **Single-GPU ROCm path** — simulation, data, training, inference, and evaluation on AMD Radeon.
+Design focus of this codebase:
 
-> Project status: full pipeline code is implemented. AMD execution results, trained
-> checkpoints, formal metrics, final report PDF, and demo video remain TBD until produced
-> on the remote Radeon environment.
+1. **Tiered task suite (L1–L4)** — named fruit×bowl, spatial grounding, ordered multi-object
+   sequences, and attribute/rule-based sorting;
+2. **Language-disambiguated dual bowls** — left vs right containers under free language;
+3. **Interruptible command execution** — mid-episode language changes invalidate stale action chunks;
+4. **Failure-aware recovery** — empty-grasp / timeout detection with one deterministic retry;
+5. **Safety monitor** — joint bounds and rate limiting before actions enter Genesis;
+6. **Single-GPU ROCm path** — simulation, data, training, inference, and evaluation on AMD Radeon;
+7. **Partial multi-goal metrics** — success-by-tier and partial completion rates for long-horizon tasks.
 
-This directory is the complete submission unit. From the official repository root,
-evaluators only need to enter `track3_VisioBotLab_RadeonVLA-Reflex/` and follow this README.
+> Status: pipeline code is complete. Measured AMD results, trained checkpoints, formal
+> metrics, the final report PDF, and the demo video will be filled in after remote Radeon runs.
+
+This directory is the self-contained submission unit. From the contest repository root,
+open `track3_VisioBotLab_RadeonVLA-Reflex/` and follow this README to reproduce the work.
 
 ## Submission information
 
@@ -38,18 +42,28 @@ automation, and small-batch logistics. A natural-language command identifies a f
 and a destination container. The policy observes the scene and robot state, predicts
 continuous robot actions, and executes them in a closed loop with safety and recovery.
 
-Task registry (six language-distinguishable tasks):
+### Task tiers
 
-```text
-banana × left bowl
-banana × right bowl
-lemon  × left bowl
-lemon  × right bowl
-plum   × left bowl
-plum   × right bowl
-```
+| Tier | Name | What the policy must do | Examples |
+|---|---|---|---|
+| **L1** | Basic named | Fruit name + left/right bowl | `banana_left`, `plum_right` |
+| **L2** | Spatial grounding | Resolve *leftmost / rightmost / nearest / farthest* after randomization | `leftmost_to_left`, `nearest_to_left` |
+| **L3** | Multi-step sequence | Complete **ordered** multi-object placements in one episode | `seq_banana_left_lemon_right`, `seq_triple_sort` |
+| **L4** | Attribute rules | Expand color/shape rules into multiple goals | `rule_yellow_left_purple_right` |
 
-Training and evaluation use **disjoint** natural-language phrasings per task.
+Suites (CLI `--suite`):
+
+| Suite | Contents |
+|---|---|
+| `basic` | L1 only (6 tasks) |
+| `spatial` | L2 |
+| `multistep` | L3 |
+| `rules` | L4 |
+| `advanced` | L2+L3+L4 |
+| **`full`** | **All tiers (default for record/eval)** |
+
+Training and evaluation use **disjoint** natural-language phrasings per task. Spatial and
+rule tasks are resolved at episode start by `radeonvla.grounding` after pose randomization.
 
 ## Planned system architecture
 
@@ -262,7 +276,35 @@ All stages below are implemented as `python -m radeonvla.<module>` entry points.
 | Benchmark | `benchmark` | Sim SPS / optional inference latency |
 | Pipeline | `pipeline` | Orchestrate stages (`all-smoke`, etc.) |
 
-### One-shot local smoke
+### One-click scripts (recommended)
+
+| Script / Make target | What it does |
+|---|---|
+| `bash scripts/run_all_local.sh` / `make all-local` | Local one-click: assets → scene → expert → **record** → validate |
+| `bash scripts/run_record.sh` / `make record-local` | Record demos only (`EPISODES`, `SUITE`, `BACKEND` overridable) |
+| `bash scripts/run_expert_demo.sh` / `make expert-demo` | Scripted demos (basic / hard mix) |
+| `bash scripts/run_pipeline_smoke.sh` / `make smoke` | 1-episode smoke + train dry-run |
+| `bash scripts/run_full_remote.sh` / `make remote-full` | Full AMD: check → record → train → eval → benchmark |
+| `bash scripts/check_local.sh` / `make check` | Env + audit + pytest + ruff |
+| `bash scripts/check_remote_amd.sh` / `make remote-check` | Strict ROCm gate |
+
+```bash
+# Local: collect 10 basic episodes
+EPISODES=10 SUITE=basic bash scripts/run_record.sh
+
+# Local: full one-click pipeline
+EPISODES=5 bash scripts/run_all_local.sh
+
+# Fast smoke
+make smoke
+
+# On AMD Radeon
+EPISODES=100 SUITE=full bash scripts/run_full_remote.sh
+```
+
+Details and env vars: [`scripts/README.md`](scripts/README.md). Optional `.env` from `.env.example`.
+
+### One-shot local smoke (module form)
 
 ```bash
 bash scripts/run_pipeline_smoke.sh
@@ -285,17 +327,23 @@ python -m radeonvla.submission_audit
 python -m radeonvla.scene --backend cpu --steps 100 --save-frames
 python -m radeonvla.scene --backend amdgpu --steps 100 --save-frames
 
-# M2 — scripted dual-bowl expert
+# M2 — scripted expert (basic + hard multi-step)
 python -m radeonvla.expert --task banana_left --episodes 5 --backend cpu
-python -m radeonvla.expert --task plum_right --episodes 5 --backend amdgpu
+python -m radeonvla.expert --task seq_triple_sort --episodes 3 --backend cpu
+python -m radeonvla.expert --suite advanced --episodes 8 --backend amdgpu
 
-# M3 — data collection (required before training)
+# M3 — data collection (default suite=full includes L1–L4)
 python -m radeonvla.record_dataset \
-  --episodes 50 \
+  --episodes 100 \
+  --suite full \
   --repo-id visiobot/radeonvla_reflex \
   --dataset-root datasets/radeonvla_reflex \
   --backend amdgpu \
   --overwrite
+
+# Ablation: basic-only data
+python -m radeonvla.record_dataset --episodes 50 --suite basic --overwrite \
+  --repo-id visiobot/radeonvla_basic --dataset-root datasets/radeonvla_basic
 
 # Optional domain randomization while recording
 python -m radeonvla.record_dataset --episodes 100 --dr-appearance --dr-object-color \
@@ -447,13 +495,13 @@ python -m radeonvla.submission_audit --final   # fails until PDF + checksums exi
 
 - AMD Track 3 contest repository
 - AMD Radeon Cloud User Guide
-- Track 3 Franka fruit-pick starter demo (workflow reference only)
+- Track 3 Franka fruit-pick demo (workflow reference for Genesis + LeRobot on ROCm)
 - Genesis World
 - Hugging Face LeRobot / SmolVLA
 - YCB Object and Model Set
 
-The upstream reference repositories are studied outside this submission directory.
-Substantial source code is **not** copied from the starter demo. See THIRD_PARTY_NOTICES.md.
+I studied upstream repositories outside this submission directory. This tree is original
+project code for RadeonVLA-Reflex; see THIRD_PARTY_NOTICES.md for dependency notices.
 
 ## Team
 

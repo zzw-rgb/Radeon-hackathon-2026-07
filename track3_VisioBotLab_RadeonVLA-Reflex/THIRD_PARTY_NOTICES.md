@@ -13,9 +13,10 @@ RadeonVLA-Reflex depends on or references the following upstream projects:
 Each dependency and asset remains subject to its own license and attribution
 requirements.
 
-The inspected Franka Fruit-Pick Demo revision did not contain a top-level license file.
-Its repository is kept outside the submission project as a learning reference. Do not
-copy substantial source code from it without explicit permission.
+The Franka Fruit-Pick Demo revision I inspected did not include a top-level license
+file. I keep that repository outside this submission tree and use it only as a
+workflow reference for Genesis + LeRobot on ROCm. This submission’s source is
+written for RadeonVLA-Reflex under VisioBot Lab.
 
-Before distributing robot or YCB-derived assets, record the original source, exact
-revision, license, modifications, and required citation in this file.
+Before redistributing robot or YCB-derived assets, I will record the original source,
+exact revision, license, modifications, and required citation in this file.

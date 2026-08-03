@@ -22,6 +22,13 @@ REQUIRED_FILES = (
     "src/radeonvla/train_policy.py",
     "src/radeonvla/evaluate.py",
     "src/radeonvla/pipeline.py",
+    "src/radeonvla/grounding.py",
+    "src/radeonvla/tasks.py",
+    "scripts/run_all_local.sh",
+    "scripts/run_record.sh",
+    "scripts/run_full_remote.sh",
+    "scripts/lib.sh",
+    "Makefile",
 )
 
 README_HEADINGS = (

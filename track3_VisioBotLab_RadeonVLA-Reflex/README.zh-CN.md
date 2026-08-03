@@ -3,15 +3,22 @@
 > **语言：** 中文辅助说明。正式比赛提交材料以英文为准，请同时阅读 [README.md](README.md)。  
 > 官方要求：PR 与提交说明使用 **English**。
 
-RadeonVLA-Reflex 是 AMD AI DevMaster Hackathon **Track 3（Physical AI）** 项目，由 VisioBot Lab 提交。目标是在 Genesis 仿真中，用 Franka Panda + **SmolVLA** 完成**语言引导的双碗水果分拣**，并在 AMD Radeon / ROCm 上跑通仿真、采集、训练与评测。
+RadeonVLA-Reflex 是我（Zhenwei Zhou / VisioBot Lab）参加 AMD AI DevMaster Hackathon
+**Track 3（Physical AI）** 的提交项目。目标是在 Genesis 中用 Franka Panda + **SmolVLA**
+完成**语言引导的双碗水果分拣**，并在 AMD Radeon / ROCm 上跑通仿真、采集、训练与评测。
 
-相对官方 starter demo，本项目增加：
+本仓库的设计重点：
 
-1. **左右双碗 × 三种水果**（6 个语言可区分任务）
+1. **分级任务套件 L1–L4**
+   - L1 基础命名：水果 × 左右碗
+   - L2 **空间指代**：leftmost / rightmost / nearest / farthest（随机化后才确定对象）
+   - L3 **多步长时序**：一局完成多个有序放置（如 banana→左，lemon→右）
+   - L4 **属性规则**：黄→左、紫→右；弯→左、圆→右
 2. **可中断指令**：中途改语言命令会作废旧 action chunk
-3. **失败感知恢复**：空抓 / 超时等触发一次确定性重试
+3. **失败感知恢复**：空抓 / 超时 + 一次重试
 4. **安全监视器**：关节限幅与速率限制
-5. **单卡 ROCm 全链路**
+5. **分层指标**：按 tier 成功率 + multi-goal 部分完成率
+6. **单卡 ROCm 全链路**
 
 ---
 
@@ -54,19 +61,26 @@ Track 3, VisioBot Lab, RadeonVLA-Reflex
 
 ---
 
-## 一键冒烟（本机 CPU）
+## 一键脚本（本机 / 远程）
 
 ```bash
 cd track3_VisioBotLab_RadeonVLA-Reflex
 conda activate radeonvla-dev   # 或你的环境
-bash scripts/run_pipeline_smoke.sh
+
+# 本机采集 10 条
+EPISODES=10 SUITE=basic bash scripts/run_record.sh
+
+# 本机一键：场景 + 专家 + 采集 + 校验
+EPISODES=5 bash scripts/run_all_local.sh
+
+# 快速冒烟（1 条）
+make smoke
+
+# 远程 AMD 全流程
+EPISODES=100 SUITE=full bash scripts/run_full_remote.sh
 ```
 
-等价：
-
-```bash
-python -m radeonvla.pipeline all-smoke --backend cpu --episodes 1 --task banana_left
-```
+更多变量说明见 `scripts/README.md`；可复制 `.env.example` 为 `.env`。
 
 ---
 
@@ -133,15 +147,27 @@ bash scripts/run_full_remote.sh
 
 ---
 
-## 任务列表（6 个）
+## 任务套件
 
-```text
-banana_left / banana_right
-lemon_left  / lemon_right
-plum_left   / plum_right
+| suite | 内容 |
+|---|---|
+| `basic` | 仅 L1（6 个） |
+| `spatial` | L2 空间指代 |
+| `multistep` | L3 多步序列 |
+| `rules` | L4 属性规则 |
+| `advanced` | L2+L3+L4 |
+| **`full`** | **全部（默认采集/评测）** |
+
+示例：
+
+```bash
+python -m radeonvla.expert --task seq_triple_sort --episodes 2
+python -m radeonvla.expert --task leftmost_to_left --episodes 3
+python -m radeonvla.record_dataset --suite full --episodes 100 --overwrite
+python -m radeonvla.record_dataset --suite multistep --episodes 40 --overwrite
 ```
 
-训练指令与评测指令分离（见 `src/radeonvla/tasks.py`）。
+训练 / 评测指令分离，见 `src/radeonvla/tasks.py` 与 `src/radeonvla/grounding.py`。
 
 ---
 
@@ -176,7 +202,7 @@ track3_VisioBotLab_RadeonVLA-Reflex/
 └── assets/README.md       # 大文件需 setup_assets 填充
 ```
 
-`_local/` 下的中文计划/介绍仅供内部使用，**已 gitignore，不要提交**。
+本地草稿目录不会进入 Git 提交。
 
 ---
 
@@ -186,7 +212,7 @@ track3_VisioBotLab_RadeonVLA-Reflex/
 |---|---|
 | 源码 + 可复现 README | 已具备 |
 | 中英文 README | 已具备 |
-| 技术报告 MD | 结构已有，实测数字待远程填写 |
+| 技术报告 MD | 结构已有，实测数字待我在远程 AMD 上跑完后填写 |
 | 数据集 / checkpoint / 视频 / PDF | 待远程 AMD 跑完后补齐 |
 
 ---
@@ -196,4 +222,4 @@ track3_VisioBotLab_RadeonVLA-Reflex/
 - Zhenwei Zhou — 系统设计、实现、训练、评测与提交  
 - VisioBot Lab · 南京理工大学  
 
-更多细节、AMD 安装与评测协议请以英文 [README.md](README.md) 为准。
+环境安装、评测协议与复现步骤以英文 [README.md](README.md) 为准。

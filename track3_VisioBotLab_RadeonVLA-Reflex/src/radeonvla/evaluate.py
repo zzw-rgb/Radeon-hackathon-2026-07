@@ -13,6 +13,7 @@ from typing import Any
 import numpy as np
 import torch
 
+from radeonvla.grounding import check_resolved_success, resolve_task
 from radeonvla.paths import EVAL_RESULTS_DIR, EVAL_VIDEOS_DIR, PROJECT_ROOT
 from radeonvla.protocol import CONTROL_HZ, DATASET_FPS
 from radeonvla.randomize import EnvRandomizer, RandomizationConfig
@@ -21,11 +22,10 @@ from radeonvla.safety import (
     FailureDetector,
     RecoveryPolicy,
     SafetyMonitor,
-    check_placement_success,
 )
 from radeonvla.scene import AppearanceDR, build_scene, init_genesis
 from radeonvla.scene_config import FRANKA_QPOS
-from radeonvla.tasks import TASKS, get_task
+from radeonvla.tasks import SUITES, get_task, list_task_ids
 
 STATE_KEY = "observation.state"
 POST_SUCCESS_SECONDS = 0.6
@@ -179,6 +179,10 @@ class EpisodeResult:
     inference_latency_ms: list[float] = field(default_factory=list)
     failure_reason: str | None = None
     video_uri: str | None = None
+    tier: str = "L1"
+    n_goals: int = 1
+    partial_success_rate: float = 0.0
+    resolved_goals: list[dict[str, str]] = field(default_factory=list)
 
 
 def run_episode(
@@ -201,16 +205,25 @@ def run_episode(
     session = CommandSession(instruction=instruction, task_id=task_id)
     safety = SafetyMonitor()
     recovery = RecoveryPolicy(max_retries=max_retries)
-    detector = FailureDetector(task, max_steps=max_steps)
 
     randomizer = EnvRandomizer(bundle, RandomizationConfig(seed=seed))
     randomizer.reset(seed=seed, task_id=task_id)
+    resolved = resolve_task(bundle, task, instruction=instruction, train=False)
+    # Failure detector tracks the *current* subgoal fruit (first incomplete goal).
+    detector = FailureDetector(task, max_steps=max_steps)
+    events: list[dict[str, Any]] = [
+        {
+            "type": "resolved_goals",
+            "tier": resolved.tier,
+            "goals": [{"object": g.object_name, "container": g.container} for g in resolved.goals],
+        }
+    ]
+
     pb.reset()
     safety.reset()
 
     n_sim = max(1, int(round(CONTROL_HZ / pb.fps)))
     latencies: list[float] = []
-    events: list[dict[str, Any]] = []
     frames: list[np.ndarray] = []
     retry_count = 0
     first_attempt_success = False
@@ -225,6 +238,8 @@ def run_episode(
             new_instruction = new_task.evaluation_instructions[0]
             session.set_command(instruction=new_instruction, task_id=interrupt_task_id, step=policy_step)
             task = new_task
+            max_steps = max(max_steps, task.max_steps)
+            resolved = resolve_task(bundle, task, instruction=new_instruction, train=False)
             detector = FailureDetector(task, max_steps=max_steps)
             pb.reset()
             events.append(
@@ -233,6 +248,9 @@ def run_episode(
                     "step": policy_step,
                     "new_task": interrupt_task_id,
                     "version": session.version,
+                    "new_goals": [
+                        {"object": g.object_name, "container": g.container} for g in resolved.goals
+                    ],
                 }
             )
 
@@ -261,11 +279,10 @@ def run_episode(
             frames.append(np.ascontiguousarray(np.hstack(panels) if len(panels) > 1 else primary))
 
         fail = detector.observe_step(bundle, step=policy_step, action=action, unsafe=not decision.accepted)
-        success_now, _, _ = check_placement_success(bundle, task)
-        if success_now:
+        report_now = check_resolved_success(bundle, resolved)
+        if report_now["success"]:
             if retry_count == 0:
                 first_attempt_success = True
-            # Post-success hold for nicer videos.
             hold_steps = int(POST_SUCCESS_SECONDS * pb.fps)
             for _ in range(hold_steps):
                 apply_action(bundle, last_action, n_sim)
@@ -278,7 +295,6 @@ def run_episode(
         if fail is not None and recovery.should_retry(retry_count, fail):
             retry_count += 1
             events.append({"type": "recovery", "step": policy_step, "reason": fail.value, "retry": retry_count})
-            # Deterministic recovery: open gripper and return toward home.
             recover = np.asarray(recovery.recovery_action(), dtype=np.float64)
             for _ in range(recovery.retreat_steps):
                 apply_action(bundle, recover, n_sim)
@@ -293,6 +309,7 @@ def run_episode(
 
         policy_step += 1
 
+    final_report = check_resolved_success(bundle, resolved)
     diag = detector.finalize(bundle)
     elapsed = time.perf_counter() - t0
     video_uri = None
@@ -303,9 +320,18 @@ def run_episode(
         imageio.mimsave(video_path, frames, fps=pb.fps)
         video_uri = str(video_path)
 
-    success = bool(diag.success)
+    success = bool(final_report["success"])
     if success and retry_count == 0:
         first_attempt_success = True
+
+    failure_reason = None
+    if not success:
+        if diag.failure_reason.value != "none":
+            failure_reason = diag.failure_reason.value
+        elif final_report["n_success"] == 0:
+            failure_reason = "no_subgoal_completed"
+        else:
+            failure_reason = "partial_multi_goal"
 
     return EpisodeResult(
         episode_id=f"{task_id}_{seed}",
@@ -313,20 +339,30 @@ def run_episode(
         task_id=session.task_id,
         instruction=session.instruction,
         success=success,
-        object_correct=bool(diag.object_correct),
-        target_correct=bool(diag.target_correct),
+        object_correct=bool(final_report["object_correct"]),
+        target_correct=bool(final_report["target_correct"]),
         first_attempt_success=first_attempt_success and success,
-        events=events + list(session.events) + list(diag.events),
+        events=events + list(session.events) + list(diag.events) + [{"type": "goal_report", **final_report}],
         retry_count=retry_count,
         completion_time_s=elapsed,
         inference_latency_ms=latencies,
-        failure_reason=None if success else diag.failure_reason.value,
+        failure_reason=failure_reason,
         video_uri=video_uri,
+        tier=resolved.tier,
+        n_goals=int(final_report["n_goals"]),
+        partial_success_rate=float(final_report["partial_success_rate"]),
+        resolved_goals=[{"object": g.object_name, "container": g.container} for g in resolved.goals],
     )
 
 
 def summarize(episodes: list[EpisodeResult]) -> dict[str, Any]:
     n = max(1, len(episodes))
+    by_tier: dict[str, list[EpisodeResult]] = {}
+    for e in episodes:
+        by_tier.setdefault(e.tier, []).append(e)
+    tier_rates = {
+        tier: sum(e.success for e in eps) / max(1, len(eps)) for tier, eps in sorted(by_tier.items())
+    }
     return {
         "num_episodes": len(episodes),
         "task_success_rate": sum(e.success for e in episodes) / n,
@@ -334,6 +370,8 @@ def summarize(episodes: list[EpisodeResult]) -> dict[str, Any]:
         "target_accuracy": sum(e.target_correct for e in episodes) / n,
         "first_attempt_success": sum(e.first_attempt_success for e in episodes) / n,
         "final_success": sum(e.success for e in episodes) / n,
+        "mean_partial_success_rate": float(np.mean([e.partial_success_rate for e in episodes])),
+        "success_by_tier": tier_rates,
         "recovery_success": (
             sum(e.success and e.retry_count > 0 for e in episodes)
             / max(1, sum(e.retry_count > 0 for e in episodes))
@@ -358,6 +396,12 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--episodes", type=int, default=None, help="Total episodes (overrides per-task).")
     parser.add_argument("--episodes-per-task", type=int, default=2)
     parser.add_argument("--tasks", nargs="*", default=None)
+    parser.add_argument(
+        "--suite",
+        default="full",
+        choices=sorted(SUITES),
+        help="Task suite when --tasks is omitted.",
+    )
     parser.add_argument("--seed-start", type=int, default=20000)
     parser.add_argument("--max-retries", type=int, default=1)
     parser.add_argument("--device", default="cuda")
@@ -375,7 +419,7 @@ def main(argv: list[str] | None = None) -> int:
     args = parse_args(argv)
     backend = args.backend or ("cpu" if args.cpu else "gpu")
     device = "cpu" if args.cpu else args.device
-    tasks = args.tasks or sorted(TASKS)
+    tasks = args.tasks or list_task_ids(args.suite)
 
     init_genesis(backend=backend, seed=args.seed_start)
     bundle = build_scene(
@@ -406,9 +450,17 @@ def main(argv: list[str] | None = None) -> int:
             interrupt_at = 40 if args.interrupt_demo and ep_index == 0 else None
             interrupt_task = None
             if interrupt_at is not None:
-                # Flip bowl side if possible.
-                fruit, side = task_id.rsplit("_", 1)
-                interrupt_task = f"{fruit}_{'right' if side == 'left' else 'left'}"
+                # Prefer flipping a basic L1 side; fall back to a multi-step task.
+                if task_id.endswith("_left"):
+                    interrupt_task = task_id[:-5] + "_right"
+                elif task_id.endswith("_right"):
+                    interrupt_task = task_id[:-6] + "_left"
+                else:
+                    interrupt_task = "banana_right" if task_id != "banana_right" else "plum_left"
+                try:
+                    get_task(interrupt_task)
+                except ValueError:
+                    interrupt_task = "banana_left"
             result = run_episode(
                 bundle,
                 pb,

@@ -10,15 +10,16 @@
 
 ## 1. Executive Summary
 
-RadeonVLA-Reflex is a language-guided Franka dual-bowl fruit-sorting system built for
-Track 3 of the AMD AI DevMaster Hackathon. The policy stack is SmolVLA fine-tuned with
-LeRobot on demonstrations collected in Genesis; the control stack adds interruptible
-command execution and failure-aware recovery around the learned action chunks. Six
-tasks (banana/lemon/plum × left/right bowl) form the formal task registry.
+RadeonVLA-Reflex is my language-guided Franka dual-bowl fruit-sorting system for
+Track 3 of the AMD AI DevMaster Hackathon (VisioBot Lab). I fine-tune SmolVLA with
+LeRobot on demonstrations collected in Genesis, and wrap closed-loop execution with
+interruptible command handling and failure-aware recovery. The formal task suite
+covers L1–L4 tiers (named targets, spatial grounding, multi-step sequences, and
+attribute rules) over banana/lemon/plum and left/right bowls.
 
-> Quantitative success rates, GPU model, ROCm build, and wall-clock numbers will be
-> filled after remote AMD runs. Until then, this section must not claim measured
-> performance.
+> I will fill quantitative success rates, GPU model, ROCm build, and wall-clock
+> numbers after remote AMD runs. Until those runs finish, this section does not
+> report measured performance.
 
 ## 2. Target Application
 
@@ -31,12 +32,18 @@ combining VLA generalization with deterministic execution safety.
 
 ## 3. Task Definition and Success Criteria
 
-- Fruits: banana, lemon, plum. Containers: left_bowl, right_bowl (six tasks).
+- Fruits: banana, lemon, plum. Containers: left_bowl, right_bowl.
+- **Tiered suite (L1–L4)** used in this project:
+  - **L1 Basic** — named fruit × left/right bowl (6 tasks).
+  - **L2 Spatial** — leftmost / rightmost / nearest-to-robot / farthest (resolved after randomization).
+  - **L3 Multi-step** — ordered multi-object sequences in one episode (2–3 subgoals).
+  - **L4 Rules** — attribute sorting (yellow→left, purple→right; curved→left, round→right).
 - Training and evaluation use disjoint natural-language templates (see `tasks.py`).
+- Spatial/rule goals are grounded by `grounding.resolve_task` after each reset.
 - Episode reset randomizes object xy within non-overlap slot jitter and small yaw noise.
 - Action: 9-D absolute joint positions (7 arm + 2 fingers) at 20 Hz.
-- Success: target fruit bottom is inside the commanded bowl rim footprint and below rim.
-- Max episode length: 600 policy steps; max recovery retries: 1.
+- Success: **all** subgoals satisfied (object bottom inside commanded bowl rim); partial rate is reported.
+- Max episode length: 600–1800 policy steps by tier; max recovery retries: 1.
 
 ## 4. System Architecture
 
@@ -62,138 +69,150 @@ recovery are **deterministic outer layers**, not a second learned high-level pla
 
 ## 5. Genesis Simulation Environment
 
-Document:
+I use Genesis 1.1.2 with a Franka Emika Panda MJCF, three YCB fruits (banana / lemon /
+plum), and two bowl instances as left/right containers. World and wrist RGB cameras feed
+the policy at 320×240; an optional third camera is for evaluation video only. Simulation
+runs at 100 Hz control with dataset capture at 20 Hz. Pose resets use non-overlapping
+slot jitter. Full asset notes live in `docs/DATASET_CARD.md` and `assets/README.md`.
 
-- Genesis version and backend;
-- Franka model and asset source;
-- fruit and container assets;
-- camera configuration;
-- physics and control frequency;
-- headless rendering;
-- deterministic reset limitations.
+Remote AMD runs use the Genesis AMD backend after `radeonvla.check_env --require-amd`.
+Local development may use CPU Genesis for imports and unit tests only.
 
 ## 6. Demonstration Dataset
 
-Use docs/DATASET_CARD.md as the source of truth. Include:
+I generate demonstrations with the scripted multi-goal expert (`record_dataset`) into a
+LeRobot 0.6 dataset. Frames store world/wrist RGB, 9-D state/action, and a natural-language
+task string. Training and evaluation instructions are disjoint per task. Seed ranges:
 
-- generation method;
-- task and episode distribution;
-- frame schema;
-- action and state ordering;
-- seed splits;
-- filtering and audit;
-- license and redistribution constraints.
+| Split | Seeds |
+|---|---|
+| Training | 0–9999 |
+| Validation | 10000–10999 |
+| Formal evaluation | 20000–29999 |
+| Interrupt / recovery probes | 30000–30999 |
+
+Detailed schema and episode counts are maintained in `docs/DATASET_CARD.md` and will be
+updated when the final dataset revision is frozen.
 
 ## 7. Model and Training
 
-Describe SmolVLA base model, feature mapping, normalization, action chunks, optimizer,
-precision, batch, steps, checkpoint selection, and training time.
+I fine-tune `lerobot/smolvla_base` through the project train wrapper
+(`python -m radeonvla.train_policy smolvla`). Dataset camera keys `world` / `wrist` map to
+SmolVLA’s `camera1` / `camera2` via `rename_map`. Video decoding defaults to `pyav`.
 
 | Item | Value |
 |---|---|
-| GPU | TBD |
-| ROCm | TBD |
-| PyTorch | TBD |
-| Precision | TBD |
-| Batch size | TBD |
-| Effective batch size | TBD |
-| Steps | TBD |
-| Training time | TBD |
-| Throughput | TBD |
-| Peak VRAM | TBD |
+| GPU | pending remote log |
+| ROCm | pending remote log |
+| PyTorch | pending remote log |
+| Precision | bfloat16 (planned) |
+| Batch size | 4 (default config) |
+| Steps | 10000 (default config) |
+| Training time | pending |
+| Throughput | pending |
+| Peak VRAM | pending |
 
 ## 8. Interruptible Command Execution
 
-Describe the fixed command-change injection point, command versioning, old chunk
-invalidation, safety transition, replanning behavior, and evaluation protocol.
-
-If only safe cancellation is verified, state that limitation and do not claim successful
-online correction.
+I implement command versioning in `CommandSession`. When the language instruction changes
+mid-episode, the version increments; `SafetyMonitor` opens the gripper, holds the arm, and
+invalidates the stale action chunk so the policy is reset. Evaluation can inject a mid-rollout
+command change with `--interrupt-demo`. I will report whether online correction succeeds or
+only safe cancellation is reliable after remote measurements.
 
 ## 9. Failure Detection and Recovery
 
-Describe the event definition, evidence window, false-trigger control, recovery
-sequence, retry limit, and evaluation.
-
-Report first-attempt and final success separately.
+`FailureDetector` watches empty-grasp heuristics (closed gripper while the target fruit
+stays near the table), timeouts, and invalid actions. `RecoveryPolicy` allows one retreat
+to a home-like open-gripper pose and a retry. I report first-attempt success and final
+success separately in evaluation JSON.
 
 ## 10. AMD Radeon GPU and ROCm Integration
 
-Include:
-
-- Radeon model and architecture;
-- ROCm and driver;
-- matching PyTorch HIP build;
-- single-GPU restriction;
-- Genesis AMD backend evidence;
-- simulation, data generation, training, inference, and evaluation use;
-- latency, throughput, temperature/power if available, and peak VRAM methodology.
+I target a single visible Radeon GPU (`HIP_VISIBLE_DEVICES=0`) with a matching ROCm PyTorch
+HIP build. The project never pins a generic CPU torch wheel in `pyproject.toml`. Remote setup
+and validation steps are in `docs/REMOTE_ROCM_SETUP.md` and `scripts/check_remote_amd.sh`.
+I will attach measured latency, throughput, and peak VRAM from the final Radeon instance.
 
 ## 11. Experimental Protocol
 
-State:
-
-- immutable submitted commit;
-- dataset and checkpoint checksum;
-- held-out tasks and instructions;
-- exact seed ranges;
-- episode count by task;
-- success and failure definitions;
-- latency measurement warm-up and synchronization;
-- retained failure episodes.
+- Fixed git commit for the submitted revision;
+- dataset and checkpoint checksums recorded in artifacts;
+- held-out evaluation language (not training phrasings);
+- seed ranges as in Section 6;
+- suite `full` by default, with per-tier rates;
+- success = all resolved subgoals placed correctly;
+- keep failure episodes in raw JSON;
+- latency measured after short warm-up with device synchronization when CUDA/HIP is available.
 
 ## 12. Quantitative Results
 
 | Method | Tasks | Episodes | First-attempt success | Final success | P95 latency | Peak VRAM |
 |---|---:|---:|---:|---:|---:|---:|
-| Scripted expert | TBD | TBD | TBD | TBD | N/A | TBD |
-| SmolVLA | TBD | TBD | TBD | TBD | TBD | TBD |
-| SmolVLA + recovery | TBD | TBD | TBD | TBD | TBD | TBD |
+| Scripted expert | pending | pending | pending | pending | N/A | pending |
+| SmolVLA | pending | pending | pending | pending | pending | pending |
+| SmolVLA + recovery | pending | pending | pending | pending | pending | pending |
 
-Remove baselines that were not actually run.
-
-Provide per-task results and link to immutable raw JSON/CSV.
+I will publish per-task and per-tier tables from immutable `outputs/eval_results/*.json`
+after remote evaluation.
 
 ## 13. Failure Analysis
 
-Show representative failures with episode IDs. Discuss wrong object, wrong target,
-empty grasp, slip, timeout, unstable placement, action invalidity, and distribution
-shift only when observed.
+After evaluation, I will attach representative episode IDs for observed modes only (wrong
+object, wrong target, empty grasp, slip, timeout, partial multi-goal, interrupt failure).
+I will not invent failure modes that were not logged.
 
 ## 14. Innovation and Technical Contributions
 
-Explain verified contributions, separating learned-policy capability from deterministic
-safety and recovery logic.
+Contributions I implemented in this submission:
+
+1. Dual-bowl language sorting with L1–L4 task tiers and runtime grounding;
+2. Interruptible command sessions with stale-chunk invalidation;
+3. Failure detection and one-shot recovery around a SmolVLA joint-position policy;
+4. A full ROCm-oriented pipeline: assets → record → validate → train → evaluate → benchmark;
+5. Evaluation metrics for full success, partial multi-goal completion, and success-by-tier.
+
+Learned control (SmolVLA) is separate from deterministic safety/recovery logic.
 
 ## 15. Deliverables
 
 | Deliverable | Public URL | SHA256 or revision |
 |---|---|---|
-| Source repository | TBD | TBD |
-| Model | TBD | TBD |
-| Dataset/documentation | TBD | TBD |
-| Raw evaluation | TBD | TBD |
-| Demo video | TBD | TBD |
-| Technical report | This PDF | TBD |
+| Source repository | pending push URL | pending commit |
+| Model | pending | pending |
+| Dataset/documentation | `docs/DATASET_CARD.md` | pending |
+| Raw evaluation | `outputs/eval_results/` | pending |
+| Demo video | pending | pending |
+| Technical report | this document / PDF export | pending |
 
 ## 16. Reproducibility
 
-Summarize the exact README path, environment creation, model and asset download,
-strict AMD validation, smoke test, single rollout, and quick evaluation.
+Reproduction follows `README.md` inside `track3_VisioBotLab_RadeonVLA-Reflex/`:
 
-Report the clean-environment audit duration and every known platform assumption.
+1. create the ROCm Python environment and install `requirements.remote.txt`;
+2. `python -m radeonvla.setup_assets`;
+3. `python -m radeonvla.check_env --require-amd --init-genesis`;
+4. record or download the dataset, then train or load the checkpoint;
+5. run `python -m radeonvla.evaluate` and compare JSON against this report.
 
 ## 17. Team Member and Contribution
 
 **Zhenwei Zhou:** system design, implementation, data generation, model training,
-evaluation, documentation, and submission.
+evaluation, documentation, and submission (VisioBot Lab, Nanjing University of Science
+and Technology).
 
 ## 18. Limitations and Future Work
 
-State simulation-only scope, task coverage, language coverage, real-robot transfer
-limits, model failures, recovery limits, and unimplemented planned features.
+Current work is **simulation-only** (Genesis). Language and object coverage are limited to
+the registered fruit/bowl suite. Real-robot transfer is out of scope for this submission.
+Recovery is capped at one retry and is rule-based, not learned. After remote training I will
+list empirical failure modes and any features that remain unmeasured.
 
 ## 19. References
 
-Include Genesis, LeRobot, SmolVLA, ROCm, YCB, the official Track 3 repository, and any
-other source actually used.
+- Genesis World
+- Hugging Face LeRobot and SmolVLA
+- AMD ROCm / Radeon developer documentation
+- YCB Object and Model Set
+- AMD Track 3 contest repository and Radeon Cloud user guide
+- Track 3 Franka fruit-pick demo (workflow reference only)

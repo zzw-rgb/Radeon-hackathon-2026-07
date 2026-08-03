@@ -2,17 +2,13 @@ base_config: configs/base.yaml
 
 evaluation:
   seed_start: 20000
-  episodes_per_task: 10
+  episodes_per_task: 5
   max_retries: 1
   save_video: true
   keep_failures: true
-  tasks:
-    - banana_left
-    - banana_right
-    - lemon_left
-    - lemon_right
-    - plum_left
-    - plum_right
+  # Prefer suite=full for the advanced benchmark; override with --tasks for ablation.
+  suite: full
+  tasks: null
 
 interrupt:
   enabled: true

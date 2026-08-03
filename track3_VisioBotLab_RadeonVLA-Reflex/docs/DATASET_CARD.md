@@ -1,6 +1,6 @@
 # RadeonVLA-Reflex Dataset Card
 
-> Status: template. Replace every TBD before release.
+> Status: draft. Fill measured fields after the demonstration dataset is finalized.
 
 ## Overview
 
@@ -50,15 +50,15 @@
 
 ## Data generation
 
-Describe:
+I collect data with the scripted multi-goal expert (`python -m radeonvla.record_dataset`):
 
-1. scripted expert states;
-2. success criteria;
-3. randomization ranges;
-4. recording frequency;
-5. filtering and rejection;
-6. dataset validation;
-7. visual replay audit.
+1. expert states follow resolved L1–L4 goals after scene randomization;
+2. success requires all subgoals inside the commanded bowl rim;
+3. pose jitter is non-overlapping; optional appearance/physics DR flags are supported;
+4. recording rate is 20 Hz (sim 100 Hz, decimated);
+5. failed episodes are discarded by default (`--keep-failures` optional);
+6. `validate_dataset` checks schema, non-finite values, and image statistics;
+7. I spot-check camera videos under `datasets/*/videos/` before training.
 
 ## Split policy
 
@@ -80,6 +80,7 @@ No seed may occur in more than one split.
 
 ## Assets and limitations
 
-List every redistributed robot, fruit, container, texture, and mesh source with its
-license and modification history. State known task imbalance, simulation bias, and
-coverage limitations.
+Robot and YCB meshes are populated via `setup_assets` (see `assets/README.md` and
+`THIRD_PARTY_NOTICES.md`). This dataset is simulation-only; object and language coverage
+are limited to the registered fruit/bowl suite. Final episode counts and any class
+imbalance will be written into the tables above when the release revision is frozen.

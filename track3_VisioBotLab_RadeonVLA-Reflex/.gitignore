@@ -3,6 +3,7 @@
 .env
 .env.*
 !.env.example
+# Keep example env tracked; real secrets stay local
 __pycache__/
 *.py[cod]
 .pytest_cache/

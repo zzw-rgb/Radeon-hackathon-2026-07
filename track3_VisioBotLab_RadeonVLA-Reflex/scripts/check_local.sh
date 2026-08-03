@@ -1,21 +1,20 @@
 #!/usr/bin/env bash
+# Local quality gate: env report + submission audit + pytest + ruff
 set -euo pipefail
+# shellcheck source=lib.sh
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/lib.sh"
+load_dotenv
 
-ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-cd "$ROOT"
+START=$(date +%s)
+section "Local checks"
 
-if command -v conda >/dev/null 2>&1; then
-  # Prefer the validated local env when available.
-  if conda env list | grep -q 'radeonvla-dev'; then
-    RUN=(conda run -n radeonvla-dev --no-capture-output)
-  else
-    RUN=()
-  fi
+run_py -m radeonvla.check_env --json docs/environment.local.json
+run_py -m radeonvla.submission_audit
+run_py -m pytest
+if command -v ruff >/dev/null 2>&1; then
+  run ruff check src tests
 else
-  RUN=()
+  run_py -m ruff check src tests
 fi
 
-"${RUN[@]}" python -m radeonvla.check_env --json docs/environment.local.json
-"${RUN[@]}" python -m radeonvla.submission_audit
-"${RUN[@]}" pytest
-"${RUN[@]}" ruff check src tests
+ok "Local checks passed in $(elapsed "$START")s"

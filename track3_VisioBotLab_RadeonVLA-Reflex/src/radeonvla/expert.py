@@ -1,8 +1,8 @@
 """Scripted dual-bowl pick-and-place expert for demonstration collection.
 
-The expert is task-conditioned: it picks the fruit named in ``TaskSpec`` and
-places it into the left or right bowl. Motion is IK-based with velocity-limited
-transport while grasping, independent of the starter demo implementation.
+The expert follows a resolved task: pick the target fruit and place it into the
+commanded left or right bowl. Multi-step tasks run subgoals in order. Motion uses
+IK with velocity-limited transport while grasping.
 """
 
 from __future__ import annotations
@@ -192,10 +192,21 @@ def run_pick_place(
     recorder: RecorderFn | None = None,
     save_frames: bool = False,
     settle_steps: int = 60,
+    fruit: str | None = None,
+    container: str | None = None,
 ) -> tuple[bool, list[tuple[str, Any]]]:
-    """Execute a language-conditioned pick into left/right bowl."""
-    fruit = task.target_object
-    container = task.target_container
+    """Execute a single pick-and-place for one (fruit, container) goal.
+
+    ``task`` may be a ``TaskSpec``, ``ResolvedTask``, or any object exposing
+    ``target_object`` / ``target_container``. Explicit ``fruit`` / ``container``
+    override those fields (used for multi-step sequences).
+    """
+    fruit = fruit or task.target_object
+    container = container or task.target_container
+    if fruit.startswith("@"):
+        raise ValueError(
+            f"Unresolved spatial target {fruit!r}. Call resolve_task() before run_pick_place()."
+        )
     pick_entity = bundle.objects[fruit]
     place_entity = bundle.objects[container]
     profile = PROFILES.get(fruit, GraspProfile())
@@ -271,14 +282,77 @@ def run_pick_place(
     _settle(bundle, settle_steps, recorder=recorder)
     snap("07_done")
 
-    success, _, _ = check_placement_success(bundle, task)
+    # Single-goal success (multi-step uses check_resolved_success at a higher level).
+    from radeonvla.tasks import SubGoalSpec, TaskSpec
+
+    synthetic = TaskSpec(
+        task_id=f"_single_{fruit}_{container}",
+        tier="L1",
+        goals=(SubGoalSpec(object_name=fruit, container=container),),
+        training_instructions=("",),
+        evaluation_instructions=("",),
+    )
+    success, _, _ = check_placement_success(bundle, synthetic)
     return success, frames
+
+
+def run_resolved_task(
+    bundle,
+    resolved,
+    *,
+    recorder: RecorderFn | None = None,
+    save_frames: bool = False,
+    settle_steps: int = 60,
+    home_between_goals: bool = True,
+) -> tuple[bool, list[tuple[str, Any]], dict]:
+    """Execute all subgoals of a ``ResolvedTask`` in order (supports L2–L4)."""
+    from radeonvla.grounding import check_resolved_success
+
+    all_frames: list[tuple[str, Any]] = []
+    for idx, goal in enumerate(resolved.goals):
+        if idx > 0 and home_between_goals:
+            # Return toward a safe home pose between subgoals so the second grasp
+            # is not disturbed by residual arm motion over the bowls.
+            _settle(bundle, 40, recorder=recorder)
+            home = np.array(FRANKA_QPOS)
+            for _ in range(80):
+                if recorder is not None:
+                    recorder(home.astype(np.float32))
+                bundle.franka.control_dofs_position(home)
+                bundle.scene.step()
+                bundle.update_wrist_cam()
+            _settle(bundle, 40, recorder=recorder)
+
+        ok, frames = run_pick_place(
+            bundle,
+            resolved,
+            recorder=recorder,
+            save_frames=save_frames and idx == 0,
+            settle_steps=settle_steps if idx == 0 else 40,
+            fruit=goal.object_name,
+            container=goal.container,
+        )
+        for tag, img in frames:
+            all_frames.append((f"g{idx}_{tag}", img))
+        if not ok:
+            report = check_resolved_success(bundle, resolved)
+            report["stopped_at_goal"] = idx
+            return False, all_frames, report
+
+    report = check_resolved_success(bundle, resolved)
+    return bool(report["success"]), all_frames, report
 
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Run the scripted dual-bowl sorting expert.")
     parser.add_argument("--config", type=Path, default=PROJECT_ROOT / "configs" / "base.yaml")
-    parser.add_argument("--task", default="banana_left", help="Task id from the registry.")
+    parser.add_argument("--task", default=None, help="Single task id (default: cycle --suite).")
+    parser.add_argument(
+        "--suite",
+        default="basic",
+        choices=("basic", "advanced", "full", "multistep", "spatial", "rules"),
+        help="Task suite to cycle when --task is omitted.",
+    )
     parser.add_argument("--episodes", type=int, default=1)
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--cpu", action="store_true")
@@ -289,7 +363,9 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
 
 
 def main(argv: list[str] | None = None) -> int:
+    from radeonvla.grounding import resolve_task
     from radeonvla.randomize import EnvRandomizer, RandomizationConfig
+    from radeonvla.tasks import list_task_ids
 
     args = parse_args(argv)
     backend = args.backend or ("cpu" if args.cpu else "gpu")
@@ -300,14 +376,28 @@ def main(argv: list[str] | None = None) -> int:
         add_wrist_cam=True,
         appearance=AppearanceDR(seed=args.seed),
     )
-    randomizer = EnvRandomizer(bundle, RandomizationConfig(seed=args.seed))
+    task_ids = [args.task] if args.task else list_task_ids(args.suite)
+    randomizer = EnvRandomizer(
+        bundle,
+        RandomizationConfig(seed=args.seed, task_ids=tuple(task_ids)),
+    )
 
     successes = 0
     for ep in range(args.episodes):
-        task = randomizer.reset(seed=args.seed + ep, task_id=args.task)
-        ok, frames = run_pick_place(bundle, task, save_frames=args.save_frames and ep == 0)
+        task_id = task_ids[ep % len(task_ids)]
+        task = randomizer.reset(seed=args.seed + ep, task_id=task_id)
+        resolved = resolve_task(bundle, task, train=True)
+        ok, frames, report = run_resolved_task(
+            bundle,
+            resolved,
+            save_frames=args.save_frames and ep == 0,
+        )
         successes += int(ok)
-        print(f"[expert] ep={ep} task={task.task_id} success={ok}")
+        goals_str = " -> ".join(f"{g.object_name}:{g.container}" for g in resolved.goals)
+        print(
+            f"[expert] ep={ep} task={task.task_id} tier={task.tier} "
+            f"goals=[{goals_str}] success={ok} partial={report.get('partial_success_rate', 0):.2f}"
+        )
         if frames:
             import imageio.v2 as imageio
 

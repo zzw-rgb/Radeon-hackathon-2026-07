@@ -23,12 +23,13 @@ from pathlib import Path
 
 import numpy as np
 
-from radeonvla.expert import run_pick_place
+from radeonvla.expert import run_resolved_task
+from radeonvla.grounding import resolve_task
 from radeonvla.paths import DATASETS_DIR, PROJECT_ROOT
 from radeonvla.protocol import CONTROL_HZ, DATASET_FPS, JOINT_NAMES, dataset_features
 from radeonvla.randomize import EnvRandomizer, RandomizationConfig, RuntimeDR
 from radeonvla.scene import AppearanceDR, build_scene, init_genesis
-from radeonvla.tasks import TASKS, get_task
+from radeonvla.tasks import SUITES, get_task, list_task_ids
 
 
 class EpisodeRecorder:
@@ -118,8 +119,14 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         default=0,
         help="Max expert rollouts (0 => 5x episodes). Stops early if successes reached.",
     )
-    parser.add_argument("--task", default=None, help="Single task id; default cycles all six tasks.")
+    parser.add_argument("--task", default=None, help="Single task id.")
     parser.add_argument("--tasks", nargs="*", default=None, help="Optional explicit task id list.")
+    parser.add_argument(
+        "--suite",
+        default="full",
+        choices=sorted(SUITES),
+        help="Task suite when --task/--tasks omitted (default: full advanced set).",
+    )
     parser.add_argument("--repo-id", default="visiobot/radeonvla_reflex")
     parser.add_argument("--dataset-root", type=Path, default=None)
     parser.add_argument("--seed", type=int, default=0)
@@ -158,12 +165,13 @@ def _instruction_for(task_id: str, *, train: bool = True) -> str:
 
 def _task_cycle(args: argparse.Namespace) -> list[str]:
     if args.task:
+        get_task(args.task)
         return [args.task]
     if args.tasks:
         for task_id in args.tasks:
             get_task(task_id)  # validate
         return list(args.tasks)
-    return sorted(TASKS)
+    return list_task_ids(args.suite)
 
 
 def _rebuild_scene(backend: str, seed: int, domain: int, args: argparse.Namespace):
@@ -277,9 +285,11 @@ def main(argv: list[str] | None = None) -> int:
         task_id = task_cycle[ep % len(task_cycle)]
         task = randomizer.reset(seed=args.seed + attempts, task_id=task_id)
         instruction = _instruction_for(task.task_id, train=True)
+        resolved = resolve_task(bundle, task, instruction=instruction, train=True)
         recorder.reset()
-        ok, _ = run_pick_place(bundle, task, recorder=recorder.on_step)
+        ok, _, report = run_resolved_task(bundle, resolved, recorder=recorder.on_step)
         attempts += 1
+        goals_str = ",".join(f"{g.object_name}->{g.container}" for g in resolved.goals)
 
         if ok and len(recorder) > 0:
             recorder.flush_to(dataset, instruction)
@@ -288,15 +298,22 @@ def main(argv: list[str] | None = None) -> int:
             ep += 1
             print(
                 f"[record] success {successes}/{args.episodes} "
-                f"task={task.task_id} frames={len(recorder)} attempt={attempts}"
+                f"task={task.task_id} tier={task.tier} goals=[{goals_str}] "
+                f"frames={len(recorder)} attempt={attempts}"
             )
         elif args.keep_failures and len(recorder) > 0:
             recorder.flush_to(dataset, "FAILED: " + instruction)
             failures_saved += 1
-            print(f"[record] failure saved task={task.task_id} frames={len(recorder)}")
+            print(
+                f"[record] failure saved task={task.task_id} tier={task.tier} "
+                f"partial={report.get('partial_success_rate', 0):.2f} frames={len(recorder)}"
+            )
         else:
             reason = "empty" if len(recorder) == 0 else "failed"
-            print(f"[record] discarded ({reason}) task={task.task_id} attempt={attempts}")
+            print(
+                f"[record] discarded ({reason}) task={task.task_id} tier={task.tier} "
+                f"partial={report.get('partial_success_rate', 0):.2f} attempt={attempts}"
+            )
 
     dataset.finalize()
 
@@ -312,6 +329,7 @@ def main(argv: list[str] | None = None) -> int:
         "attempts": attempts,
         "per_task_successes": per_task,
         "task_cycle": task_cycle,
+        "suite": args.suite,
         "seed": args.seed,
         "backend": backend,
         "dr_appearance": args.dr_appearance,

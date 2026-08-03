@@ -1,6 +1,6 @@
 """Scene layout for language-conditioned dual-bowl fruit sorting.
 
-Layout is intentionally different from the Track 3 starter demo:
+Layout choices:
 - two destination bowls (left / right) so language must disambiguate targets;
 - three pickable fruits spaced for reliable top-down grasps;
 - world + wrist cameras for policy observations, plus a cosmetic video camera.

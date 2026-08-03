@@ -1,8 +1,5 @@
 """Execution safety, interruptible commands, and failure-aware recovery.
 
-These modules implement the project's main differentiators over a plain
-pick-and-place VLA demo:
-
 1. **CommandSession** — versioned natural-language commands. A mid-episode
    instruction change bumps the version so stale action chunks are discarded.
 2. **SafetyMonitor** — clamps joint targets and can force a hold / open-gripper
