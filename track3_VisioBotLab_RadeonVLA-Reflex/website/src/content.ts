@@ -66,10 +66,10 @@ export const copy = {
   sourceCta: { en: "Explore the source", zh: "查看项目源码" },
   demoCta: { en: "See the evidence plan", zh: "查看演示证据" },
   heroAlt: {
-    en: "Franka Panda robot rendered in simulation",
-    zh: "仿真环境中渲染的 Franka Panda 机械臂",
+    en: "Industrial robot holding an apple while a broken stale action path is rerouted to a safe recovery path",
+    zh: "工业机械臂夹持苹果，失效的旧动作路径断开并重新规划为安全恢复路径",
   },
-  placeholder: { en: "Temporary simulation asset", zh: "临时仿真素材" },
+  placeholder: { en: "Original recovery concept art", zh: "原创恢复机制概念图" },
   proofLabel: { en: "Verified snapshot", zh: "已核验快照" },
   proofNote: {
     en: "Values below come from the completed local dataset manifest. Formal policy metrics remain pending.",
@@ -173,8 +173,8 @@ export const copy = {
     zh: "RadeonVLA-Reflex · Track 3 Physical AI 挑战赛",
   },
   attribution: {
-    en: "Simulation asset attribution: Genesis World / Franka Emika Panda. See THIRD_PARTY_NOTICES.md.",
-    zh: "仿真素材署名：Genesis World / Franka Emika Panda。详见 THIRD_PARTY_NOTICES.md。",
+    en: "Hero concept art generated for RadeonVLA-Reflex. Third-party software and simulation credits are listed in THIRD_PARTY_NOTICES.md.",
+    zh: "Hero 概念图为 RadeonVLA-Reflex 项目生成；第三方软件与仿真署名详见 THIRD_PARTY_NOTICES.md。",
   },
 } satisfies Record<string, unknown>;
 

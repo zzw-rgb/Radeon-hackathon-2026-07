@@ -35,9 +35,9 @@ All bilingual copy, verified metrics, task rows, and external URLs live in
 - update Dataset Card, Model Card, technical report, and this site from the same run;
 - keep the simulation-only limitation visible.
 
-The temporary hero imports `../assets/robots/franka/panda.png` through Vite. Replace it
-with a project-owned final scene poster after the Radeon demo run. Preserve the upstream
-asset attribution from `../THIRD_PARTY_NOTICES.md`.
+The project-owned hero concept is bundled from
+`src/assets/radeonvla-reflex-hero.png`. Keep the software and simulation credits in
+`../THIRD_PARTY_NOTICES.md` when editing the footer.
 
 ## Adding the final video
 

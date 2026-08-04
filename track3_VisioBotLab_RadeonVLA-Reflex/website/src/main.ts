@@ -1,4 +1,4 @@
-import pandaImage from "../../assets/robots/franka/panda.png";
+import heroImage from "./assets/radeonvla-reflex-hero.png";
 import {
   copy,
   demos,
@@ -71,7 +71,7 @@ function render(): void {
           <figure class="hero-visual reveal" aria-labelledby="hero-visual-caption">
             <div class="visual-orbit orbit-one" aria-hidden="true"></div>
             <div class="visual-orbit orbit-two" aria-hidden="true"></div>
-            <img src="${pandaImage}" alt="${t(copy.heroAlt, locale)}" />
+            <img src="${heroImage}" alt="${t(copy.heroAlt, locale)}" />
             <figcaption id="hero-visual-caption">
               <span class="live-dot" aria-hidden="true"></span>
               ${t(copy.placeholder, locale)}
