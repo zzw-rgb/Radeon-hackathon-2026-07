@@ -78,8 +78,11 @@ def main(argv: list[str] | None = None) -> int:
     }
 
     if args.policy_path:
+        from radeonvla.artifact_io import sha256_path
         from radeonvla.evaluate import build_observation, load_policy
 
+        if torch.cuda.is_available():
+            torch.cuda.reset_peak_memory_stats()
         device = "cpu" if args.cpu else args.device
         pb = load_policy(args.policy_path, args.repo_id, args.dataset_root, device)
         pb.reset()
@@ -100,6 +103,10 @@ def main(argv: list[str] | None = None) -> int:
             "p50": float(np.percentile(lat, 50)),
             "p95": float(np.percentile(lat, 95)),
         }
+        result["inference_peak_vram_mib"] = (
+            torch.cuda.max_memory_allocated() / 1024**2 if torch.cuda.is_available() else None
+        )
+        result["checkpoint_sha256"] = sha256_path(args.policy_path)
 
     stamp = datetime.now(UTC).strftime("%Y%m%dT%H%M%SZ")
     out = args.output or (BENCHMARK_DIR / f"benchmark_{stamp}.json")
