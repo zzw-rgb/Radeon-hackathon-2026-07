@@ -262,10 +262,7 @@ class EnvRandomizer:
         self.home_yaw = {n: float(OBJECT_LAYOUT[n]["euler"][2]) for n in self.names}
         self.radius = {n: self._pack_radius(n) for n in self.names}
         # rest_z must match the scaled mesh placement used in build_scene.
-        self.rest_z = {
-            n: self._assets[n].rest_z_offset * float(OBJECT_LAYOUT[n].get("scale", 1.0))
-            for n in self.names
-        }
+        self.rest_z = {n: self._assets[n].rest_z_offset * float(OBJECT_LAYOUT[n].get("scale", 1.0)) for n in self.names}
         self.safe_jitter = self._compute_safe_jitter()
         self._base_cam_pos = np.asarray(WORLD_CAM_POS, dtype=float)
         self._base_cam_lookat = np.asarray(WORLD_CAM_LOOKAT, dtype=float)
@@ -274,6 +271,7 @@ class EnvRandomizer:
         # Last sampled xy per entity (for debugging / tests).
         self.last_xy: dict[str, np.ndarray] = {n: self.home[n].copy() for n in self.names}
         self.last_layout_meta: dict = {}
+        self.last_runtime_meta: dict = {"enabled": False}
 
     def _pack_radius(self, name: str) -> float:
         layout = OBJECT_LAYOUT[name]
@@ -489,11 +487,10 @@ class EnvRandomizer:
                 euler = np.asarray(layout.get("euler", BOWL_EULER), dtype=float)
                 self._set_pose(name, xy, euler)
             else:
-                yaw = self.home_yaw[name] + float(
-                    self.rng.uniform(-self.cfg.yaw_jitter, self.cfg.yaw_jitter)
-                )
+                yaw = self.home_yaw[name] + float(self.rng.uniform(-self.cfg.yaw_jitter, self.cfg.yaw_jitter))
                 self._set_pose(name, xy, np.array([0.0, 0.0, yaw]))
 
+        self.last_runtime_meta = {"enabled": bool(self.cfg.runtime_dr.enabled)}
         if self.cfg.runtime_dr.enabled:
             self._apply_runtime_dr()
 
@@ -509,6 +506,7 @@ class EnvRandomizer:
     def _apply_runtime_dr(self) -> None:
         dr = self.cfg.runtime_dr
         friction_ratio = float(self.rng.uniform(*dr.friction_ratio_range))
+        mass_ratios: dict[str, float] = {}
         for name, ent in self.bundle.objects.items():
             try:
                 if hasattr(ent, "set_friction"):
@@ -516,6 +514,7 @@ class EnvRandomizer:
             except Exception:
                 pass
             mass_ratio = float(self.rng.uniform(*dr.mass_ratio_range))
+            mass_ratios[name] = mass_ratio
             base = self._base_mass.get(name, 0.05)
             try:
                 if hasattr(ent, "set_mass_shift"):
@@ -523,14 +522,25 @@ class EnvRandomizer:
             except Exception:
                 pass
 
+        position_delta = np.zeros(3, dtype=float)
+        lookat_delta = np.zeros(3, dtype=float)
         if self.bundle.world_cam is not None and (dr.cam_pos_jitter > 0 or dr.cam_lookat_jitter > 0):
             pos = self._base_cam_pos.copy()
             look = self._base_cam_lookat.copy()
             if dr.cam_pos_jitter > 0:
-                pos += self.rng.uniform(-dr.cam_pos_jitter, dr.cam_pos_jitter, size=3)
+                position_delta = self.rng.uniform(-dr.cam_pos_jitter, dr.cam_pos_jitter, size=3)
+                pos += position_delta
             if dr.cam_lookat_jitter > 0:
-                look += self.rng.uniform(-dr.cam_lookat_jitter, dr.cam_lookat_jitter, size=3)
+                lookat_delta = self.rng.uniform(-dr.cam_lookat_jitter, dr.cam_lookat_jitter, size=3)
+                look += lookat_delta
             try:
                 self.bundle.world_cam.set_pose(pos=pos, lookat=look)
             except Exception:
                 pass
+        self.last_runtime_meta = {
+            "enabled": True,
+            "friction_ratio": friction_ratio,
+            "mass_ratios": mass_ratios,
+            "world_camera_position_delta": position_delta.tolist(),
+            "world_camera_lookat_delta": lookat_delta.tolist(),
+        }

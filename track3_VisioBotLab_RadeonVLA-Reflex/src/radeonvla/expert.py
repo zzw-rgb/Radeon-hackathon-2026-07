@@ -324,6 +324,7 @@ def run_pick_place(
     settle_steps: int = 60,
     fruit: str | None = None,
     container: str | None = None,
+    allow_kinematic_assist: bool | None = None,
 ) -> tuple[bool, list[tuple[str, Any]]]:
     """Execute a single pick-and-place for one (fruit, container) goal.
 
@@ -334,12 +335,11 @@ def run_pick_place(
     fruit = fruit or task.target_object
     container = container or task.target_container
     if fruit.startswith("@"):
-        raise ValueError(
-            f"Unresolved spatial target {fruit!r}. Call resolve_task() before run_pick_place()."
-        )
+        raise ValueError(f"Unresolved spatial target {fruit!r}. Call resolve_task() before run_pick_place().")
     pick_entity = bundle.objects[fruit]
     place_entity = bundle.objects[container]
     profile = PROFILES.get(fruit, GraspProfile())
+    kinematic_assist = KINEMATIC_GRASP_ASSIST if allow_kinematic_assist is None else bool(allow_kinematic_assist)
 
     frames: list[tuple[str, Any]] = []
 
@@ -459,7 +459,7 @@ def run_pick_place(
         )
         # If physical hold was lost and we are not glued, abort.
         if hold is None and not _grip_holding(bundle, pick_entity):
-            if KINEMATIC_GRASP_ASSIST:
+            if kinematic_assist:
                 _attach_fruit_to_hand(pick_entity, bundle)
                 hold = pick_entity
             else:
@@ -478,9 +478,10 @@ def run_pick_place(
         if hold is not None:
             _attach_fruit_to_hand(pick_entity, bundle)
         _goto_direct(bundle, release, gquat, finger_cmd=GRIPPER_OPEN, steps=120, recorder=recorder)
-        # Nudge fruit into bowl center if it bounced just outside the rim.
+        # A nudge has no corresponding robot action. Keep it only for assisted
+        # demos; formal behavior-cloning data must preserve action causality.
         fruit_xy = entity_pos(pick_entity)[:2]
-        if float(np.linalg.norm(fruit_xy - place_pos[:2])) > 0.04:
+        if kinematic_assist and float(np.linalg.norm(fruit_xy - place_pos[:2])) > 0.04:
             entity_pos_now = entity_pos(pick_entity)
             entity_pos_now[0] = place_pos[0]
             entity_pos_now[1] = place_pos[1]
@@ -505,13 +506,14 @@ def run_pick_place(
     for round_i in range(MAX_PICK_PLACE_ROUNDS):
         # Recover fruit onto table if it fell off between rounds (teleport home slot).
         if not _fruit_on_table(pick_entity) and not _fruit_is_lifted(pick_entity):
+            if not kinematic_assist:
+                break
             from radeonvla.scene_config import OBJECT_LAYOUT
 
             home_xy = OBJECT_LAYOUT[fruit]["pos"]
             rest = float(entity_aabb(pick_entity)[1, 2] - entity_aabb(pick_entity)[0, 2]) * 0.5
             set_rigid_position(
-                pick_entity,
-                np.array([home_xy[0], home_xy[1], TABLE_TOP_Z + max(rest, 0.03)], dtype=float)
+                pick_entity, np.array([home_xy[0], home_xy[1], TABLE_TOP_Z + max(rest, 0.03)], dtype=float)
             )
             for _ in range(20):
                 bundle.scene.step()
@@ -538,7 +540,7 @@ def run_pick_place(
             hand = bundle.franka.get_link("hand")
             hp = _to_np(hand.get_pos())
             open_hold = np.array([hp[0], hp[1], LIFT_HAND_Z])
-            if KINEMATIC_GRASP_ASSIST and attempt + 1 >= MAX_GRASP_ATTEMPTS:
+            if kinematic_assist and attempt + 1 >= MAX_GRASP_ATTEMPTS:
                 # Last attempt: close fingers and glue fruit into jaws.
                 _goto_direct(
                     bundle,
@@ -560,9 +562,7 @@ def run_pick_place(
                     close_force=profile.close_force,
                     recorder=recorder,
                 )
-                down = np.array(
-                    [obj_pos[0], obj_pos[1], _grasp_hand_z(pick_entity, profile, attempt=attempt)]
-                )
+                down = np.array([obj_pos[0], obj_pos[1], _grasp_hand_z(pick_entity, profile, attempt=attempt)])
                 _goto_direct(
                     bundle,
                     down,
@@ -595,7 +595,7 @@ def run_pick_place(
 
         _do_place(grasp_quat, glued=glued)
         snap(f"r{round_i}_done")
-        success, _, _ = check_placement_success(bundle, synthetic)
+        success, _, _ = check_placement_success(bundle, synthetic, strict=not kinematic_assist)
         if success:
             break
         _arm_home()
@@ -611,10 +611,12 @@ def run_resolved_task(
     save_frames: bool = False,
     settle_steps: int = 60,
     home_between_goals: bool = True,
+    allow_kinematic_assist: bool | None = None,
 ) -> tuple[bool, list[tuple[str, Any]], dict]:
     """Execute all subgoals of a ``ResolvedTask`` in order (supports L2–L4)."""
     from radeonvla.grounding import check_resolved_success
 
+    strict_physics = allow_kinematic_assist is False
     all_frames: list[tuple[str, Any]] = []
     for idx, goal in enumerate(resolved.goals):
         if idx > 0 and home_between_goals:
@@ -638,15 +640,16 @@ def run_resolved_task(
             settle_steps=settle_steps if idx == 0 else 40,
             fruit=goal.object_name,
             container=goal.container,
+            allow_kinematic_assist=allow_kinematic_assist,
         )
         for tag, img in frames:
             all_frames.append((f"g{idx}_{tag}", img))
         if not ok:
-            report = check_resolved_success(bundle, resolved)
+            report = check_resolved_success(bundle, resolved, strict=strict_physics)
             report["stopped_at_goal"] = idx
             return False, all_frames, report
 
-    report = check_resolved_success(bundle, resolved)
+    report = check_resolved_success(bundle, resolved, strict=strict_physics)
     return bool(report["success"]), all_frames, report
 
 

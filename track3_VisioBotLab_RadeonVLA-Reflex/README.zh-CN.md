@@ -375,10 +375,33 @@ python -m radeonvla.record_dataset --episodes 200 --suite basic --require-covera
 python -m radeonvla.record_dataset --episodes 400 --suite basic --require-coverage \
   --dr-appearance --dr-object-color --dr-runtime --backend amdgpu
 
+# 正式纯物理数据：20 个任务，每个恰好 50 条成功 episode。
+# 默认关闭运动学粘附、物体瞬移和 placement nudge，并为每条数据写原子证书。
+SOURCE_COMMIT="$(git rev-parse HEAD)" python -m radeonvla.record_dataset \
+  --episodes-per-task 50 --suite basic --require-coverage \
+  --repo-id YOUR_HF_NAMESPACE/radeonvla-reflex-physical-1k \
+  --dataset-root datasets/radeonvla_reflex_physical_1k \
+  --dr-appearance --dr-object-color --dr-runtime --dr-rebuild-every 20 \
+  --max-attempts 10000 --backend amdgpu
+
+# 中断后续采；参数和源码 revision 必须与原子进度记录一致。
+SOURCE_COMMIT="$(git rev-parse HEAD)" python -m radeonvla.record_dataset \
+  --episodes-per-task 50 --suite basic --require-coverage \
+  --repo-id YOUR_HF_NAMESPACE/radeonvla-reflex-physical-1k \
+  --dataset-root datasets/radeonvla_reflex_physical_1k \
+  --dr-appearance --dr-object-color --dr-runtime --dr-rebuild-every 20 \
+  --max-attempts 10000 --backend amdgpu --resume-incomplete
+
 # 训练前校验数据集
 python -m radeonvla.validate_dataset \
   --repo-id visiobot/radeonvla_reflex \
   --dataset-root datasets/radeonvla_reflex
+
+# 正式发布门禁
+python -m radeonvla.validate_dataset \
+  --repo-id YOUR_HF_NAMESPACE/radeonvla-reflex-physical-1k \
+  --dataset-root datasets/radeonvla_reflex_physical_1k \
+  --expected-episodes 1000 --episodes-per-task 50 --require-strict-physics
 
 # M4/M5 — 训练 SmolVLA（需要非空数据集）
 python -m radeonvla.train_policy smolvla \

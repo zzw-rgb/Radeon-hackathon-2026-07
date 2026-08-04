@@ -17,6 +17,18 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--repo-id", default="visiobot/radeonvla_reflex")
     parser.add_argument("--dataset-root", type=Path, default=None)
     parser.add_argument("--max-frames", type=int, default=32, help="Sample up to N frames for image checks.")
+    parser.add_argument("--expected-episodes", type=int, default=0, help="Require exactly N episodes (0 disables).")
+    parser.add_argument(
+        "--episodes-per-task",
+        type=int,
+        default=0,
+        help="Require exactly N certified successful episodes for each manifest task (0 disables).",
+    )
+    parser.add_argument(
+        "--require-strict-physics",
+        action="store_true",
+        help="Require zero-assist manifest flags and one strict certificate per successful episode.",
+    )
     parser.add_argument(
         "--video-backend",
         default="pyav",
@@ -59,6 +71,99 @@ def main(argv: list[str] | None = None) -> int:
         "errors": [],
         "warnings": [],
     }
+
+    num_episodes = int(getattr(ds, "num_episodes", 0) or 0)
+    if args.expected_episodes > 0 and num_episodes != args.expected_episodes:
+        report["errors"].append(f"Episode count {num_episodes} != expected {args.expected_episodes}")
+
+    manifest_path = root / "recording_manifest.json"
+    manifest = None
+    if manifest_path.is_file():
+        try:
+            manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        except json.JSONDecodeError as exc:
+            report["errors"].append(f"Invalid recording manifest JSON: {exc}")
+    elif args.require_strict_physics or args.episodes_per_task > 0:
+        report["errors"].append("Missing recording_manifest.json required by formal validation")
+
+    certificates = []
+    certificate_paths = sorted((root / "certificates").glob("episode_*.json"))
+    for certificate_path in certificate_paths:
+        try:
+            certificates.append(json.loads(certificate_path.read_text(encoding="utf-8")))
+        except json.JSONDecodeError as exc:
+            report["errors"].append(f"Invalid certificate {certificate_path.name}: {exc}")
+    report["strict_certificate_count"] = len(certificates)
+
+    if args.require_strict_physics:
+        if manifest is not None:
+            strict_manifest = (
+                manifest.get("strict_physics") is True
+                and manifest.get("rigid_pose_write_guard") is True
+                and manifest.get("kinematic_grasp_assist") is False
+                and manifest.get("placement_nudge") is False
+                and int(manifest.get("failures_saved", -1)) == 0
+            )
+            if not strict_manifest:
+                report["errors"].append("Manifest does not prove strict zero-assist physical recording")
+        if len(certificates) != num_episodes:
+            report["errors"].append(
+                f"Strict certificate count {len(certificates)} != dataset episodes {num_episodes}"
+            )
+        indices = [int(item.get("episode_index", -1)) for item in certificates]
+        if sorted(indices) != list(range(num_episodes)):
+            report["errors"].append("Strict certificate episode indices are missing, duplicated, or non-contiguous")
+        seeds = [item.get("seed") for item in certificates]
+        if len(set(seeds)) != len(seeds):
+            report["errors"].append("Strict certificates contain duplicate rollout seeds")
+        invalid = [
+            int(item.get("episode_index", -1))
+            for item in certificates
+            if item.get("success") is not True
+            or item.get("strict_physics") is not True
+            or item.get("rigid_pose_write_guard") is not True
+            or item.get("kinematic_intervention_count") != 0
+        ]
+        if invalid:
+            report["errors"].append(f"Episodes without strict zero-intervention success certificates: {invalid}")
+        metadata_tasks = {
+            int(episode["episode_index"]): list(episode.get("tasks") or []) for episode in ds.meta.episodes
+        }
+        task_mismatches = [
+            int(item.get("episode_index", -1))
+            for item in certificates
+            if item.get("instruction") not in metadata_tasks.get(int(item.get("episode_index", -1)), [])
+        ]
+        if task_mismatches:
+            report["errors"].append(f"Certificate/dataset instruction mismatches: {task_mismatches}")
+        certificate_commits = {item.get("source_commit") for item in certificates}
+        manifest_commit = manifest.get("source_commit") if manifest is not None else None
+        if certificate_commits != {manifest_commit}:
+            report["errors"].append(
+                f"Certificate source revisions {sorted(map(str, certificate_commits))} "
+                f"do not match manifest {manifest_commit!r}"
+            )
+
+    if args.episodes_per_task > 0:
+        if manifest is None:
+            report["errors"].append("Cannot validate per-task quota without a recording manifest")
+        else:
+            task_cycle = list(manifest.get("task_cycle") or [])
+            task_counts = {task_id: 0 for task_id in task_cycle}
+            for certificate in certificates:
+                task_id = certificate.get("task_id")
+                if certificate.get("success") is True and task_id in task_counts:
+                    task_counts[task_id] += 1
+            bad_counts = {
+                task_id: count for task_id, count in task_counts.items() if count != args.episodes_per_task
+            }
+            report["certified_successes_per_task"] = task_counts
+            if not task_cycle:
+                report["errors"].append("Manifest task_cycle is empty")
+            if bad_counts:
+                report["errors"].append(
+                    f"Certified per-task quota is not exactly {args.episodes_per_task}: {bad_counts}"
+                )
 
     # "task" is stored as episode language via task_index in LeRobot 0.6, not always a tensor feature.
     required = {"observation.state", "action", *IMAGE_KEYS}

@@ -13,6 +13,7 @@ load_dotenv
 export HIP_VISIBLE_DEVICES="${HIP_VISIBLE_DEVICES:-0}"
 BACKEND="${BACKEND:-amdgpu}"
 EPISODES="${EPISODES:-200}"
+EPISODES_PER_TASK="${EPISODES_PER_TASK:-0}"
 TRAIN_STEPS="${TRAIN_STEPS:-10000}"
 SUITE="${SUITE:-basic}"
 REPO_ID="${REPO_ID:-visiobot/radeonvla_reflex}"
@@ -27,6 +28,7 @@ DR="${DR:-1}"
 DR_REBUILD_EVERY="${DR_REBUILD_EVERY:-20}"
 OVERWRITE="${OVERWRITE:-0}"
 DISCARD_INCOMPLETE="${DISCARD_INCOMPLETE:-0}"
+RESUME_INCOMPLETE="${RESUME_INCOMPLETE:-0}"
 SOURCE_COMMIT="${SOURCE_COMMIT:-}"
 
 START=$(date +%s)
@@ -60,6 +62,9 @@ if [[ "$SKIP_RECORD" != "1" ]]; then
     --repo-id "$REPO_ID"
     --dataset-root "$DATASET_ROOT"
   )
+  if [[ "$EPISODES_PER_TASK" != "0" ]]; then
+    RECORD_ARGS+=(--episodes-per-task "$EPISODES_PER_TASK")
+  fi
   if [[ "$SUITE" == "basic" && "$EPISODES" -ge 20 ]]; then
     RECORD_ARGS+=(--require-coverage)
   fi
@@ -77,13 +82,25 @@ if [[ "$SKIP_RECORD" != "1" ]]; then
   if [[ "$DISCARD_INCOMPLETE" == "1" ]]; then
     RECORD_ARGS+=(--discard-incomplete)
   fi
+  if [[ "$RESUME_INCOMPLETE" == "1" ]]; then
+    RECORD_ARGS+=(--resume-incomplete)
+  fi
   run_py "${RECORD_ARGS[@]}"
 else
   section "3 record skipped (SKIP_RECORD=1)"
   [[ -d "$DATASET_ROOT" ]] || die "DATASET_ROOT not found: $DATASET_ROOT"
 fi
-run_py -m radeonvla.validate_dataset --repo-id "$REPO_ID" --dataset-root "$DATASET_ROOT" \
+VALIDATE_ARGS=(
+  -m radeonvla.validate_dataset
+  --repo-id "$REPO_ID"
+  --dataset-root "$DATASET_ROOT"
+  --require-strict-physics
   --json artifacts/dataset_validation.json
+)
+if [[ "$EPISODES_PER_TASK" != "0" ]]; then
+  VALIDATE_ARGS+=(--episodes-per-task "$EPISODES_PER_TASK")
+fi
+run_py "${VALIDATE_ARGS[@]}"
 if [[ -f "$DATASET_ROOT/recording_manifest.json" ]]; then
   cp "$DATASET_ROOT/recording_manifest.json" artifacts/dataset_manifest.json
 fi

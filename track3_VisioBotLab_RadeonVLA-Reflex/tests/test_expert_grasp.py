@@ -20,3 +20,8 @@ def test_round_fruit_grasp_targets_equator() -> None:
 def test_fruit_profiles_use_low_contact_force() -> None:
     assert all(-2.0 <= profile.close_force < 0.0 for profile in expert.PROFILES.values())
     assert all(profile.retry_drop == 0.0 for profile in expert.PROFILES.values())
+
+
+def test_formal_collection_can_disable_kinematic_assist() -> None:
+    assert "allow_kinematic_assist" in expert.run_pick_place.__annotations__
+    assert "allow_kinematic_assist" in expert.run_resolved_task.__annotations__

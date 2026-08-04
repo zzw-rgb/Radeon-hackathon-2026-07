@@ -396,10 +396,35 @@ python -m radeonvla.record_dataset --episodes 200 --suite basic --require-covera
 python -m radeonvla.record_dataset --episodes 400 --suite basic --require-coverage \
   --dr-appearance --dr-object-color --dr-runtime --backend amdgpu
 
+# Formal strict-physics dataset: exactly 20 tasks × 50 successful episodes.
+# Kinematic grasp assist, object teleports, and placement nudges are disabled;
+# every committed episode receives an atomic provenance certificate.
+SOURCE_COMMIT="$(git rev-parse HEAD)" python -m radeonvla.record_dataset \
+  --episodes-per-task 50 --suite basic --require-coverage \
+  --repo-id YOUR_HF_NAMESPACE/radeonvla-reflex-physical-1k \
+  --dataset-root datasets/radeonvla_reflex_physical_1k \
+  --dr-appearance --dr-object-color --dr-runtime --dr-rebuild-every 20 \
+  --max-attempts 10000 --backend amdgpu
+
+# Continue the same staging dataset after an interruption. All collection
+# settings and the source revision must match the atomic progress record.
+SOURCE_COMMIT="$(git rev-parse HEAD)" python -m radeonvla.record_dataset \
+  --episodes-per-task 50 --suite basic --require-coverage \
+  --repo-id YOUR_HF_NAMESPACE/radeonvla-reflex-physical-1k \
+  --dataset-root datasets/radeonvla_reflex_physical_1k \
+  --dr-appearance --dr-object-color --dr-runtime --dr-rebuild-every 20 \
+  --max-attempts 10000 --backend amdgpu --resume-incomplete
+
 # Validate dataset before train
 python -m radeonvla.validate_dataset \
   --repo-id visiobot/radeonvla_reflex \
   --dataset-root datasets/radeonvla_reflex
+
+# Formal publication gate
+python -m radeonvla.validate_dataset \
+  --repo-id YOUR_HF_NAMESPACE/radeonvla-reflex-physical-1k \
+  --dataset-root datasets/radeonvla_reflex_physical_1k \
+  --expected-episodes 1000 --episodes-per-task 50 --require-strict-physics
 
 # M4/M5 — train SmolVLA (needs a non-empty recorded dataset)
 python -m radeonvla.train_policy smolvla \

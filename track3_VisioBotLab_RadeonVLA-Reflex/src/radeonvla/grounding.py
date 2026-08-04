@@ -139,7 +139,13 @@ def resolve_task(bundle, task: TaskSpec, *, instruction: str | None = None, trai
     )
 
 
-def check_resolved_success(bundle, resolved: ResolvedTask, *, success_tol: float = 0.06) -> dict:
+def check_resolved_success(
+    bundle,
+    resolved: ResolvedTask,
+    *,
+    success_tol: float = 0.06,
+    strict: bool = False,
+) -> dict:
     """Evaluate every subgoal; episode succeeds only if all are satisfied."""
     from radeonvla.safety import check_placement_success
     from radeonvla.tasks import SubGoalSpec
@@ -156,7 +162,12 @@ def check_resolved_success(bundle, resolved: ResolvedTask, *, success_tol: float
             training_instructions=("",),
             evaluation_instructions=("",),
         )
-        ok, obj_ok, tgt_ok = check_placement_success(bundle, synthetic, success_tol=success_tol)
+        ok, obj_ok, tgt_ok = check_placement_success(
+            bundle,
+            synthetic,
+            success_tol=success_tol,
+            strict=strict,
+        )
         per_goal.append(
             {
                 "object": g.object_name,
@@ -172,10 +183,9 @@ def check_resolved_success(bundle, resolved: ResolvedTask, *, success_tol: float
         "success": all_ok,
         "n_goals": len(resolved.goals),
         "n_success": sum(1 for g in per_goal if g["success"]),
-        "partial_success_rate": (
-            sum(1 for g in per_goal if g["success"]) / max(1, len(per_goal))
-        ),
+        "partial_success_rate": (sum(1 for g in per_goal if g["success"]) / max(1, len(per_goal))),
         "goals": per_goal,
         "object_correct": all(g["object_correct"] or g["success"] for g in per_goal),
         "target_correct": all(g["target_correct"] for g in per_goal),
+        "strict_physics": strict,
     }

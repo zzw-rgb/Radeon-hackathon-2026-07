@@ -170,7 +170,13 @@ def entity_aabb(entity) -> np.ndarray:
     return aabb
 
 
-def check_placement_success(bundle, task: TaskSpec, *, success_tol: float = 0.06) -> tuple[bool, bool, bool]:
+def check_placement_success(
+    bundle,
+    task: TaskSpec,
+    *,
+    success_tol: float = 0.06,
+    strict: bool = False,
+) -> tuple[bool, bool, bool]:
     """Return (success, object_correct_proxy, target_correct).
 
     ``object_correct`` is True when the commanded fruit is the one that moved
@@ -187,17 +193,21 @@ def check_placement_success(bundle, task: TaskSpec, *, success_tol: float = 0.06
     pick_pos = entity_pos(obj)
     bowl_aabb = entity_aabb(bowl)
     rim_z = float(bowl_aabb[1, 2])
-    rim_radius = 0.5 * float(
-        min(bowl_aabb[1, 0] - bowl_aabb[0, 0], bowl_aabb[1, 1] - bowl_aabb[0, 1])
-    )
+    rim_radius = 0.5 * float(min(bowl_aabb[1, 0] - bowl_aabb[0, 0], bowl_aabb[1, 1] - bowl_aabb[0, 1]))
     bowl_xy = entity_pos(bowl)[:2]
     horizontal = float(np.linalg.norm(pick_pos[:2] - bowl_xy))
-    # Accept anything near the bowl footprint. Convex bowl hull + sphere bounce
-    # often parks the fruit a few cm past the geometric rim (d≈0.10–0.12 m).
-    within = horizontal < max(success_tol, rim_radius * 1.45, 0.12)
     obj_bottom = float(entity_aabb(obj)[0, 2])
-    # Allow fruit resting in / on the bowl rim (convex hulls raise the contact surface).
-    inside = obj_bottom < rim_z + 0.05
+    if strict:
+        # Formal demonstrations must finish with the fruit center clearly inside
+        # the bowl footprint. A 60-step post-release settle in the expert precedes
+        # this check, so no teleport/nudge or transient rim contact is accepted.
+        within = horizontal < min(success_tol, rim_radius * 0.8)
+        inside = obj_bottom < rim_z + 0.035
+    else:
+        # Runtime recovery uses a deliberately tolerant proxy: convex bowl hulls
+        # can bounce a fruit a few centimetres beyond the geometric rim.
+        within = horizontal < max(success_tol, rim_radius * 1.45, 0.12)
+        inside = obj_bottom < rim_z + 0.05
     target_correct = bool(within and inside)
 
     # Object is considered "handled" if it is clearly above table rest height or inside bowl.
@@ -254,17 +264,24 @@ class FailureDetector:
             self.diag.events.append({"type": "unsafe_action", "step": step})
             return FailureReason.UNSAFE_ACTION
 
-        gripper = float(np.mean(action_arr[7:9]))
-        if gripper < 0.015:
-            self._saw_closed = True
-            if detect_empty_grasp(bundle, self.task, gripper_width=gripper):
-                self._empty_grasp_hits += 1
-            # Require persistence to avoid false triggers during approach.
-            if self._empty_grasp_hits >= 15:
-                self.diag.empty_grasp = True
-                self.diag.failure_reason = FailureReason.EMPTY_GRASP
-                self.diag.events.append({"type": "empty_grasp", "step": step})
-                return FailureReason.EMPTY_GRASP
+        commanded_gripper = float(np.mean(action_arr[7:9]))
+        if commanded_gripper < 0.015:
+            # Use measured finger positions. A zero action marks the beginning
+            # of the close/squeeze phase, before the real fingers have settled.
+            measured = _to_np(bundle.franka.get_qpos()).reshape(-1)
+            gripper = float(np.mean(measured[-2:]))
+            if gripper >= 0.015:
+                self._empty_grasp_hits = 0
+            else:
+                self._saw_closed = True
+                if detect_empty_grasp(bundle, self.task, gripper_width=gripper):
+                    self._empty_grasp_hits += 1
+                # Require persistence to avoid false triggers during approach.
+                if self._empty_grasp_hits >= 15:
+                    self.diag.empty_grasp = True
+                    self.diag.failure_reason = FailureReason.EMPTY_GRASP
+                    self.diag.events.append({"type": "empty_grasp", "step": step})
+                    return FailureReason.EMPTY_GRASP
         else:
             self._empty_grasp_hits = 0
 
