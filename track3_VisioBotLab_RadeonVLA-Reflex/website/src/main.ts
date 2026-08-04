@@ -147,67 +147,17 @@ function render(): void {
           <h2 id="demo-title">${t(copy.sectionDemoTitle, locale)}</h2>
           <p>${t(copy.sectionDemoBody, locale)}</p>
         </div>
-        <div class="collection-showcase">
-          <div class="collection-head reveal">
-            <div class="collection-head-label">
-              <span class="live-dot" aria-hidden="true"></span>
-              <small>${t(copy.videoLabel, locale)}</small>
-            </div>
+        <div class="video-placeholder reveal" role="status">
+          <div class="video-grid" aria-hidden="true"></div>
+          <div class="video-status">
+            <span class="play-symbol" aria-hidden="true">▶</span>
             <div>
+              <small>${t(copy.videoLabel, locale)}</small>
               <strong>${t(copy.videoPending, locale)}</strong>
               <p>${t(copy.videoBody, locale)}</p>
             </div>
           </div>
-          <div class="collection-stat-row reveal" aria-label="Local smoke collection stats">
-            ${copy.collectionStats
-              .map(
-                (stat) => `
-                  <div class="collection-stat">
-                    <strong>${stat.value}</strong>
-                    <span>${t(stat.label, locale)}</span>
-                  </div>`,
-              )
-              .join("")}
-          </div>
-          <div class="collection-video-grid">
-            ${collectionClips
-              .map(
-                (clip) => `
-                  <article class="collection-video-card reveal" aria-labelledby="collection-title-${clip.episode}">
-                    <div class="collection-video-frame">
-                      <video
-                        controls
-                        playsinline
-                        preload="metadata"
-                        poster="${publicAsset(clip.poster)}"
-                        aria-label="${t(copy.clipPlayLabel, locale)}: ${t(clip.title, locale)}"
-                      >
-                        <source src="${publicAsset(clip.video)}" type="video/mp4" />
-                        ${t(copy.clipFallback, locale)}
-                      </video>
-                      <span class="camera-pill">${t(copy.clipCamera, locale)}</span>
-                      <span class="duration-pill">${clip.duration}</span>
-                    </div>
-                    <div class="collection-video-copy">
-                      <div class="collection-video-state">
-                        <span>${clip.index}</span>
-                        <strong>${t(copy.clipState, locale)}</strong>
-                      </div>
-                      <h3 id="collection-title-${clip.episode}">${t(clip.title, locale)}</h3>
-                      <p>${t(clip.instruction, locale)}</p>
-                      <div class="collection-video-meta">
-                        <span>EP ${clip.episode}</span>
-                        <span>${t(clip.frames, locale)}</span>
-                      </div>
-                    </div>
-                  </article>`,
-              )
-              .join("")}
-          </div>
-          <aside class="collection-note reveal">
-            <strong>${t(copy.collectionScopeTitle, locale)}</strong>
-            <p>${t(copy.collectionScopeBody, locale)}</p>
-          </aside>
+          <span class="pending-pill">${t(copy.pending, locale)}</span>
         </div>
         <div class="demo-grid">
           ${demos
@@ -360,6 +310,78 @@ function render(): void {
               </a>
             </article>
           </div>
+        </div>
+      </section>
+
+      <section class="collection-appendix section-shell section-block" id="data-smoke" aria-labelledby="collection-title">
+        <div class="collection-appendix-intro reveal">
+          <p class="eyebrow">${t(copy.collectionKicker, locale)}</p>
+          <div>
+            <h2 id="collection-title">${t(copy.collectionTitle, locale)}</h2>
+            <p>${t(copy.collectionBody, locale)}</p>
+          </div>
+        </div>
+        <div class="collection-showcase collection-showcase-compact">
+          <div class="collection-head reveal">
+            <div class="collection-head-label">
+              <span class="live-dot" aria-hidden="true"></span>
+              <small>${t(copy.videoCollectionLabel, locale)}</small>
+            </div>
+            <div>
+              <strong>${t(copy.videoCollectionPending, locale)}</strong>
+              <p>${t(copy.videoCollectionBody, locale)}</p>
+            </div>
+          </div>
+          <div class="collection-stat-row reveal" aria-label="Local smoke collection stats">
+            ${copy.collectionStats
+              .map(
+                (stat) => `
+                  <div class="collection-stat">
+                    <strong>${stat.value}</strong>
+                    <span>${t(stat.label, locale)}</span>
+                  </div>`,
+              )
+              .join("")}
+          </div>
+          <div class="collection-video-grid">
+            ${collectionClips
+              .map(
+                (clip) => `
+                  <article class="collection-video-card reveal" aria-labelledby="collection-title-${clip.episode}">
+                    <div class="collection-video-frame">
+                      <video
+                        controls
+                        playsinline
+                        preload="none"
+                        poster="${publicAsset(clip.poster)}"
+                        aria-label="${t(copy.clipPlayLabel, locale)}: ${t(clip.title, locale)}"
+                      >
+                        <source src="${publicAsset(clip.video)}" type="video/mp4" />
+                        ${t(copy.clipFallback, locale)}
+                      </video>
+                      <span class="camera-pill">${t(copy.clipCamera, locale)}</span>
+                      <span class="duration-pill">${clip.duration}</span>
+                    </div>
+                    <div class="collection-video-copy">
+                      <div class="collection-video-state">
+                        <span>${clip.index}</span>
+                        <strong>${t(copy.clipState, locale)}</strong>
+                      </div>
+                      <h3 id="collection-title-${clip.episode}">${t(clip.title, locale)}</h3>
+                      <p>${t(clip.instruction, locale)}</p>
+                      <div class="collection-video-meta">
+                        <span>EP ${clip.episode}</span>
+                        <span>${t(clip.frames, locale)}</span>
+                      </div>
+                    </div>
+                  </article>`,
+              )
+              .join("")}
+          </div>
+          <aside class="collection-note reveal">
+            <strong>${t(copy.collectionScopeTitle, locale)}</strong>
+            <p>${t(copy.collectionScopeBody, locale)}</p>
+          </aside>
         </div>
       </section>
 
