@@ -60,3 +60,22 @@ load_dotenv() {
     set +a
   fi
 }
+
+# LeRobot 0.6 writes numbered checkpoint directories (for example 010000)
+# instead of always creating checkpoints/last. Prefer the compatibility link
+# when present, otherwise select the numerically latest pretrained model.
+latest_pretrained_model() {
+  local train_dir=$1
+  local legacy="$train_dir/checkpoints/last/pretrained_model"
+  local latest
+
+  if [[ -d "$legacy" ]]; then
+    printf '%s\n' "$legacy"
+    return 0
+  fi
+
+  latest=$(find "$train_dir/checkpoints" -mindepth 2 -maxdepth 2 \
+    -type d -name pretrained_model -print 2>/dev/null | sort -V | tail -n 1)
+  [[ -n "$latest" ]] || return 1
+  printf '%s\n' "$latest"
+}

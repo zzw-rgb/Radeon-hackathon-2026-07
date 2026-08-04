@@ -10,6 +10,7 @@ is loaded automatically when present (see `.env.example`).
 | `run_expert_demo.sh` | Scripted demos across basic / hard tasks |
 | `run_pipeline_smoke.sh` | Fast 1-episode smoke + train dry-run |
 | `run_full_remote.sh` | **Full AMD path**: check → record → train → eval → benchmark |
+| `run_reflex_demo.sh` | Normal + interrupt + target-shift videos from an existing checkpoint |
 | `check_local.sh` | Env + audit + pytest + ruff |
 | `check_remote_amd.sh` | Strict ROCm gate + scene/benchmark |
 
@@ -18,13 +19,16 @@ is loaded automatically when present (see `.env.example`).
 | Variable | Default | Used by |
 |---|---|---|
 | `BACKEND` | `cpu` (local) / `amdgpu` (remote) | most runners |
-| `EPISODES` | `5` / `20` / `100` | record scripts |
+| `EPISODES` | `5` local / `200` remote | record scripts |
 | `SUITE` | `basic` or `full` | record / remote |
 | `TASK` | empty | pin a single task id |
 | `REPO_ID` / `DATASET_ROOT` | suite-based | record / train |
 | `DR` | `0` local / `1` remote | domain randomization |
 | `TRAIN_STEPS` | `10000` | full remote |
 | `CKPT` | auto under `outputs/train/...` | eval when `SKIP_TRAIN=1` |
+| `SKIP_RECORD` | `0` | reuse an already validated dataset on remote |
+| `OVERWRITE` | `0` | replace a published dataset only after the new staging run validates |
+| `DISCARD_INCOMPLETE` | `0` | explicitly remove the target's stale `.inprogress` directory |
 | `HIP_VISIBLE_DEVICES` | `0` | remote AMD |
 | `PYTHON` | auto (`conda run -n radeonvla-dev` if present) | all |
 
@@ -41,8 +45,8 @@ EPISODES=5 bash scripts/run_all_local.sh
 MODE=hard bash scripts/run_expert_demo.sh
 
 # Remote AMD full stack
-EPISODES=100 SUITE=full bash scripts/run_full_remote.sh
+EPISODES=200 SUITE=basic bash scripts/run_full_remote.sh
 
 # Remote: only re-eval an existing checkpoint
-SKIP_TRAIN=1 CKPT=outputs/train/.../pretrained_model bash scripts/run_full_remote.sh
+SKIP_RECORD=1 SKIP_TRAIN=1 CKPT=outputs/train/.../pretrained_model bash scripts/run_full_remote.sh
 ```

@@ -15,14 +15,18 @@
 
 ## Task coverage
 
-| Task | Training episodes | Validation episodes | Test episodes |
-|---|---:|---:|---:|
-| banana_left | TBD | TBD | TBD |
-| banana_right | TBD | TBD | TBD |
-| lemon_left | TBD | TBD | TBD |
-| lemon_right | TBD | TBD | TBD |
-| plum_left | TBD | TBD | TBD |
-| plum_right | TBD | TBD | TBD |
+The primary L1 dataset has 20 variations: five fruits × four bowl positions.
+
+| Fruit | Bowl positions | Planned training minimum | Validation | Held-out evaluation |
+|---|---|---:|---:|---:|
+| banana | white-left, blue-left, white-right, blue-right | 10 each | 5 each | 10 each |
+| lemon | white-left, blue-left, white-right, blue-right | 10 each | 5 each | 10 each |
+| plum | white-left, blue-left, white-right, blue-right | 10 each | 5 each | 10 each |
+| apple | white-left, blue-left, white-right, blue-right | 10 each | 5 each | 10 each |
+| orange | white-left, blue-left, white-right, blue-right | 10 each | 5 each | 10 each |
+
+The release table will replace planned counts with the immutable dataset manifest. L2–L4
+data are reported separately and are not implied by the primary L1 total.
 
 ## Frame schema
 
@@ -59,6 +63,8 @@ I collect data with the scripted multi-goal expert (`python -m radeonvla.record_
 5. failed episodes are discarded by default (`--keep-failures` optional);
 6. `validate_dataset` checks schema, non-finite values, and image statistics;
 7. I spot-check camera videos under `datasets/*/videos/` before training.
+8. Recording happens under `.inprogress`; the target path is replaced only after finalize,
+   coverage checks, and a successful LeRobot reopen.
 
 ## Split policy
 

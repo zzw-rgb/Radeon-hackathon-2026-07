@@ -3,10 +3,11 @@
 > **Language:** English (official submission). Chinese version: [README.zh-CN.md](README.zh-CN.md).  
 > Contest materials and PR text must be in English per the official repository rules.
 
-RadeonVLA-Reflex is my Track 3 submission for the AMD AI DevMaster Hackathon
-(team VisioBot Lab). I built a **language-guided dual-bowl fruit sorting** stack on
-Genesis + Franka Panda, fine-tuning **SmolVLA** with LeRobot, all intended to run on a
-single AMD Radeon GPU under ROCm.
+RadeonVLA-Reflex is an **interruptible and recoverable VLA execution runtime** for
+dynamic robotic sorting on one AMD Radeon GPU. The Track 3 benchmark uses a Franka
+Panda, Genesis, LeRobot, and SmolVLA to sort five fruits into four language-addressable
+bowls. Fruit sorting is the testbed; the core contribution is keeping action-chunking
+policies responsive when an operator changes a command or a grasp fails.
 
 Design focus of this codebase:
 
@@ -18,6 +19,11 @@ Design focus of this codebase:
 5. **Safety monitor** — joint bounds and rate limiting before actions enter Genesis;
 6. **Single-GPU ROCm path** — simulation, data, training, inference, and evaluation on AMD Radeon;
 7. **Partial multi-goal metrics** — success-by-tier and partial completion rates for long-horizon tasks.
+8. **Repeatable stress tests** — deterministic target/container shifts with normal-vs-Reflex ablations;
+9. **Reviewable evidence** — per-episode JSON, flattened CSV, Markdown summaries, videos with live
+   runtime state, and deterministic checkpoint hashes;
+10. **Crash-safe collection** — incomplete runs remain in a staging directory and never replace the
+    last validated dataset.
 
 > Status: pipeline code is complete. Measured AMD results, trained checkpoints, formal
 > metrics, the final report PDF, and the demo video will be filled in after remote Radeon runs.
@@ -37,10 +43,12 @@ open `track3_VisioBotLab_RadeonVLA-Reflex/` and follow this README to reproduce 
 
 ## Target application
 
-The target application is flexible robotic sorting for food handling, laboratory
-automation, and small-batch logistics. A natural-language command identifies a fruit
-and a destination container. The policy observes the scene and robot state, predicts
-continuous robot actions, and executes them in a closed loop with safety and recovery.
+The target application is a language-reconfigurable sorting cell for food handling,
+laboratory automation, and small-batch logistics. An operator can change a destination
+while the robot is moving without waiting for a pre-generated action chunk to finish.
+The runtime invalidates stale actions, moves to a safe open-gripper hold, and can retry
+one detected empty grasp. This reduces the need for task-specific PLC reprogramming while
+keeping operator intervention explicit and measurable.
 
 ### Task tiers
 
@@ -63,12 +71,12 @@ Suites (CLI `--suite`):
 | `multistep` | L3 |
 | `rules` | L4 |
 | `advanced` | L2+L3+L4 |
-| **`full`** | **All tiers (default for record/eval)** |
+| `full` | All tiers (explicit opt-in advanced benchmark) |
 
 Training and evaluation use **disjoint** natural-language phrasings per task. Spatial and
 rule tasks are resolved at episode start by `radeonvla.grounding` after pose randomization.
 
-## Planned system architecture
+## System architecture
 
 ```text
 Language command ───────────────────────┐
@@ -82,9 +90,10 @@ Robot and gripper state ────────────────┤
                                         ↓
                          execution safety monitor
                          ├─ joint bounds / rate limit
-                         ├─ command version changes
+                         ├─ versioned command invalidation
                          ├─ empty-grasp detection
-                         └─ timeout + one recovery retry
+                         ├─ timeout + one recovery retry
+                         └─ event/latency telemetry
                                         ↓
                     Genesis Franka dual-bowl simulation
                                         ↓
@@ -93,7 +102,8 @@ Robot and gripper state ────────────────┤
 
 The learned stack is end-to-end joint-position control conditioned on language and
 vision. Interrupt invalidation and recovery are deterministic safety layers around the
-policy (they do not retrain the VLA).
+policy (they do not retrain the VLA). Evaluation can inject a repeatable target or bowl
+shift and renders `RUNNING / INTERRUPTED / RECOVERING / SUCCESS` directly on demo video.
 
 ## Repository layout
 
@@ -116,6 +126,8 @@ track3_VisioBotLab_RadeonVLA-Reflex/
 │   ├── validate_dataset.py   # dataset QA before train
 │   ├── train_policy.py       # SmolVLA / ACT training wrapper
 │   ├── evaluate.py           # closed-loop eval + interrupt + recovery
+│   ├── stress.py             # deterministic target/container perturbations
+│   ├── artifact_io.py        # hashes + JSON/CSV/Markdown evidence
 │   ├── safety.py             # command session, safety, failures
 │   ├── pipeline.py           # stage orchestrator / all-smoke
 │   ├── benchmark.py          # throughput / latency
@@ -124,12 +136,17 @@ track3_VisioBotLab_RadeonVLA-Reflex/
 │   └── submission_audit.py
 ├── scripts/
 │   ├── run_pipeline_smoke.sh
+│   ├── run_reflex_demo.sh
 │   └── run_full_remote.sh
 ├── tests/
 ├── docs/
 ├── artifacts/
 ├── reports/
-├── docker/Dockerfile
+├── docker/
+│   ├── Dockerfile
+│   ├── compose.yaml
+│   └── entrypoint.sh
+├── .dockerignore
 └── assets/README.md
 ```
 
@@ -247,12 +264,12 @@ PY
 ### 2. Clone onto the persistent volume
 
 ```bash
-cd <PVC_ROOT>
+cd /workspace
 mkdir -p visiobot
 cd visiobot
-git clone https://github.com/<GITHUB_ID>/Radeon-hackathon-2026-07.git
+git clone https://github.com/zzw-rgb/Radeon-hackathon-2026-07.git
 cd Radeon-hackathon-2026-07
-git checkout <SUBMITTED_COMMIT_OR_BRANCH>
+git checkout submission/track3-visiobotlab-radeonvla-reflex
 cd track3_VisioBotLab_RadeonVLA-Reflex
 ```
 
@@ -312,6 +329,7 @@ All stages below are implemented as `python -m radeonvla.<module>` entry points.
 | `bash scripts/run_expert_demo.sh` / `make expert-demo` | Scripted demos (basic / hard mix) |
 | `bash scripts/run_pipeline_smoke.sh` / `make smoke` | 1-episode smoke + train dry-run |
 | `bash scripts/run_full_remote.sh` / `make remote-full` | Full AMD: check → record → train → eval → benchmark |
+| `bash scripts/run_reflex_demo.sh` | Normal + command-interrupt + target-shift judge demos |
 | `bash scripts/check_local.sh` / `make check` | Env + audit + pytest + ruff |
 | `bash scripts/check_remote_amd.sh` / `make remote-check` | Strict ROCm gate |
 
@@ -325,8 +343,8 @@ EPISODES=5 bash scripts/run_all_local.sh
 # Fast smoke
 make smoke
 
-# On AMD Radeon
-EPISODES=100 SUITE=full bash scripts/run_full_remote.sh
+# On AMD Radeon: 10 successful demonstrations for each of 20 L1 variations
+EPISODES=200 SUITE=basic bash scripts/run_full_remote.sh
 ```
 
 Details and env vars: [`scripts/README.md`](scripts/README.md). Optional `.env` from `.env.example`.
@@ -359,22 +377,23 @@ python -m radeonvla.expert --task banana_white_left --episodes 5 --backend cpu
 python -m radeonvla.expert --task seq_triple_sort --episodes 3 --backend cpu
 python -m radeonvla.expert --suite advanced --episodes 8 --backend amdgpu
 
-# M3 — data collection (default suite=full includes L1–L4)
+# M3 — primary L1 data collection (20 tasks × 10 successful demonstrations)
 python -m radeonvla.record_dataset \
-  --episodes 100 \
-  --suite full \
+  --episodes 200 \
+  --suite basic \
   --repo-id visiobot/radeonvla_reflex \
   --dataset-root datasets/radeonvla_reflex \
   --backend amdgpu \
-  --overwrite
+  --require-coverage
 
-# Ablation: basic-only data
-python -m radeonvla.record_dataset --episodes 50 --suite basic --overwrite \
-  --repo-id visiobot/radeonvla_basic --dataset-root datasets/radeonvla_basic
+# Explicitly replace an existing published dataset only after the new run validates
+python -m radeonvla.record_dataset --episodes 200 --suite basic --require-coverage \
+  --overwrite --discard-incomplete --repo-id visiobot/radeonvla_basic \
+  --dataset-root datasets/radeonvla_basic
 
 # Optional domain randomization while recording
-python -m radeonvla.record_dataset --episodes 100 --dr-appearance --dr-object-color \
-  --dr-runtime --backend amdgpu --overwrite
+python -m radeonvla.record_dataset --episodes 400 --suite basic --require-coverage \
+  --dr-appearance --dr-object-color --dr-runtime --backend amdgpu
 
 # Validate dataset before train
 python -m radeonvla.validate_dataset \
@@ -392,14 +411,24 @@ python -m radeonvla.evaluate \
   --policy-path outputs/train/smolvla_radeonvla_reflex/checkpoints/last/pretrained_model \
   --repo-id visiobot/radeonvla_reflex \
   --dataset-root datasets/radeonvla_reflex \
-  --episodes-per-task 10 --save-video --backend amdgpu
+  --suite basic --episodes-per-task 10 --save-video --backend amdgpu \
+  --output artifacts/evaluation.json
 
 # Interruptibility demo (injects a mid-episode command change on ep0)
 python -m radeonvla.evaluate \
   --policy-path outputs/train/smolvla_radeonvla_reflex/checkpoints/last/pretrained_model \
   --repo-id visiobot/radeonvla_reflex \
   --dataset-root datasets/radeonvla_reflex \
-  --interrupt-demo --save-video --backend amdgpu
+  --tasks banana_white_left --interrupt-demo --save-video --backend amdgpu \
+  --output artifacts/interrupt_evaluation.json
+
+# Repeatable robustness stress: move the active target during execution
+python -m radeonvla.evaluate \
+  --policy-path outputs/train/smolvla_radeonvla_reflex/checkpoints/last/pretrained_model \
+  --repo-id visiobot/radeonvla_reflex --dataset-root datasets/radeonvla_reflex \
+  --tasks banana_white_left lemon_blue_right plum_white_right \
+  --episodes-per-task 2 --perturbation target_shift --perturb-at-step 30 \
+  --save-video --backend amdgpu --output artifacts/perturbation_evaluation.json
 
 # Throughput / latency
 python -m radeonvla.benchmark --backend amdgpu --steps 500
@@ -411,18 +440,29 @@ python -m radeonvla.benchmark --backend amdgpu --steps 500
 export HIP_VISIBLE_DEVICES=0
 bash scripts/run_full_remote.sh
 # or customize:
-EPISODES=100 TRAIN_STEPS=10000 bash scripts/run_full_remote.sh
+EPISODES=200 SUITE=basic TRAIN_STEPS=10000 bash scripts/run_full_remote.sh
 ```
 
-Optional Docker (preferable for Track 3):
+### Self-contained Docker (preferable for Track 3)
 
 ```bash
-docker build -f docker/Dockerfile -t radeonvla-reflex:rocm7.2.1 .
+docker build --pull -f docker/Dockerfile -t radeonvla-reflex:rocm7.2.1 .
 docker run --rm -it --device=/dev/kfd --device=/dev/dri \
   --group-add video --group-add render \
-  -v "$PWD":/workspace/radeonvla-reflex \
-  radeonvla-reflex:rocm7.2.1
+  --ipc=host --shm-size=8g --security-opt seccomp=unconfined \
+  -v "$PWD/datasets":/workspace/radeonvla-reflex/datasets \
+  -v "$PWD/checkpoints":/workspace/radeonvla-reflex/checkpoints \
+  -v "$PWD/outputs":/workspace/radeonvla-reflex/outputs \
+  -v "$PWD/artifacts":/workspace/radeonvla-reflex/artifacts \
+  radeonvla-reflex:rocm7.2.1 check-amd
+
+# Equivalent Compose entry point
+docker compose -f docker/compose.yaml run --rm radeonvla check-amd
 ```
+
+The source, configs, scripts, assets, report templates, and tests are inside the image;
+only mutable datasets, checkpoints, outputs, and evidence are mounted. Container commands
+are `help`, `check-amd`, `smoke`, `remote-full`, `reflex-demo`, and `shell`.
 
 ## Dataset specification
 
@@ -456,8 +496,9 @@ Seed splits:
 
 ## Evaluation protocol
 
-The minimum formal evaluation is 20 held-out episodes across at least two tasks. The
-target protocol is 10 held-out episodes for each of the six tasks (evaluation language).
+The primary protocol is 10 held-out episodes for each of the 20 L1 tasks (200 total,
+evaluation-only language). Additional interrupt and target-shift suites use representative
+tasks and disjoint seeds. L2–L4 results are reported only when trained and measured.
 
 Reported metrics:
 
@@ -467,14 +508,18 @@ Reported metrics:
 - first-attempt success;
 - final success after the allowed recovery;
 - recovery success;
+- safe interrupt rate and command-to-invalidation steps;
+- success by task and injected perturbation scenario;
 - mean and P95 completion time;
 - P50 and P95 inference latency;
 - simulation steps per second;
 - training samples per second;
 - training and inference peak VRAM.
 
-Every episode, including failures, remains in the raw JSON results under
-`outputs/eval_results/`. Schema: `artifacts/evaluation.schema.json`.
+Every episode, including failures, remains in JSON. Canonical evidence is written to
+`artifacts/evaluation.json`, `evaluation.csv`, and `summary.md`; schema:
+`artifacts/evaluation.schema.json`. Videos include the current command, Reflex state,
+command version, retry count, scenario, and measured inference latency.
 
 ## Reproduction sequence
 
@@ -499,13 +544,13 @@ release revision.
 | Source code | Pipeline implemented | This self-contained directory |
 | Reproducibility README | This file | README.md |
 | Technical report (MD) | Draft structure | reports/RadeonVLA-Reflex-Technical-Report.md |
-| Technical report PDF | TODO | TBD |
-| Demo video | TODO | TBD |
-| Model checkpoint | TODO | TBD |
-| Dataset or dataset documentation | Template | docs/DATASET_CARD.md |
-| Raw evaluation results | TODO | TBD |
-| SHA256 checksums | TODO | TBD |
-| Docker image definition | Available | docker/Dockerfile |
+| Technical report PDF | Export after final metrics | `reports/RadeonVLA-Reflex-Technical-Report.pdf` |
+| Demo video | Generate from the selected checkpoint | `outputs/eval_videos/` |
+| Model checkpoint | Select the latest validated numeric checkpoint | `outputs/train/*/checkpoints/*/pretrained_model` |
+| Dataset or dataset documentation | Implemented | `docs/DATASET_CARD.md` |
+| Raw evaluation results | Generated by the remote workflow | `artifacts/evaluation.json` |
+| SHA256 checksums | Generated by the remote workflow | `artifacts/SHA256SUMS` |
+| Docker image definition | Self-contained; AMD build verification pending | docker/Dockerfile |
 
 Submission-authoring files:
 

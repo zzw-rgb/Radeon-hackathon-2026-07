@@ -12,23 +12,37 @@ load_dotenv
 
 export HIP_VISIBLE_DEVICES="${HIP_VISIBLE_DEVICES:-0}"
 BACKEND="${BACKEND:-amdgpu}"
-EPISODES="${EPISODES:-100}"
+EPISODES="${EPISODES:-200}"
 TRAIN_STEPS="${TRAIN_STEPS:-10000}"
-SUITE="${SUITE:-full}"
+SUITE="${SUITE:-basic}"
 REPO_ID="${REPO_ID:-visiobot/radeonvla_reflex}"
 DATASET_ROOT="${DATASET_ROOT:-datasets/radeonvla_reflex}"
+TRAIN_OUTPUT="${TRAIN_OUTPUT:-outputs/train/smolvla_$(basename "$DATASET_ROOT")}"
 DEVICE="${DEVICE:-cuda}"
 BATCH_SIZE="${BATCH_SIZE:-4}"
-EVAL_PER_TASK="${EVAL_PER_TASK:-5}"
+EVAL_PER_TASK="${EVAL_PER_TASK:-10}"
 SKIP_TRAIN="${SKIP_TRAIN:-0}"
+SKIP_RECORD="${SKIP_RECORD:-0}"
 DR="${DR:-1}"
+DR_REBUILD_EVERY="${DR_REBUILD_EVERY:-20}"
+OVERWRITE="${OVERWRITE:-0}"
+DISCARD_INCOMPLETE="${DISCARD_INCOMPLETE:-0}"
+SOURCE_COMMIT="${SOURCE_COMMIT:-}"
 
 START=$(date +%s)
 section "Full remote pipeline"
 log "HIP_VISIBLE_DEVICES=$HIP_VISIBLE_DEVICES BACKEND=$BACKEND SUITE=$SUITE EPISODES=$EPISODES"
+if [[ -n "$SOURCE_COMMIT" && ! "$SOURCE_COMMIT" =~ ^[0-9a-fA-F]{40}$ ]]; then
+  die "SOURCE_COMMIT must be a 40-character hexadecimal git commit"
+fi
+GIT_COMMIT_ARGS=()
+if [[ -n "$SOURCE_COMMIT" ]]; then
+  GIT_COMMIT_ARGS+=(--git-commit "$SOURCE_COMMIT")
+  log "Source commit: $SOURCE_COMMIT"
+fi
 
 section "1 env (strict AMD)"
-run_py -m radeonvla.check_env --require-amd --init-genesis --json docs/environment.remote.json
+run_py -m radeonvla.check_env --require-amd --init-genesis --json artifacts/environment.remote.json
 
 section "2 assets + scene + expert smoke"
 run_py -m radeonvla.setup_assets
@@ -37,37 +51,65 @@ run_py -m radeonvla.expert --backend "$BACKEND" --task banana_white_left --episo
 run_py -m radeonvla.expert --backend "$BACKEND" --task seq_banana_white_left_lemon_white_right --episodes 1
 
 section "3 record ($EPISODES successes, suite=$SUITE)"
-RECORD_ARGS=(
-  -m radeonvla.record_dataset
-  --backend "$BACKEND"
-  --episodes "$EPISODES"
-  --suite "$SUITE"
-  --repo-id "$REPO_ID"
-  --dataset-root "$DATASET_ROOT"
-  --overwrite
-)
-if [[ "$DR" == "1" ]]; then
-  RECORD_ARGS+=(--dr-appearance --dr-object-color --dr-runtime)
+if [[ "$SKIP_RECORD" != "1" ]]; then
+  RECORD_ARGS=(
+    -m radeonvla.record_dataset
+    --backend "$BACKEND"
+    --episodes "$EPISODES"
+    --suite "$SUITE"
+    --repo-id "$REPO_ID"
+    --dataset-root "$DATASET_ROOT"
+  )
+  if [[ "$SUITE" == "basic" && "$EPISODES" -ge 20 ]]; then
+    RECORD_ARGS+=(--require-coverage)
+  fi
+  if [[ "$DR" == "1" ]]; then
+    RECORD_ARGS+=(
+      --dr-appearance
+      --dr-object-color
+      --dr-runtime
+      --dr-rebuild-every "$DR_REBUILD_EVERY"
+    )
+  fi
+  if [[ "$OVERWRITE" == "1" ]]; then
+    RECORD_ARGS+=(--overwrite)
+  fi
+  if [[ "$DISCARD_INCOMPLETE" == "1" ]]; then
+    RECORD_ARGS+=(--discard-incomplete)
+  fi
+  run_py "${RECORD_ARGS[@]}"
+else
+  section "3 record skipped (SKIP_RECORD=1)"
+  [[ -d "$DATASET_ROOT" ]] || die "DATASET_ROOT not found: $DATASET_ROOT"
 fi
-run_py "${RECORD_ARGS[@]}"
-run_py -m radeonvla.validate_dataset --repo-id "$REPO_ID" --dataset-root "$DATASET_ROOT"
+run_py -m radeonvla.validate_dataset --repo-id "$REPO_ID" --dataset-root "$DATASET_ROOT" \
+  --json artifacts/dataset_validation.json
 
-CKPT="${CKPT:-outputs/train/smolvla_$(basename "$DATASET_ROOT")/checkpoints/last/pretrained_model}"
+CKPT="${CKPT:-}"
 if [[ "$SKIP_TRAIN" != "1" ]]; then
   section "4 train SmolVLA ($TRAIN_STEPS steps)"
   run_py -m radeonvla.train_policy smolvla \
     --repo-id "$REPO_ID" \
     --dataset-root "$DATASET_ROOT" \
+    --output-dir "$TRAIN_OUTPUT" \
     --steps "$TRAIN_STEPS" \
     --device "$DEVICE" \
     --batch-size "$BATCH_SIZE"
 else
   section "4 train skipped (SKIP_TRAIN=1)"
-  [[ -d "$CKPT" ]] || die "CKPT not found: $CKPT"
 fi
+
+if [[ -z "$CKPT" ]]; then
+  CKPT="$(latest_pretrained_model "$TRAIN_OUTPUT")" \
+    || die "No pretrained model found below $TRAIN_OUTPUT/checkpoints"
+fi
+[[ -d "$CKPT" ]] || die "CKPT not found: $CKPT"
+log "Resolved checkpoint: $CKPT"
 
 section "5 evaluate"
 [[ -d "$CKPT" ]] || die "Checkpoint missing: $CKPT (set CKPT=... or disable SKIP_TRAIN)"
+CKPT_SHA256="$("${PYTHON[@]}" -m radeonvla.artifact_io "$CKPT" | tail -n 1)"
+log "Checkpoint SHA256: $CKPT_SHA256"
 run_py -m radeonvla.evaluate \
   --policy-path "$CKPT" \
   --repo-id "$REPO_ID" \
@@ -75,9 +117,12 @@ run_py -m radeonvla.evaluate \
   --backend "$BACKEND" \
   --suite "$SUITE" \
   --episodes-per-task "$EVAL_PER_TASK" \
+  --checkpoint-sha256 "$CKPT_SHA256" \
+  "${GIT_COMMIT_ARGS[@]}" \
+  --output artifacts/evaluation.json \
   --save-video
 
-section "6 interrupt demo + benchmark"
+section "6 Reflex interrupt + perturbation demos"
 run_py -m radeonvla.evaluate \
   --policy-path "$CKPT" \
   --repo-id "$REPO_ID" \
@@ -86,11 +131,46 @@ run_py -m radeonvla.evaluate \
   --tasks banana_white_left \
   --episodes-per-task 1 \
   --interrupt-demo \
-  --save-video || log "WARN: interrupt demo returned non-zero"
+  --checkpoint-sha256 "$CKPT_SHA256" \
+  "${GIT_COMMIT_ARGS[@]}" \
+  --output artifacts/interrupt_evaluation.json \
+  --save-video
 
+run_py -m radeonvla.evaluate \
+  --policy-path "$CKPT" \
+  --repo-id "$REPO_ID" \
+  --dataset-root "$DATASET_ROOT" \
+  --backend "$BACKEND" \
+  --tasks banana_white_left \
+  --episodes-per-task 1 \
+  --interrupt-demo \
+  --disable-reflex \
+  --checkpoint-sha256 "$CKPT_SHA256" \
+  "${GIT_COMMIT_ARGS[@]}" \
+  --output artifacts/baseline_interrupt_evaluation.json
+
+run_py -m radeonvla.evaluate \
+  --policy-path "$CKPT" \
+  --repo-id "$REPO_ID" \
+  --dataset-root "$DATASET_ROOT" \
+  --backend "$BACKEND" \
+  --tasks banana_white_left lemon_blue_right plum_white_right \
+  --episodes-per-task 2 \
+  --perturbation target_shift \
+  --perturb-at-step 30 \
+  --checkpoint-sha256 "$CKPT_SHA256" \
+  "${GIT_COMMIT_ARGS[@]}" \
+  --output artifacts/perturbation_evaluation.json \
+  --save-video
+
+section "7 benchmark + checksums"
 run_py -m radeonvla.benchmark --backend "$BACKEND" --steps 300 \
-  --policy-path "$CKPT" --repo-id "$REPO_ID" --dataset-root "$DATASET_ROOT"
+  --policy-path "$CKPT" --repo-id "$REPO_ID" --dataset-root "$DATASET_ROOT" \
+  --output artifacts/benchmark.json
+
+find artifacts -maxdepth 1 -type f ! -name SHA256SUMS -print0 \
+  | sort -z | xargs -0 sha256sum > artifacts/SHA256SUMS
 
 ok "Full remote pipeline finished in $(elapsed "$START")s"
 log "Checkpoint: $CKPT"
-log "Eval outputs under: $ROOT/outputs/eval_results"
+log "Curated evidence: $ROOT/artifacts"

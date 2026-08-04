@@ -1,7 +1,7 @@
 # Convenience targets for RadeonVLA-Reflex
 # Usage: make help
 
-.PHONY: help install-local check smoke record-local record-basic expert-demo remote-check remote-full audit
+.PHONY: help install-local check smoke record-local record-basic expert-demo reflex-demo remote-check remote-full audit docker-build docker-check
 
 ROOT := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
 
@@ -14,15 +14,18 @@ help:
 	@echo "  make record-local    # record a few local episodes (SUITE/EPISODES overridable)"
 	@echo "  make record-basic    # all 20 fruit/bowl combinations + validation"
 	@echo "  make expert-demo     # scripted demos (MODE=mix|basic|hard)"
+	@echo "  make reflex-demo     # normal + interrupt + target-shift model demos (needs CKPT)"
 	@echo "  make all-local       # full local one-click record pipeline"
 	@echo "  make remote-check    # strict AMD gate (on Radeon machine)"
 	@echo "  make remote-full     # full AMD train/eval pipeline"
 	@echo "  make audit           # submission structure audit only"
+	@echo "  make docker-build    # build the self-contained ROCm image"
+	@echo "  make docker-check    # run strict AMD checks inside the image"
 	@echo ""
 	@echo "Examples:"
 	@echo "  EPISODES=20 SUITE=basic make record-local"
 	@echo "  MODE=hard make expert-demo"
-	@echo "  EPISODES=100 SUITE=full make remote-full"
+	@echo "  EPISODES=200 SUITE=basic make remote-full"
 
 install-local:
 	python -m pip install -r requirements.local.txt
@@ -43,6 +46,9 @@ record-basic:
 expert-demo:
 	bash scripts/run_expert_demo.sh
 
+reflex-demo:
+	bash scripts/run_reflex_demo.sh
+
 all-local:
 	bash scripts/run_all_local.sh
 
@@ -54,3 +60,9 @@ remote-full:
 
 audit:
 	python -m radeonvla.submission_audit
+
+docker-build:
+	docker build --pull -f docker/Dockerfile -t radeonvla-reflex:rocm7.2.1 .
+
+docker-check:
+	docker compose -f docker/compose.yaml run --rm radeonvla check-amd

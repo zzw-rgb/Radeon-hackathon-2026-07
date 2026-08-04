@@ -34,6 +34,24 @@ artifacts/*.csv
 artifacts/*.png
 artifacts/*.mp4
 !artifacts/evaluation.schema.json
+!artifacts/environment.remote.json
+!artifacts/dataset_validation.json
+!artifacts/evaluation.json
+!artifacts/evaluation.csv
+!artifacts/summary.md
+!artifacts/interrupt_evaluation.json
+!artifacts/interrupt_evaluation.csv
+!artifacts/interrupt_evaluation.summary.md
+!artifacts/baseline_interrupt_evaluation.json
+!artifacts/baseline_interrupt_evaluation.csv
+!artifacts/baseline_interrupt_evaluation.summary.md
+!artifacts/perturbation_evaluation.json
+!artifacts/perturbation_evaluation.csv
+!artifacts/perturbation_evaluation.summary.md
+!artifacts/benchmark.json
+!artifacts/demo_*.json
+!artifacts/demo_*.csv
+!artifacts/demo_*.summary.md
 docs/environment.*.json
 # Simulation assets ARE tracked for contest reproducibility (~42MB).
 # Do not ignore assets/ycb or assets/robots.

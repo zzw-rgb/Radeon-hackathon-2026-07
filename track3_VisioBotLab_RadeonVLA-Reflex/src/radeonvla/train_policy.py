@@ -9,13 +9,14 @@ import sys
 from pathlib import Path
 
 from radeonvla.paths import DATASETS_DIR, PROJECT_ROOT, TRAIN_DIR
-from radeonvla.protocol import SMOLVLA_RENAME_MAP
+from radeonvla.protocol import SMOLVLA_INPUT_FEATURES, SMOLVLA_RENAME_MAP
 
 PRESETS: dict[str, dict] = {
     "smolvla": {
         "policy_arg": ("path", "lerobot/smolvla_base"),
         "batch_size": 4,
         "rename_map": SMOLVLA_RENAME_MAP,
+        "input_features": SMOLVLA_INPUT_FEATURES,
     },
     "act": {
         "policy_arg": ("type", "act"),
@@ -67,6 +68,17 @@ def build_command(args: argparse.Namespace, passthrough: list[str]) -> list[str]
         preset_rename = PRESETS[args.policy].get("rename_map")
         if preset_rename:
             cmd.append(f"--rename_map={json.dumps(preset_rename)}")
+
+    passthrough_has_inputs = any(p.startswith("--policy.input_features") for p in passthrough)
+    if not passthrough_has_inputs:
+        preset_inputs = PRESETS[args.policy].get("input_features")
+        if preset_inputs:
+            # A pretrained config otherwise keeps the base checkpoint's 6-D
+            # state declaration even though this dataset contains 9-D states.
+            cmd.append(
+                "--policy.input_features="
+                + json.dumps(preset_inputs, separators=(",", ":"))
+            )
 
     cmd += passthrough
     return cmd

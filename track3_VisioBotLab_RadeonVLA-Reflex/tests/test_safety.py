@@ -1,5 +1,5 @@
 from radeonvla.protocol import GRIPPER_OPEN, clamp_action
-from radeonvla.safety import CommandSession, FailureReason, RecoveryPolicy, SafetyMonitor
+from radeonvla.safety import CommandSession, FailureDetector, FailureReason, RecoveryPolicy, SafetyMonitor
 from radeonvla.tasks import get_task
 
 
@@ -40,6 +40,14 @@ def test_recovery_policy_limits_retries() -> None:
     action = policy.recovery_action()
     assert len(action) == 9
     assert action[7] == GRIPPER_OPEN
+
+
+def test_failure_detector_times_out_on_last_allowed_step() -> None:
+    bundle = type("Bundle", (), {"objects": {}})()
+    detector = FailureDetector(get_task("banana_white_left"), max_steps=3)
+    open_gripper_action = [0.0] * 7 + [GRIPPER_OPEN, GRIPPER_OPEN]
+    assert detector.observe_step(bundle, step=1, action=open_gripper_action) is None
+    assert detector.observe_step(bundle, step=2, action=open_gripper_action) is FailureReason.TIMEOUT
 
 
 def test_task_registry_language_disjoint() -> None:

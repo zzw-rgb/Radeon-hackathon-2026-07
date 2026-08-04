@@ -14,8 +14,8 @@ RadeonVLA-Reflex is my language-guided Franka dual-bowl fruit-sorting system for
 Track 3 of the AMD AI DevMaster Hackathon (VisioBot Lab). I fine-tune SmolVLA with
 LeRobot on demonstrations collected in Genesis, and wrap closed-loop execution with
 interruptible command handling and failure-aware recovery. The formal task suite
-covers L1–L4 tiers (named targets, spatial grounding, multi-step sequences, and
-attribute rules) over banana/lemon/plum and left/right bowls.
+covers a primary L1 benchmark of five fruits × four language-addressable bowl positions,
+plus L2–L4 extensions for spatial grounding, multi-step sequences, and attribute rules.
 
 > I will fill quantitative success rates, GPU model, ROCm build, and wall-clock
 > numbers after remote AMD runs. Until those runs finish, this section does not
@@ -32,9 +32,9 @@ combining VLA generalization with deterministic execution safety.
 
 ## 3. Task Definition and Success Criteria
 
-- Fruits: banana, lemon, plum. Containers: left_bowl, right_bowl.
+- Fruits: banana, lemon, plum, apple, orange. Containers: white/blue bowls on the left/right.
 - **Tiered suite (L1–L4)** used in this project:
-  - **L1 Basic** — named fruit × left/right bowl (6 tasks).
+  - **L1 Basic** — named fruit × color/side bowl (20 tasks).
   - **L2 Spatial** — leftmost / rightmost / nearest-to-robot / farthest (resolved after randomization).
   - **L3 Multi-step** — ordered multi-object sequences in one episode (2–3 subgoals).
   - **L4 Rules** — attribute sorting (yellow→left, purple→right; curved→left, round→right).
@@ -69,8 +69,8 @@ recovery are **deterministic outer layers**, not a second learned high-level pla
 
 ## 5. Genesis Simulation Environment
 
-I use Genesis 1.1.2 with a Franka Emika Panda MJCF, three YCB fruits (banana / lemon /
-plum), and two bowl instances as left/right containers. World and wrist RGB cameras feed
+I use Genesis 1.1.2 with a Franka Emika Panda MJCF, five YCB fruits (banana / lemon /
+plum / apple / orange), and four fixed upright bowl instances (white/blue on each side). World and wrist RGB cameras feed
 the policy at 320×240; an optional third camera is for evaluation video only. Simulation
 runs at 100 Hz control with dataset capture at 20 Hz. Pose resets use non-overlapping
 slot jitter. Full asset notes live in `docs/DATASET_CARD.md` and `assets/README.md`.
@@ -83,6 +83,11 @@ Local development may use CPU Genesis for imports and unit tests only.
 I generate demonstrations with the scripted multi-goal expert (`record_dataset`) into a
 LeRobot 0.6 dataset. Frames store world/wrist RGB, 9-D state/action, and a natural-language
 task string. Training and evaluation instructions are disjoint per task. Seed ranges:
+
+Collection uses two-phase publication. Episodes are written to a hidden `.inprogress`
+directory with an atomic progress manifest. Only a finalized dataset that reaches the
+requested success count, passes the task-coverage gate, and can be reopened by LeRobot
+replaces the previous published dataset.
 
 | Split | Seeds |
 |---|---|
@@ -120,6 +125,10 @@ invalidates the stale action chunk so the policy is reset. Evaluation can inject
 command change with `--interrupt-demo`. I will report whether online correction succeeds or
 only safe cancellation is reliable after remote measurements.
 
+The evaluator records safe-interrupt rate, command-to-invalidation steps, and the number
+of unprotected post-interrupt action steps. Demo videos overlay command version, runtime
+state, retry count, scenario, and live inference latency.
+
 ## 9. Failure Detection and Recovery
 
 `FailureDetector` watches empty-grasp heuristics (closed gripper while the target fruit
@@ -140,7 +149,10 @@ I will attach measured latency, throughput, and peak VRAM from the final Radeon 
 - dataset and checkpoint checksums recorded in artifacts;
 - held-out evaluation language (not training phrasings);
 - seed ranges as in Section 6;
-- suite `full` by default, with per-tier rates;
+- suite `basic` by default for the primary 20-task benchmark; advanced tiers are explicit;
+- primary award benchmark: 20 L1 tasks × 10 held-out episodes;
+- deterministic target/container shifts for robustness stress tests;
+- baseline-vs-Reflex ablation by disabling invalidation and retry;
 - success = all resolved subgoals placed correctly;
 - keep failure episodes in raw JSON;
 - latency measured after short warm-up with device synchronization when CUDA/HIP is available.
@@ -150,10 +162,10 @@ I will attach measured latency, throughput, and peak VRAM from the final Radeon 
 | Method | Tasks | Episodes | First-attempt success | Final success | P95 latency | Peak VRAM |
 |---|---:|---:|---:|---:|---:|---:|
 | Scripted expert | pending | pending | pending | pending | N/A | pending |
-| SmolVLA | pending | pending | pending | pending | pending | pending |
-| SmolVLA + recovery | pending | pending | pending | pending | pending | pending |
+| SmolVLA baseline | pending | pending | pending | pending | pending | pending |
+| SmolVLA + Reflex | pending | pending | pending | pending | pending | pending |
 
-I will publish per-task and per-tier tables from immutable `outputs/eval_results/*.json`
+I will publish per-task and per-tier tables from immutable `artifacts/evaluation.json`
 after remote evaluation.
 
 ## 13. Failure Analysis
@@ -169,8 +181,10 @@ Contributions I implemented in this submission:
 1. Dual-bowl language sorting with L1–L4 task tiers and runtime grounding;
 2. Interruptible command sessions with stale-chunk invalidation;
 3. Failure detection and one-shot recovery around a SmolVLA joint-position policy;
-4. A full ROCm-oriented pipeline: assets → record → validate → train → evaluate → benchmark;
-5. Evaluation metrics for full success, partial multi-goal completion, and success-by-tier.
+4. Deterministic target/container perturbations and baseline-vs-Reflex robustness evaluation;
+5. Crash-safe dataset publication with continuous progress manifests and coverage gates;
+6. A full ROCm-oriented pipeline: assets → record → validate → train → evaluate → benchmark;
+7. Reviewable JSON/CSV/Markdown evidence with real checkpoint hashing and video telemetry.
 
 Learned control (SmolVLA) is separate from deterministic safety/recovery logic.
 
@@ -181,7 +195,7 @@ Learned control (SmolVLA) is separate from deterministic safety/recovery logic.
 | Source repository | pending push URL | pending commit |
 | Model | pending | pending |
 | Dataset/documentation | `docs/DATASET_CARD.md` | pending |
-| Raw evaluation | `outputs/eval_results/` | pending |
+| Raw evaluation | `artifacts/evaluation.json` + CSV/summary | pending |
 | Demo video | pending | pending |
 | Technical report | this document / PDF export | pending |
 

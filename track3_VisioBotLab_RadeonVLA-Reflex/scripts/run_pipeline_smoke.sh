@@ -20,6 +20,8 @@ run_py -m radeonvla.pipeline all-smoke \
   --repo-id visiobot/radeonvla_reflex_smoke \
   --dataset-root datasets/radeonvla_reflex_smoke \
   --device cpu \
+  --overwrite \
+  --discard-incomplete \
   --dry-run-train
 
 ok "Smoke finished in $(elapsed "$START")s"

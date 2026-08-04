@@ -9,6 +9,7 @@
     "environment",
     "checkpoint",
     "config",
+    "summary",
     "episodes"
   ],
   "properties": {
@@ -43,6 +44,21 @@
     },
     "config": {
       "type": "object"
+    },
+    "summary": {
+      "type": "object",
+      "required": [
+        "num_episodes",
+        "final_success",
+        "first_attempt_success",
+        "recovery_success",
+        "safe_interrupt_rate",
+        "success_by_task",
+        "success_by_scenario",
+        "p50_inference_latency_ms",
+        "p95_inference_latency_ms"
+      ],
+      "additionalProperties": true
     },
     "episodes": {
       "type": "array",
@@ -85,6 +101,32 @@
           },
           "video_uri": {
             "type": ["string", "null"]
+          },
+          "scenario": {
+            "type": "string"
+          },
+          "reflex_enabled": {
+            "type": "boolean"
+          },
+          "interrupted": {
+            "type": "boolean"
+          },
+          "safe_interrupt": {
+            "type": "boolean"
+          },
+          "interrupt_response_steps": {
+            "type": ["integer", "null"],
+            "minimum": 0
+          },
+          "unprotected_post_interrupt_steps": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "perturbation_applied": {
+            "type": "boolean"
+          },
+          "recovery_success": {
+            "type": "boolean"
           }
         },
         "additionalProperties": true

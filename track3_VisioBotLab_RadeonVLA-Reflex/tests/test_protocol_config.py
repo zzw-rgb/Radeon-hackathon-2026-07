@@ -1,6 +1,14 @@
+import json
+
 from radeonvla.config import load_config
 from radeonvla.paths import PROJECT_ROOT
-from radeonvla.protocol import ACTION_DIM, JOINT_NAMES, SMOLVLA_RENAME_MAP, dataset_features
+from radeonvla.protocol import (
+    ACTION_DIM,
+    JOINT_NAMES,
+    SMOLVLA_INPUT_FEATURES,
+    SMOLVLA_RENAME_MAP,
+    dataset_features,
+)
 from radeonvla.train_policy import PRESETS, build_command
 
 
@@ -45,3 +53,34 @@ def test_smolvla_train_command_includes_rename_map() -> None:
     assert "lerobot.scripts.lerobot_train" in joined
     assert "rename_map" in joined
     assert PRESETS["smolvla"]["rename_map"] == SMOLVLA_RENAME_MAP
+    feature_arg = next(item for item in cmd if item.startswith("--policy.input_features="))
+    features = json.loads(feature_arg.split("=", 1)[1])
+    assert features == SMOLVLA_INPUT_FEATURES
+    assert features["observation.state"]["shape"] == [ACTION_DIM]
+
+
+def test_explicit_input_features_override_wins() -> None:
+    class Args:
+        policy = "smolvla"
+        policy_path = None
+        policy_type = None
+        dataset_root = "datasets/demo"
+        repo_id = "visiobot/demo"
+        batch_size = None
+        name = None
+        output_dir = None
+        steps = 1
+        save_freq = 1
+        log_freq = 1
+        num_workers = 0
+        seed = 0
+        device = "cpu"
+        push_to_hub = False
+        wandb = False
+        video_backend = "pyav"
+        rename_map = None
+
+    override = "--policy.input_features=null"
+    cmd = build_command(Args(), [override])
+    assert cmd.count(override) == 1
+    assert sum(item.startswith("--policy.input_features") for item in cmd) == 1

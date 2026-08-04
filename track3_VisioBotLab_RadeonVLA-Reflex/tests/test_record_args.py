@@ -1,4 +1,12 @@
-from radeonvla.record_dataset import _instruction_for, _missing_task_coverage, _task_cycle, parse_args
+from radeonvla.record_dataset import (
+    _collection_complete,
+    _instruction_for,
+    _missing_task_coverage,
+    _promote_dataset,
+    _staging_root,
+    _task_cycle,
+    parse_args,
+)
 from radeonvla.tasks import get_task
 
 
@@ -34,3 +42,41 @@ def test_required_coverage_reports_missing_tasks() -> None:
     assert _missing_task_coverage(selected, counts) == ["banana_white_left"]
     counts["banana_white_left"] = 1
     assert _missing_task_coverage(selected, counts) == []
+
+
+def test_collection_repairs_coverage_after_requested_count() -> None:
+    selected = ["apple_blue_left", "banana_white_left"]
+    counts = {"apple_blue_left": 20, "banana_white_left": 0}
+    assert not _collection_complete(
+        successes=20,
+        requested=20,
+        task_cycle=selected,
+        per_task=counts,
+        require_coverage=True,
+    )
+    counts["banana_white_left"] = 1
+    assert _collection_complete(
+        successes=21,
+        requested=20,
+        task_cycle=selected,
+        per_task=counts,
+        require_coverage=True,
+    )
+
+
+def test_staging_root_is_hidden_sibling(tmp_path) -> None:
+    target = tmp_path / "dataset"
+    assert _staging_root(target) == tmp_path / ".dataset.inprogress"
+
+
+def test_promote_dataset_replaces_target_only_after_staging_exists(tmp_path) -> None:
+    target = tmp_path / "dataset"
+    target.mkdir()
+    (target / "old.txt").write_text("old")
+    staging = _staging_root(target)
+    staging.mkdir()
+    (staging / "new.txt").write_text("new")
+    _promote_dataset(staging, target, overwrite=True)
+    assert not staging.exists()
+    assert not (target / "old.txt").exists()
+    assert (target / "new.txt").read_text() == "new"

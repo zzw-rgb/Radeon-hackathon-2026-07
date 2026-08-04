@@ -61,6 +61,19 @@ SMOLVLA_RENAME_MAP: dict[str, str] = {
     "observation.images.wrist": "observation.images.camera2",
 }
 
+# The published SmolVLA base checkpoint describes a 6-D robot state.  This
+# project uses the seven Panda arm joints plus both finger joints, so the
+# checkpoint config must be overridden to 9-D when it is loaded for training.
+# Keep the base model's canonical visual interface: the dataset rename map
+# supplies camera1/camera2 and SmolVLA handles the absent camera3 as an empty
+# view, matching the upstream pretraining layout.
+SMOLVLA_INPUT_FEATURES: dict[str, dict[str, object]] = {
+    "observation.state": {"type": "STATE", "shape": [STATE_DIM]},
+    "observation.images.camera1": {"type": "VISUAL", "shape": [3, 256, 256]},
+    "observation.images.camera2": {"type": "VISUAL", "shape": [3, 256, 256]},
+    "observation.images.camera3": {"type": "VISUAL", "shape": [3, 256, 256]},
+}
+
 # YCB mesh directory names used by the scene builder.
 FRUIT_YCB: dict[str, str] = {
     "banana": "011_banana",

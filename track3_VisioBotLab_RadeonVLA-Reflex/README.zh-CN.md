@@ -3,9 +3,10 @@
 > **语言：** 中文说明。英文正式版见 [README.md](README.md)。  
 > 比赛提交材料与 Pull Request 正文请使用英文（官方仓库要求）。
 
-RadeonVLA-Reflex 是 AMD AI DevMaster Hackathon **Track 3** 提交项目（团队 VisioBot Lab）。
-项目在 Genesis 中实现 **Franka Panda 语言引导双碗水果分拣**，基于 LeRobot 微调 **SmolVLA**，
-并面向单卡 AMD Radeon（ROCm）完成仿真、数据采集、训练、推理与评测。
+RadeonVLA-Reflex 是运行在单张 AMD Radeon GPU 上的**可中断、可恢复 VLA 执行层**。
+Track 3 基准使用 Genesis、Franka Panda、LeRobot 和 SmolVLA，把 5 种水果分到 4 个
+可由语言指定的盘位。水果分拣是验证场景，核心贡献是让 action-chunk 策略在操作员改指令
+或抓取失败时仍能及时、安全、可量化地响应。
 
 主要设计内容：
 
@@ -16,6 +17,9 @@ RadeonVLA-Reflex 是 AMD AI DevMaster Hackathon **Track 3** 提交项目（团�
 5. **安全监视器** — 进入仿真前的关节限幅与速率限制；
 6. **单卡 ROCm 路径** — 在 AMD Radeon 上完成仿真、数据、训练、推理与评测；
 7. **多目标部分完成指标** — 按层级成功率与部分完成率统计长时序任务。
+8. **可重复压力测试** — 确定性移动目标水果/盘位，并支持 baseline 与 Reflex 消融；
+9. **可审阅证据** — 自动输出 JSON、CSV、摘要、真实 checkpoint 哈希和带实时状态的视频；
+10. **中断安全采集** — 未完成数据只保留在 staging，不会覆盖上一份有效数据。
 
 > 状态：流水线代码已就绪。AMD 实测结果、训练权重、正式指标、技术报告 PDF 与演示视频
 > 将在远程 Radeon 环境跑完后补齐。
@@ -35,9 +39,9 @@ RadeonVLA-Reflex 是 AMD AI DevMaster Hackathon **Track 3** 提交项目（团�
 
 ## 目标应用
 
-目标应用为食品处理、实验室自动化与小批量物流等场景下的柔性分拣。
-自然语言指令指定水果与目标容器；策略观测场景与机器人状态，预测连续关节动作，
-在安全与恢复逻辑约束下闭环执行。
+目标应用为食品处理、实验室自动化与小批量物流中的语言可重配置分拣单元。
+操作员可以在机器人运动途中修改目标；运行层立即作废旧动作块、进入安全张爪保持，
+并能对检测到的空抓执行一次恢复重试。
 
 ### 任务层级
 
@@ -60,7 +64,7 @@ RadeonVLA-Reflex 是 AMD AI DevMaster Hackathon **Track 3** 提交项目（团�
 | `multistep` | L3 |
 | `rules` | L4 |
 | `advanced` | L2+L3+L4 |
-| **`full`** | **全部层级（采集/评测默认）** |
+| `full` | 全部层级（显式启用的高级基准） |
 
 训练与评测使用**不相交**的自然语言表述。空间与规则任务在位姿随机化后，
 由 `radeonvla.grounding` 在 episode 开始时解析。
@@ -81,7 +85,8 @@ RadeonVLA-Reflex 是 AMD AI DevMaster Hackathon **Track 3** 提交项目（团�
                          ├─ 关节限幅 / 速率限制
                          ├─ 指令版本变更
                          ├─ 空抓检测
-                         └─ 超时 + 一次恢复重试
+                         ├─ 超时 + 一次恢复重试
+                         └─ 事件 / 延迟遥测
                                     ↓
                     Genesis Franka 双碗仿真
                                     ↓
@@ -89,7 +94,8 @@ RadeonVLA-Reflex 是 AMD AI DevMaster Hackathon **Track 3** 提交项目（团�
 ```
 
 学习栈为语言与视觉条件下的端到端关节位置控制。
-指令作废与恢复为策略外的确定性安全层（不重新训练 VLA）。
+指令作废与恢复为策略外的确定性安全层（不重新训练 VLA）。评测可确定性注入水果或盘位
+移动，并把 `RUNNING / INTERRUPTED / RECOVERING / SUCCESS` 直接叠加到演示视频。
 
 ## 仓库结构
 
@@ -239,12 +245,12 @@ PY
 ### 2. 克隆到持久卷
 
 ```bash
-cd <PVC_ROOT>
+cd /workspace
 mkdir -p visiobot
 cd visiobot
-git clone https://github.com/<GITHUB_ID>/Radeon-hackathon-2026-07.git
+git clone https://github.com/zzw-rgb/Radeon-hackathon-2026-07.git
 cd Radeon-hackathon-2026-07
-git checkout <SUBMITTED_COMMIT_OR_BRANCH>
+git checkout submission/track3-visiobotlab-radeonvla-reflex
 cd track3_VisioBotLab_RadeonVLA-Reflex
 ```
 
@@ -318,7 +324,7 @@ EPISODES=5 bash scripts/run_all_local.sh
 make smoke
 
 # AMD Radeon
-EPISODES=100 SUITE=full bash scripts/run_full_remote.sh
+EPISODES=200 SUITE=basic bash scripts/run_full_remote.sh
 ```
 
 变量说明见 [`scripts/README.md`](scripts/README.md)。可选从 `.env.example` 复制 `.env`。
@@ -351,22 +357,23 @@ python -m radeonvla.expert --task banana_white_left --episodes 5 --backend cpu
 python -m radeonvla.expert --task seq_triple_sort --episodes 3 --backend cpu
 python -m radeonvla.expert --suite advanced --episodes 8 --backend amdgpu
 
-# M3 — 数据采集（默认 suite=full 含 L1–L4）
+# M3 — 主基准数据采集（20 个 L1 任务，每项至少 10 个成功示范）
 python -m radeonvla.record_dataset \
-  --episodes 100 \
-  --suite full \
+  --episodes 200 \
+  --suite basic \
   --repo-id visiobot/radeonvla_reflex \
   --dataset-root datasets/radeonvla_reflex \
   --backend amdgpu \
-  --overwrite
+  --require-coverage
 
-# 消融：仅 basic 数据
-python -m radeonvla.record_dataset --episodes 50 --suite basic --overwrite \
+# 仅在新数据完成验证后安全替换旧数据
+python -m radeonvla.record_dataset --episodes 200 --suite basic --require-coverage \
+  --overwrite --discard-incomplete \
   --repo-id visiobot/radeonvla_basic --dataset-root datasets/radeonvla_basic
 
 # 采集时可选域随机
-python -m radeonvla.record_dataset --episodes 100 --dr-appearance --dr-object-color \
-  --dr-runtime --backend amdgpu --overwrite
+python -m radeonvla.record_dataset --episodes 400 --suite basic --require-coverage \
+  --dr-appearance --dr-object-color --dr-runtime --backend amdgpu
 
 # 训练前校验数据集
 python -m radeonvla.validate_dataset \
@@ -403,18 +410,27 @@ python -m radeonvla.benchmark --backend amdgpu --steps 500
 export HIP_VISIBLE_DEVICES=0
 bash scripts/run_full_remote.sh
 # 或自定义：
-EPISODES=100 TRAIN_STEPS=10000 bash scripts/run_full_remote.sh
+EPISODES=200 SUITE=basic TRAIN_STEPS=10000 bash scripts/run_full_remote.sh
 ```
 
-可选 Docker（Track 3 更推荐）：
+自包含 Docker（Track 3 推荐）：
 
 ```bash
-docker build -f docker/Dockerfile -t radeonvla-reflex:rocm7.2.1 .
+docker build --pull -f docker/Dockerfile -t radeonvla-reflex:rocm7.2.1 .
 docker run --rm -it --device=/dev/kfd --device=/dev/dri \
   --group-add video --group-add render \
-  -v "$PWD":/workspace/radeonvla-reflex \
-  radeonvla-reflex:rocm7.2.1
+  --ipc=host --shm-size=8g --security-opt seccomp=unconfined \
+  -v "$PWD/datasets":/workspace/radeonvla-reflex/datasets \
+  -v "$PWD/checkpoints":/workspace/radeonvla-reflex/checkpoints \
+  -v "$PWD/outputs":/workspace/radeonvla-reflex/outputs \
+  -v "$PWD/artifacts":/workspace/radeonvla-reflex/artifacts \
+  radeonvla-reflex:rocm7.2.1 check-amd
+
+docker compose -f docker/compose.yaml run --rm radeonvla check-amd
 ```
+
+源码、配置、脚本、资产和测试已经包含在镜像内，仅挂载可变的数据、权重和结果。
+入口命令包括 `help`、`check-amd`、`smoke`、`remote-full`、`reflex-demo` 和 `shell`。
 
 ## 数据规格
 
@@ -448,8 +464,8 @@ task                       # 自然语言指令
 
 ## 评测协议
 
-最低正式评测为至少两个任务上共 20 个 held-out episode。
-目标协议为每个任务 10 个 held-out episode（评测用语）。
+主协议为 20 个 L1 任务各 10 个 held-out episode，共 200 个。中断和目标移动
+压力测试使用代表性任务与独立 seed；L2–L4 只有在实际训练评测后才报告。
 
 报告指标：
 
@@ -459,14 +475,17 @@ task                       # 自然语言指令
 - 首次尝试成功；
 - 允许恢复后的最终成功；
 - 恢复成功；
+- 安全中断率与指令到动作作废的步数；
+- 按任务和扰动场景统计的成功率；
 - 完成时间均值与 P95；
 - 推理延迟 P50 与 P95；
 - 仿真步每秒；
 - 训练样本每秒；
 - 训练与推理峰值显存。
 
-包括失败在内的每个 episode 均保留在 `outputs/eval_results/` 的原始 JSON 中。
-模式：`artifacts/evaluation.schema.json`。
+包括失败在内的每个 episode 均保留在 JSON 中。正式证据自动写入
+`artifacts/evaluation.json`、`evaluation.csv` 和 `summary.md`，模式为
+`artifacts/evaluation.schema.json`。视频会显示当前指令、Reflex 状态、版本、重试和延迟。
 
 ## 复现步骤
 
@@ -490,12 +509,12 @@ task                       # 自然语言指令
 | 源代码 | 流水线已实现 | 本自包含目录 |
 | 可复现 README | 本文件 / 英文版 | README.md |
 | 技术报告（MD） | 草稿结构 | reports/RadeonVLA-Reflex-Technical-Report.md |
-| 技术报告 PDF | TODO | TBD |
-| 演示视频 | TODO | TBD |
-| 模型权重 | TODO | TBD |
+| 技术报告 PDF | 最终指标确定后导出 | `reports/RadeonVLA-Reflex-Technical-Report.pdf` |
+| 演示视频 | 用最终 checkpoint 生成 | `outputs/eval_videos/` |
+| 模型权重 | 选择最新且验证通过的数字 checkpoint | `outputs/train/*/checkpoints/*/pretrained_model` |
 | 数据集或数据文档 | 模板 | docs/DATASET_CARD.md |
-| 原始评测结果 | TODO | TBD |
-| SHA256 校验和 | TODO | TBD |
+| 原始评测结果 | 由远程流程生成 | `artifacts/evaluation.json` |
+| SHA256 校验和 | 由远程流程生成 | `artifacts/SHA256SUMS` |
 | Docker 镜像定义 | 可用 | docker/Dockerfile |
 
 提交撰写相关文件：

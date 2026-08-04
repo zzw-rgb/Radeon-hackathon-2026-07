@@ -64,6 +64,16 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--dry-run-train", action="store_true")
     parser.add_argument("--require-amd", action="store_true")
     parser.add_argument("--dr", action="store_true", help="Enable appearance+runtime DR when recording.")
+    parser.add_argument(
+        "--overwrite",
+        action="store_true",
+        help="Safely replace an existing published dataset after staging validates.",
+    )
+    parser.add_argument(
+        "--discard-incomplete",
+        action="store_true",
+        help="Discard this target's incomplete staging directory before recording.",
+    )
     parser.add_argument("--seed", type=int, default=0)
     return parser.parse_args(argv)
 
@@ -128,12 +138,17 @@ def main(argv: list[str] | None = None) -> int:
             dataset_root,
             "--seed",
             str(args.seed),
-            "--overwrite",
         ]
+        if args.overwrite:
+            cmd.append("--overwrite")
+        if args.discard_incomplete:
+            cmd.append("--discard-incomplete")
         if args.task:
             cmd += ["--task", args.task]
         else:
             cmd += ["--suite", args.suite]
+            if args.suite == "basic" and args.episodes >= 20:
+                cmd.append("--require-coverage")
         if args.dr:
             cmd += ["--dr-appearance", "--dr-object-color", "--dr-runtime"]
         return _run(cmd)

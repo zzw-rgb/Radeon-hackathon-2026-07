@@ -14,7 +14,7 @@ section "Remote AMD checks (HIP_VISIBLE_DEVICES=$HIP_VISIBLE_DEVICES)"
 run_py -m radeonvla.check_env \
   --require-amd \
   --init-genesis \
-  --json docs/environment.remote.json
+  --json artifacts/environment.remote.json
 
 run_py -m radeonvla.setup_assets
 run_py -m radeonvla.scene --backend "$BACKEND" --steps 50 --save-frames

@@ -18,6 +18,8 @@ TASK="${TASK:-}"   # if set, record only this task; else cycle suite
 REPO_ID="${REPO_ID:-visiobot/radeonvla_local}"
 DATASET_ROOT="${DATASET_ROOT:-datasets/radeonvla_local}"
 SEED="${SEED:-0}"
+OVERWRITE="${OVERWRITE:-0}"
+DISCARD_INCOMPLETE="${DISCARD_INCOMPLETE:-0}"
 
 START=$(date +%s)
 section "RadeonVLA-Reflex local one-click"
@@ -47,12 +49,20 @@ RECORD_ARGS=(
   --repo-id "$REPO_ID"
   --dataset-root "$DATASET_ROOT"
   --seed "$SEED"
-  --overwrite
 )
+if [[ "$OVERWRITE" == "1" ]]; then
+  RECORD_ARGS+=(--overwrite)
+fi
+if [[ "$DISCARD_INCOMPLETE" == "1" ]]; then
+  RECORD_ARGS+=(--discard-incomplete)
+fi
 if [[ -n "$TASK" ]]; then
   RECORD_ARGS+=(--task "$TASK")
 else
   RECORD_ARGS+=(--suite "$SUITE")
+  if [[ "$SUITE" == "basic" && "$EPISODES" -ge 20 ]]; then
+    RECORD_ARGS+=(--require-coverage)
+  fi
 fi
 run_py "${RECORD_ARGS[@]}"
 

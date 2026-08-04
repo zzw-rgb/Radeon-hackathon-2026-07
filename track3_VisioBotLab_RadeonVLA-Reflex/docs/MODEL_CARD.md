@@ -40,9 +40,14 @@ Language-conditioned Franka fruit sorting in the submitted Genesis scene.
 
 ## Evaluation
 
-I will link this card to the immutable evaluation JSON under `outputs/eval_results/` and
+I will link this card to the immutable `artifacts/evaluation.json` and
 record task/episode counts, first-attempt vs final success, recovery success, inference
 latency, and known failure modes after the remote AMD evaluation.
+
+The formal evidence bundle also reports safe-interrupt rate, command-to-invalidation
+steps, unprotected post-interrupt action steps, and success under deterministic target
+shifts. Baseline runs disable chunk invalidation and automatic retry while retaining the
+same checkpoint and held-out seeds.
 
 ## Limitations
 

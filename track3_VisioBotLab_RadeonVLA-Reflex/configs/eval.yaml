@@ -6,8 +6,8 @@ evaluation:
   max_retries: 1
   save_video: true
   keep_failures: true
-  # Prefer suite=full for the advanced benchmark; override with --tasks for ablation.
-  suite: full
+  # Primary award benchmark: 20 L1 tasks. Run advanced explicitly for L2–L4.
+  suite: basic
   tasks: null
 
 interrupt:
@@ -25,3 +25,6 @@ metrics:
   - inference_latency
   - simulation_throughput
   - peak_vram
+  - safe_interrupt_rate
+  - interrupt_response_steps
+  - success_by_scenario

@@ -13,6 +13,7 @@ from typing import Any
 import numpy as np
 import torch
 
+from radeonvla.artifact_io import sha256_path, validate_evaluation_payload, write_evaluation_bundle
 from radeonvla.grounding import check_resolved_success, resolve_task
 from radeonvla.paths import EVAL_RESULTS_DIR, EVAL_VIDEOS_DIR, PROJECT_ROOT
 from radeonvla.protocol import CONTROL_HZ, DATASET_FPS
@@ -25,6 +26,7 @@ from radeonvla.safety import (
 )
 from radeonvla.scene import AppearanceDR, build_scene, init_genesis
 from radeonvla.scene_config import FRANKA_QPOS
+from radeonvla.stress import PERTURBATIONS, inject_perturbation
 from radeonvla.tasks import SUITES, get_task, list_task_ids
 
 STATE_KEY = "observation.state"
@@ -163,6 +165,63 @@ def apply_action(bundle, action: np.ndarray | list[float], n_sim_steps: int) -> 
         bundle.update_wrist_cam()
 
 
+def _video_frame(
+    bundle,
+    pb: PolicyBundle,
+    observation: dict[str, np.ndarray],
+    *,
+    state: str,
+    instruction: str,
+    version: int,
+    retry_count: int,
+    latency_ms: float,
+    scenario: str,
+) -> np.ndarray:
+    """Render a fixed-width multi-camera frame with Reflex telemetry."""
+    import cv2
+
+    primary = observation[pb.image_keys[0]]
+    h, w = primary.shape[:2]
+    panels = [primary]
+    if bundle.wrist_cam is not None:
+        panels.append(_render_camera(bundle.wrist_cam, (w, h)))
+    if bundle.video_cam is not None:
+        panels.append(_render_camera(bundle.video_cam, (w, h)))
+    frame = np.ascontiguousarray(np.hstack(panels) if len(panels) > 1 else primary).copy()
+
+    colors = {
+        "RUNNING": (70, 220, 70),
+        "INTERRUPTED": (0, 180, 255),
+        "RECOVERING": (40, 80, 255),
+        "SUCCESS": (70, 220, 70),
+        "FAILED": (30, 30, 255),
+    }
+    cv2.rectangle(frame, (0, 0), (frame.shape[1], 78), (18, 18, 18), thickness=-1)
+    cv2.putText(
+        frame,
+        f"REFLEX {state}",
+        (12, 23),
+        cv2.FONT_HERSHEY_SIMPLEX,
+        0.62,
+        colors.get(state, (255, 255, 255)),
+        2,
+        cv2.LINE_AA,
+    )
+    cv2.putText(
+        frame,
+        f"v{version} retry={retry_count} latency={latency_ms:.1f}ms scenario={scenario}",
+        (12, 47),
+        cv2.FONT_HERSHEY_SIMPLEX,
+        0.45,
+        (235, 235, 235),
+        1,
+        cv2.LINE_AA,
+    )
+    text = instruction if len(instruction) <= 100 else instruction[:97] + "..."
+    cv2.putText(frame, text, (12, 68), cv2.FONT_HERSHEY_SIMPLEX, 0.42, (235, 235, 235), 1, cv2.LINE_AA)
+    return frame
+
+
 @dataclass
 class EpisodeResult:
     episode_id: str
@@ -183,6 +242,14 @@ class EpisodeResult:
     n_goals: int = 1
     partial_success_rate: float = 0.0
     resolved_goals: list[dict[str, str]] = field(default_factory=list)
+    scenario: str = "normal"
+    reflex_enabled: bool = True
+    interrupted: bool = False
+    safe_interrupt: bool = False
+    interrupt_response_steps: int | None = None
+    unprotected_post_interrupt_steps: int = 0
+    perturbation_applied: bool = False
+    recovery_success: bool = False
 
 
 def run_episode(
@@ -196,6 +263,10 @@ def run_episode(
     max_retries: int = 1,
     interrupt_at_step: int | None = None,
     interrupt_task_id: str | None = None,
+    perturbation: str = "none",
+    perturb_at_step: int | None = None,
+    perturb_distance: float = 0.06,
+    reflex_enabled: bool = True,
     save_video: bool = False,
     video_path: Path | None = None,
 ) -> EpisodeResult:
@@ -204,7 +275,7 @@ def run_episode(
     instruction = instruction or task.evaluation_instructions[0]
     session = CommandSession(instruction=instruction, task_id=task_id)
     safety = SafetyMonitor()
-    recovery = RecoveryPolicy(max_retries=max_retries)
+    recovery = RecoveryPolicy(max_retries=max_retries if reflex_enabled else 0)
 
     randomizer = EnvRandomizer(bundle, RandomizationConfig(seed=seed))
     randomizer.reset(seed=seed, task_id=task_id)
@@ -229,19 +300,55 @@ def run_episode(
     first_attempt_success = False
     t0 = time.perf_counter()
     policy_step = 0
+    attempt_step = 0
+    step_budget = max_steps * ((max_retries + 1) if reflex_enabled else 1)
     active = True
     last_action = list(FRANKA_QPOS)
+    interrupt_step: int | None = None
+    invalidation_step: int | None = None
+    perturbation_applied = False
+    display_state = "RUNNING"
+    scenario_parts: list[str] = []
+    if interrupt_at_step is not None:
+        scenario_parts.append("interrupt")
+    if perturbation != "none":
+        scenario_parts.append(perturbation)
+    scenario = "+".join(scenario_parts) or "normal"
 
-    while active and policy_step < max_steps:
+    while active and policy_step < step_budget:
+        if (
+            perturb_at_step is not None
+            and policy_step == perturb_at_step
+            and not perturbation_applied
+            and perturbation != "none"
+        ):
+            event = inject_perturbation(
+                bundle,
+                resolved,
+                kind=perturbation,
+                distance=perturb_distance,
+                seed=seed + policy_step,
+                step=policy_step,
+            )
+            if event is not None:
+                events.append(event)
+                perturbation_applied = True
+
         if interrupt_at_step is not None and policy_step == interrupt_at_step and interrupt_task_id:
             new_task = get_task(interrupt_task_id)
             new_instruction = new_task.evaluation_instructions[0]
             session.set_command(instruction=new_instruction, task_id=interrupt_task_id, step=policy_step)
             task = new_task
             max_steps = max(max_steps, task.max_steps)
+            remaining_attempts = (max_retries - retry_count + 1) if reflex_enabled else 1
+            step_budget = max(step_budget, policy_step + max_steps * max(1, remaining_attempts))
             resolved = resolve_task(bundle, task, instruction=new_instruction, train=False)
             detector = FailureDetector(task, max_steps=max_steps)
-            pb.reset()
+            attempt_step = 0
+            interrupt_step = policy_step
+            display_state = "INTERRUPTED"
+            if reflex_enabled:
+                pb.reset()
             events.append(
                 {
                     "type": "interrupt_inject",
@@ -259,26 +366,36 @@ def run_episode(
         raw_action = pb.select_action(obs, session.instruction)
         latencies.append((time.perf_counter() - t_inf0) * 1000.0)
 
-        decision = safety.process(raw_action, command_version=session.version)
+        safety_version = session.version if reflex_enabled else 0
+        decision = safety.process(raw_action, command_version=safety_version)
         if decision.invalidate_chunk:
             pb.reset()
             events.append({"type": "chunk_invalidated", "step": policy_step, "reason": decision.reason})
+            if interrupt_step is not None and invalidation_step is None:
+                invalidation_step = policy_step
 
         action = np.asarray(decision.action, dtype=np.float64)
         apply_action(bundle, action, n_sim)
         last_action = action.tolist()
 
         if save_video:
-            primary = obs[pb.image_keys[0]]
-            h, w = primary.shape[:2]
-            panels = [primary]
-            if bundle.wrist_cam is not None:
-                panels.append(_render_camera(bundle.wrist_cam, (w, h)))
-            if bundle.video_cam is not None:
-                panels.append(_render_camera(bundle.video_cam, (w, h)))
-            frames.append(np.ascontiguousarray(np.hstack(panels) if len(panels) > 1 else primary))
+            frames.append(
+                _video_frame(
+                    bundle,
+                    pb,
+                    obs,
+                    state=display_state,
+                    instruction=session.instruction,
+                    version=session.version,
+                    retry_count=retry_count,
+                    latency_ms=latencies[-1],
+                    scenario=scenario,
+                )
+            )
+        if display_state in {"INTERRUPTED", "RECOVERING"}:
+            display_state = "RUNNING"
 
-        fail = detector.observe_step(bundle, step=policy_step, action=action, unsafe=not decision.accepted)
+        fail = detector.observe_step(bundle, step=attempt_step, action=action, unsafe=not decision.accepted)
         report_now = check_resolved_success(bundle, resolved)
         if report_now["success"]:
             if retry_count == 0:
@@ -288,12 +405,27 @@ def run_episode(
                 apply_action(bundle, last_action, n_sim)
                 if save_video:
                     obs_hold = build_observation(bundle, pb)
-                    frames.append(obs_hold[pb.image_keys[0]])
+                    frames.append(
+                        _video_frame(
+                            bundle,
+                            pb,
+                            obs_hold,
+                            state="SUCCESS",
+                            instruction=session.instruction,
+                            version=session.version,
+                            retry_count=retry_count,
+                            latency_ms=latencies[-1],
+                            scenario=scenario,
+                        )
+                    )
             active = False
             break
 
+        did_recover = False
         if fail is not None and recovery.should_retry(retry_count, fail):
             retry_count += 1
+            did_recover = True
+            display_state = "RECOVERING"
             events.append({"type": "recovery", "step": policy_step, "reason": fail.value, "retry": retry_count})
             recover = np.asarray(recovery.recovery_action(), dtype=np.float64)
             for _ in range(recovery.retreat_steps):
@@ -301,6 +433,7 @@ def run_episode(
             pb.reset()
             safety.reset()
             detector = FailureDetector(task, max_steps=max_steps)
+            attempt_step = 0
             fail = None
         elif fail is not None:
             events.append({"type": "terminal_failure", "step": policy_step, "reason": fail.value})
@@ -308,6 +441,8 @@ def run_episode(
             break
 
         policy_step += 1
+        if not did_recover:
+            attempt_step += 1
 
     final_report = check_resolved_success(bundle, resolved)
     diag = detector.finalize(bundle)
@@ -333,6 +468,21 @@ def run_episode(
         else:
             failure_reason = "partial_multi_goal"
 
+    interrupt_response_steps = None
+    unprotected_steps = 0
+    if interrupt_step is not None:
+        if invalidation_step is not None:
+            interrupt_response_steps = max(0, invalidation_step - interrupt_step)
+            unprotected_steps = interrupt_response_steps
+        else:
+            unprotected_steps = max(0, policy_step - interrupt_step + 1)
+    safe_interrupt = bool(
+        interrupt_step is not None
+        and invalidation_step is not None
+        and interrupt_response_steps is not None
+        and interrupt_response_steps <= 1
+    )
+
     return EpisodeResult(
         episode_id=f"{task_id}_{seed}",
         seed=seed,
@@ -352,6 +502,14 @@ def run_episode(
         n_goals=int(final_report["n_goals"]),
         partial_success_rate=float(final_report["partial_success_rate"]),
         resolved_goals=[{"object": g.object_name, "container": g.container} for g in resolved.goals],
+        scenario=scenario,
+        reflex_enabled=reflex_enabled,
+        interrupted=interrupt_step is not None,
+        safe_interrupt=safe_interrupt,
+        interrupt_response_steps=interrupt_response_steps,
+        unprotected_post_interrupt_steps=unprotected_steps,
+        perturbation_applied=perturbation_applied,
+        recovery_success=bool(success and retry_count > 0),
     )
 
 
@@ -363,6 +521,21 @@ def summarize(episodes: list[EpisodeResult]) -> dict[str, Any]:
     tier_rates = {
         tier: sum(e.success for e in eps) / max(1, len(eps)) for tier, eps in sorted(by_tier.items())
     }
+    by_task: dict[str, list[EpisodeResult]] = {}
+    by_scenario: dict[str, list[EpisodeResult]] = {}
+    for episode in episodes:
+        by_task.setdefault(episode.task_id, []).append(episode)
+        by_scenario.setdefault(episode.scenario, []).append(episode)
+    task_rates = {
+        task_id: sum(e.success for e in eps) / max(1, len(eps)) for task_id, eps in sorted(by_task.items())
+    }
+    scenario_rates = {
+        scenario: sum(e.success for e in eps) / max(1, len(eps))
+        for scenario, eps in sorted(by_scenario.items())
+    }
+    interrupted = [episode for episode in episodes if episode.interrupted]
+    recovered = [episode for episode in episodes if episode.retry_count > 0]
+    all_latencies = [x for episode in episodes for x in episode.inference_latency_ms] or [0.0]
     return {
         "num_episodes": len(episodes),
         "task_success_rate": sum(e.success for e in episodes) / n,
@@ -372,17 +545,28 @@ def summarize(episodes: list[EpisodeResult]) -> dict[str, Any]:
         "final_success": sum(e.success for e in episodes) / n,
         "mean_partial_success_rate": float(np.mean([e.partial_success_rate for e in episodes])),
         "success_by_tier": tier_rates,
+        "success_by_task": task_rates,
+        "success_by_scenario": scenario_rates,
         "recovery_success": (
-            sum(e.success and e.retry_count > 0 for e in episodes)
-            / max(1, sum(e.retry_count > 0 for e in episodes))
+            sum(e.success for e in recovered) / max(1, len(recovered))
         ),
+        "recovery_attempts": len(recovered),
+        "safe_interrupt_rate": sum(e.safe_interrupt for e in interrupted) / max(1, len(interrupted)),
+        "interrupt_episodes": len(interrupted),
+        "mean_interrupt_response_steps": float(
+            np.mean([e.interrupt_response_steps for e in interrupted if e.interrupt_response_steps is not None])
+        )
+        if any(e.interrupt_response_steps is not None for e in interrupted)
+        else None,
+        "unprotected_post_interrupt_steps": sum(e.unprotected_post_interrupt_steps for e in interrupted),
         "mean_completion_time_s": float(np.mean([e.completion_time_s for e in episodes])),
         "p95_completion_time_s": float(np.percentile([e.completion_time_s for e in episodes], 95)),
         "mean_inference_latency_ms": float(
-            np.mean([x for e in episodes for x in e.inference_latency_ms] or [0.0])
+            np.mean(all_latencies)
         ),
+        "p50_inference_latency_ms": float(np.percentile(all_latencies, 50)),
         "p95_inference_latency_ms": float(
-            np.percentile([x for e in episodes for x in e.inference_latency_ms] or [0.0], 95)
+            np.percentile(all_latencies, 95)
         ),
     }
 
@@ -398,17 +582,28 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--tasks", nargs="*", default=None)
     parser.add_argument(
         "--suite",
-        default="full",
+        default="basic",
         choices=sorted(SUITES),
-        help="Task suite when --tasks is omitted.",
+        help="Task suite when --tasks is omitted (default: 20-task basic benchmark).",
     )
     parser.add_argument("--seed-start", type=int, default=20000)
     parser.add_argument("--max-retries", type=int, default=1)
+    parser.add_argument("--max-steps", type=int, default=None, help="Optional per-episode cap for smoke tests.")
     parser.add_argument("--device", default="cuda")
     parser.add_argument("--cpu", action="store_true")
     parser.add_argument("--backend", choices=("cpu", "gpu", "amdgpu"), default=None)
     parser.add_argument("--save-video", action="store_true")
     parser.add_argument("--interrupt-demo", action="store_true", help="Inject a mid-episode command change.")
+    parser.add_argument("--disable-reflex", action="store_true", help="Ablation: no chunk invalidation or retry.")
+    parser.add_argument("--perturbation", choices=PERTURBATIONS, default="none")
+    parser.add_argument("--perturb-at-step", type=int, default=30)
+    parser.add_argument("--perturb-distance", type=float, default=0.06)
+    parser.add_argument("--checkpoint-sha256", default=None, help="Precomputed checkpoint tree SHA256.")
+    parser.add_argument(
+        "--git-commit",
+        default=None,
+        help="40-character source commit used for this run (for source-only remote copies without .git).",
+    )
     parser.add_argument("--output", type=Path, default=None)
     return parser.parse_args(argv)
 
@@ -430,6 +625,10 @@ def main(argv: list[str] | None = None) -> int:
         appearance=AppearanceDR(seed=args.seed_start),
     )
     pb = load_policy(args.policy_path, args.repo_id, args.dataset_root, device)
+    checkpoint_sha256 = args.checkpoint_sha256 or sha256_path(args.policy_path)
+    if len(checkpoint_sha256) != 64 or any(c not in "0123456789abcdef" for c in checkpoint_sha256.lower()):
+        raise ValueError("--checkpoint-sha256 must be 64 hexadecimal characters")
+    checkpoint_sha256 = checkpoint_sha256.lower()
 
     results: list[EpisodeResult] = []
     ep_index = 0
@@ -472,8 +671,13 @@ def main(argv: list[str] | None = None) -> int:
                 task_id=task_id,
                 seed=seed,
                 max_retries=args.max_retries,
+                max_steps=args.max_steps,
                 interrupt_at_step=interrupt_at,
                 interrupt_task_id=interrupt_task,
+                perturbation=args.perturbation,
+                perturb_at_step=args.perturb_at_step,
+                perturb_distance=args.perturb_distance,
+                reflex_enabled=not args.disable_reflex,
                 save_video=args.save_video,
                 video_path=video_path,
             )
@@ -486,40 +690,52 @@ def main(argv: list[str] | None = None) -> int:
             ep_index += 1
 
     summary = summarize(results)
-    try:
-        commit = subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip()
-    except Exception:
-        commit = "0" * 40
+    commit = args.git_commit
+    if commit is None:
+        try:
+            commit = subprocess.check_output(
+                ["git", "rev-parse", "HEAD"], text=True, stderr=subprocess.DEVNULL
+            ).strip()
+        except Exception:
+            commit = "0" * 40
+    if len(commit) != 40 or any(c not in "0123456789abcdef" for c in commit.lower()):
+        raise ValueError("--git-commit must be 40 hexadecimal characters")
+    commit = commit.lower()
 
+    gpu_name = torch.cuda.get_device_name(pb.device) if torch.cuda.is_available() else str(pb.device)
     payload = {
         "experiment_id": f"eval_{stamp}",
-        "git_commit": commit if len(commit) == 40 else "0" * 40,
+        "git_commit": commit,
         "environment": {
-            "gpu": str(pb.device),
-            "rocm": str(torch.version.hip),
+            "gpu": gpu_name,
+            "rocm": str(torch.version.hip or "none"),
             "torch": torch.__version__,
             "genesis": "1.1.2",
             "lerobot": "0.6.0",
         },
         "checkpoint": {
             "uri": args.policy_path,
-            "sha256": "0" * 64,
+            "sha256": checkpoint_sha256,
         },
         "config": {
             "tasks": tasks,
             "seed_start": args.seed_start,
             "max_retries": args.max_retries,
             "backend": backend,
+            "reflex_enabled": not args.disable_reflex,
+            "perturbation": args.perturbation,
+            "perturb_at_step": args.perturb_at_step,
+            "perturb_distance": args.perturb_distance,
         },
         "summary": summary,
         "episodes": [asdict(e) for e in results],
     }
 
     out = args.output or (run_dir / "results.json")
-    out.parent.mkdir(parents=True, exist_ok=True)
-    out.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+    validate_evaluation_payload(payload, PROJECT_ROOT / "artifacts" / "evaluation.schema.json")
+    written = write_evaluation_bundle(payload, out)
     print(json.dumps(summary, indent=2))
-    print(f"[eval] wrote {out}")
+    print(f"[eval] wrote {written['json']}, {written['csv']}, {written['summary']}")
     return 0
 
 

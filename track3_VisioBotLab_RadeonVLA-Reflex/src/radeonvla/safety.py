@@ -272,7 +272,7 @@ class FailureDetector:
         if fruit is not None and float(entity_pos(fruit)[2]) > TABLE_TOP_Z + 0.12:
             self.diag.object_lifted = True
 
-        if step >= self.max_steps:
+        if step + 1 >= self.max_steps:
             self.diag.failure_reason = FailureReason.TIMEOUT
             self.diag.events.append({"type": "timeout", "step": step})
             return FailureReason.TIMEOUT

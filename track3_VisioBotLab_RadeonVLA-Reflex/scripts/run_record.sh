@@ -3,7 +3,7 @@
 #
 # Usage:
 #   bash scripts/run_record.sh                          # basic suite, 20 eps, cpu
-#   BACKEND=amdgpu SUITE=full EPISODES=100 bash scripts/run_record.sh
+#   BACKEND=amdgpu SUITE=basic EPISODES=200 bash scripts/run_record.sh
 #   TASK=leftmost_to_left EPISODES=10 bash scripts/run_record.sh
 #   DR=1 EPISODES=50 bash scripts/run_record.sh         # enable domain randomization
 set -euo pipefail
@@ -20,6 +20,8 @@ DATASET_ROOT="${DATASET_ROOT:-datasets/radeonvla_${SUITE}}"
 SEED="${SEED:-0}"
 DR="${DR:-0}"
 MAX_ATTEMPTS="${MAX_ATTEMPTS:-0}"
+OVERWRITE="${OVERWRITE:-0}"
+DISCARD_INCOMPLETE="${DISCARD_INCOMPLETE:-0}"
 
 START=$(date +%s)
 section "Record demonstrations"
@@ -35,8 +37,13 @@ ARGS=(
   --repo-id "$REPO_ID"
   --dataset-root "$DATASET_ROOT"
   --seed "$SEED"
-  --overwrite
 )
+if [[ "$OVERWRITE" == "1" ]]; then
+  ARGS+=(--overwrite)
+fi
+if [[ "$DISCARD_INCOMPLETE" == "1" ]]; then
+  ARGS+=(--discard-incomplete)
+fi
 if [[ -n "$TASK" ]]; then
   ARGS+=(--task "$TASK")
 else

@@ -2,7 +2,7 @@ project: RadeonVLA-Reflex
 seed: 0
 
 # Task suites: basic | spatial | multistep | rules | advanced | full
-task_suite: full
+task_suite: basic
 
 runtime:
   backend: amdgpu

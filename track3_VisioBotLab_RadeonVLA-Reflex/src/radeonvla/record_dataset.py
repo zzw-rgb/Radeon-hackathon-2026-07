@@ -9,20 +9,21 @@ End-to-end data collection for SmolVLA training:
 
 Example::
 
-    python -m radeonvla.record_dataset --episodes 20 --backend cpu --overwrite
+    python -m radeonvla.record_dataset --episodes 20 --backend cpu
     python -m radeonvla.record_dataset --episodes 100 --backend amdgpu \\
-        --dr-appearance --dr-object-color --dr-runtime --overwrite
+        --dr-appearance --dr-object-color --dr-runtime
 """
 
 from __future__ import annotations
 
 import argparse
-import json
 import shutil
+from datetime import UTC, datetime
 from pathlib import Path
 
 import numpy as np
 
+from radeonvla.artifact_io import atomic_write_json
 from radeonvla.expert import run_resolved_task
 from radeonvla.grounding import resolve_task
 from radeonvla.paths import DATASETS_DIR, PROJECT_ROOT
@@ -30,6 +31,48 @@ from radeonvla.protocol import CONTROL_HZ, DATASET_FPS, JOINT_NAMES, dataset_fea
 from radeonvla.randomize import EnvRandomizer, RandomizationConfig, RuntimeDR
 from radeonvla.scene import AppearanceDR, build_scene, init_genesis
 from radeonvla.tasks import SUITES, get_task, list_task_ids
+
+
+def _staging_root(dataset_root: Path) -> Path:
+    return dataset_root.with_name(f".{dataset_root.name}.inprogress")
+
+
+def _assert_managed_staging(dataset_root: Path, staging_root: Path) -> None:
+    expected = _staging_root(dataset_root)
+    if staging_root.resolve() != expected.resolve():
+        raise ValueError(f"Refusing to manage unexpected staging directory: {staging_root}")
+
+
+def _discard_staging(dataset_root: Path, staging_root: Path) -> None:
+    _assert_managed_staging(dataset_root, staging_root)
+    if staging_root.exists():
+        shutil.rmtree(staging_root)
+
+
+def _promote_dataset(staging_root: Path, dataset_root: Path, *, overwrite: bool) -> None:
+    """Atomically publish staging while preserving/rolling back the old dataset."""
+    _assert_managed_staging(dataset_root, staging_root)
+    if not staging_root.is_dir():
+        raise FileNotFoundError(f"Staging dataset not found: {staging_root}")
+    if dataset_root.exists() and not overwrite:
+        raise FileExistsError(f"{dataset_root} exists; pass --overwrite to replace it after validation.")
+
+    backup_root = dataset_root.with_name(f".{dataset_root.name}.backup")
+    if backup_root.exists():
+        raise FileExistsError(f"Stale backup exists: {backup_root}; inspect it before retrying.")
+
+    moved_old = False
+    if dataset_root.exists():
+        dataset_root.rename(backup_root)
+        moved_old = True
+    try:
+        staging_root.rename(dataset_root)
+    except BaseException:
+        if moved_old and backup_root.exists() and not dataset_root.exists():
+            backup_root.rename(dataset_root)
+        raise
+    if moved_old:
+        shutil.rmtree(backup_root)
 
 
 class EpisodeRecorder:
@@ -129,9 +172,9 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--tasks", nargs="*", default=None, help="Optional explicit task id list.")
     parser.add_argument(
         "--suite",
-        default="full",
+        default="basic",
         choices=sorted(SUITES),
-        help="Task suite when --task/--tasks omitted (default: full advanced set).",
+        help="Task suite when --task/--tasks omitted (default: 20-task basic benchmark).",
     )
     parser.add_argument("--repo-id", default="visiobot/radeonvla_reflex")
     parser.add_argument("--dataset-root", type=Path, default=None)
@@ -141,7 +184,16 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--img-height", type=int, default=240)
     parser.add_argument("--cpu", action="store_true")
     parser.add_argument("--backend", choices=("cpu", "gpu", "amdgpu"), default=None)
-    parser.add_argument("--overwrite", action="store_true")
+    parser.add_argument(
+        "--overwrite",
+        action="store_true",
+        help="Safely replace an existing published dataset only after staging validates.",
+    )
+    parser.add_argument(
+        "--discard-incomplete",
+        action="store_true",
+        help="Delete this target's .inprogress staging directory before a fresh run.",
+    )
     parser.add_argument("--vcodec", default="libsvtav1", help="RGB video codec for LeRobot.")
     parser.add_argument("--dr-appearance", action="store_true")
     parser.add_argument("--dr-object-color", action="store_true")
@@ -190,6 +242,15 @@ def _missing_task_coverage(task_cycle: list[str], per_task: dict[str, int]) -> l
     return [task_id for task_id in task_cycle if per_task.get(task_id, 0) < 1]
 
 
+def _collection_complete(
+    *, successes: int, requested: int, task_cycle: list[str], per_task: dict[str, int], require_coverage: bool
+) -> bool:
+    """Treat the episode count as a minimum and repair any missing coverage before publication."""
+    if successes < requested:
+        return False
+    return not require_coverage or not _missing_task_coverage(task_cycle, per_task)
+
+
 def _rebuild_scene(backend: str, seed: int, domain: int, args: argparse.Namespace):
     """Rebuild Genesis for a new appearance domain (Layer-A DR)."""
     import genesis as gs
@@ -220,16 +281,24 @@ def main(argv: list[str] | None = None) -> int:
     from lerobot.datasets.lerobot_dataset import LeRobotDataset
 
     args = parse_args(argv)
+    if args.episodes <= 0:
+        raise ValueError("--episodes must be greater than zero")
     backend = args.backend or ("cpu" if args.cpu else "gpu")
     dataset_root = Path(args.dataset_root or (DATASETS_DIR / args.repo_id.split("/")[-1]))
     if not dataset_root.is_absolute():
         dataset_root = (PROJECT_ROOT / dataset_root).resolve()
+    staging_root = _staging_root(dataset_root)
     max_attempts = args.max_attempts if args.max_attempts > 0 else max(args.episodes * 5, args.episodes)
 
-    if dataset_root.exists():
-        if not args.overwrite:
-            raise FileExistsError(f"{dataset_root} exists; pass --overwrite to replace it.")
-        shutil.rmtree(dataset_root)
+    if dataset_root.exists() and not args.overwrite:
+        raise FileExistsError(f"{dataset_root} exists; choose a new path or pass --overwrite for safe replacement.")
+    if staging_root.exists():
+        if not args.discard_incomplete:
+            raise FileExistsError(
+                f"Incomplete staging dataset exists: {staging_root}. Inspect it, then pass "
+                "--discard-incomplete to start over without touching the published dataset."
+            )
+        _discard_staging(dataset_root, staging_root)
     dataset_root.parent.mkdir(parents=True, exist_ok=True)
 
     task_cycle = _task_cycle(args)
@@ -266,7 +335,7 @@ def main(argv: list[str] | None = None) -> int:
     dataset = LeRobotDataset.create(
         repo_id=args.repo_id,
         fps=args.fps,
-        root=str(dataset_root),
+        root=str(staging_root),
         robot_type="franka",
         features=features,
         use_videos=True,
@@ -285,104 +354,171 @@ def main(argv: list[str] | None = None) -> int:
     max_fail_streak = max(1, int(args.max_fail_streak))
     fail_streak = 0
 
-    while successes < args.episodes and attempts < max_attempts:
-        if args.dr_rebuild_every and args.dr_appearance and successes > 0:
-            target_domain = successes // args.dr_rebuild_every
-            if target_domain != domain:
-                domain = target_domain
-                bundle = _rebuild_scene(backend, args.seed, domain, args)
-                randomizer = EnvRandomizer(
-                    bundle,
-                    RandomizationConfig(
-                        seed=args.seed + attempts,
-                        runtime_dr=runtime,
-                        task_ids=tuple(task_cycle),
-                    ),
+    def manifest_payload(status: str, *, error: str | None = None) -> dict:
+        missing = _missing_task_coverage(task_cycle, per_task)
+        payload = {
+            "status": status,
+            "updated_at": datetime.now(UTC).isoformat(),
+            "repo_id": args.repo_id,
+            "dataset_root": str(dataset_root),
+            "staging_root": str(staging_root),
+            "fps": args.fps,
+            "image_size": [args.img_height, args.img_width],
+            "joint_names": list(JOINT_NAMES),
+            "features": features,
+            "requested_successes": args.episodes,
+            "successes": successes,
+            "failures_saved": failures_saved,
+            "attempts": attempts,
+            "max_attempts": max_attempts,
+            "per_task_successes": per_task,
+            "missing_task_coverage": missing,
+            "coverage_complete": not missing,
+            "require_coverage": args.require_coverage,
+            "task_cycle": task_cycle,
+            "suite": args.suite,
+            "seed": args.seed,
+            "backend": backend,
+            "video_codec": args.vcodec,
+            "dr_appearance": args.dr_appearance,
+            "dr_object_color": args.dr_object_color,
+            "dr_table_jitter": args.dr_table_jitter,
+            "dr_fov_jitter": args.dr_fov_jitter,
+            "dr_rebuild_every": args.dr_rebuild_every,
+            "dr_runtime": args.dr_runtime,
+            "dr_friction_ratio_range": list(args.dr_friction),
+            "dr_mass_ratio_range": list(args.dr_mass),
+            "dr_camera_position_jitter": args.dr_cam_pos,
+            "dr_camera_lookat_jitter": args.dr_cam_lookat,
+        }
+        if error:
+            payload["error"] = error
+        return payload
+
+    try:
+        while not _collection_complete(
+            successes=successes,
+            requested=args.episodes,
+            task_cycle=task_cycle,
+            per_task=per_task,
+            require_coverage=args.require_coverage,
+        ) and attempts < max_attempts:
+            if args.dr_rebuild_every and args.dr_appearance and successes > 0:
+                target_domain = successes // args.dr_rebuild_every
+                if target_domain != domain:
+                    domain = target_domain
+                    bundle = _rebuild_scene(backend, args.seed, domain, args)
+                    randomizer = EnvRandomizer(
+                        bundle,
+                        RandomizationConfig(
+                            seed=args.seed + attempts,
+                            runtime_dr=runtime,
+                            task_ids=tuple(task_cycle),
+                        ),
+                    )
+                    recorder = EpisodeRecorder(bundle, fps=args.fps, img_wh=(args.img_width, args.img_height))
+                    print(f"[record] rebuilt appearance domain {domain}")
+
+            missing_coverage = _missing_task_coverage(task_cycle, per_task)
+            coverage_repair = successes >= args.episodes and args.require_coverage and missing_coverage
+            active_cycle = missing_coverage if coverage_repair else task_cycle
+            task_id = active_cycle[ep % len(active_cycle)]
+            if coverage_repair:
+                print(f"[record] coverage repair: collecting missing task {task_id}")
+            task = randomizer.reset(seed=args.seed + attempts, task_id=task_id)
+            instruction = _instruction_for(task.task_id, train=True)
+            resolved = resolve_task(bundle, task, instruction=instruction, train=True)
+            recorder.reset()
+            ok, _, report = run_resolved_task(bundle, resolved, recorder=recorder.on_step)
+            attempts += 1
+            goals_str = ",".join(f"{g.object_name}->{g.container}" for g in resolved.goals)
+
+            if ok and len(recorder) > 0:
+                recorder.flush_to(dataset, instruction)
+                successes += 1
+                per_task[task.task_id] = per_task.get(task.task_id, 0) + 1
+                ep += 1
+                fail_streak = 0
+                print(
+                    f"[record] success {successes}/{args.episodes} "
+                    f"task={task.task_id} tier={task.tier} goals=[{goals_str}] "
+                    f"frames={len(recorder)} attempt={attempts}"
                 )
-                recorder = EpisodeRecorder(bundle, fps=args.fps, img_wh=(args.img_width, args.img_height))
-                print(f"[record] rebuilt appearance domain {domain}")
+            elif args.keep_failures and len(recorder) > 0:
+                recorder.flush_to(dataset, "FAILED: " + instruction)
+                failures_saved += 1
+                fail_streak += 1
+                print(
+                    f"[record] failure saved task={task.task_id} tier={task.tier} "
+                    f"partial={report.get('partial_success_rate', 0):.2f} frames={len(recorder)}"
+                )
+            else:
+                reason = "empty" if len(recorder) == 0 else "failed"
+                fail_streak += 1
+                print(
+                    f"[record] discarded ({reason}) task={task.task_id} tier={task.tier} "
+                    f"partial={report.get('partial_success_rate', 0):.2f} attempt={attempts}"
+                )
 
-        task_id = task_cycle[ep % len(task_cycle)]
-        task = randomizer.reset(seed=args.seed + attempts, task_id=task_id)
-        instruction = _instruction_for(task.task_id, train=True)
-        resolved = resolve_task(bundle, task, instruction=instruction, train=True)
-        recorder.reset()
-        ok, _, report = run_resolved_task(bundle, resolved, recorder=recorder.on_step)
-        attempts += 1
-        goals_str = ",".join(f"{g.object_name}->{g.container}" for g in resolved.goals)
+            if fail_streak >= max_fail_streak:
+                print(
+                    f"[record] skip task={task_id} after {fail_streak} consecutive fails "
+                    f"(advance cycle so recording is not stuck)"
+                )
+                ep += 1
+                fail_streak = 0
+            atomic_write_json(staging_root / "recording_progress.json", manifest_payload("recording"))
 
-        if ok and len(recorder) > 0:
-            recorder.flush_to(dataset, instruction)
-            successes += 1
-            per_task[task.task_id] = per_task.get(task.task_id, 0) + 1
-            ep += 1
-            fail_streak = 0
-            print(
-                f"[record] success {successes}/{args.episodes} "
-                f"task={task.task_id} tier={task.tier} goals=[{goals_str}] "
-                f"frames={len(recorder)} attempt={attempts}"
+        dataset.finalize()
+    except BaseException as exc:
+        if staging_root.exists():
+            atomic_write_json(
+                staging_root / "recording_progress.json",
+                manifest_payload("interrupted", error=f"{type(exc).__name__}: {exc}"),
             )
-        elif args.keep_failures and len(recorder) > 0:
-            recorder.flush_to(dataset, "FAILED: " + instruction)
-            failures_saved += 1
-            fail_streak += 1
-            print(
-                f"[record] failure saved task={task.task_id} tier={task.tier} "
-                f"partial={report.get('partial_success_rate', 0):.2f} frames={len(recorder)}"
-            )
-        else:
-            reason = "empty" if len(recorder) == 0 else "failed"
-            fail_streak += 1
-            print(
-                f"[record] discarded ({reason}) task={task.task_id} tier={task.tier} "
-                f"partial={report.get('partial_success_rate', 0):.2f} attempt={attempts}"
-            )
-
-        if fail_streak >= max_fail_streak:
-            print(
-                f"[record] skip task={task_id} after {fail_streak} consecutive fails "
-                f"(advance cycle so recording is not stuck)"
-            )
-            ep += 1
-            fail_streak = 0
-
-    dataset.finalize()
+        print(f"[record] interrupted; published dataset untouched, inspect staging: {staging_root}")
+        raise
 
     missing_coverage = _missing_task_coverage(task_cycle, per_task)
-    manifest = {
-        "repo_id": args.repo_id,
-        "dataset_root": str(dataset_root),
-        "fps": args.fps,
-        "image_size": [args.img_height, args.img_width],
-        "joint_names": list(JOINT_NAMES),
-        "features": features,
-        "successes": successes,
-        "failures_saved": failures_saved,
-        "attempts": attempts,
-        "per_task_successes": per_task,
-        "missing_task_coverage": missing_coverage,
-        "coverage_complete": not missing_coverage,
-        "require_coverage": args.require_coverage,
-        "task_cycle": task_cycle,
-        "suite": args.suite,
-        "seed": args.seed,
-        "backend": backend,
-        "dr_appearance": args.dr_appearance,
-        "dr_runtime": args.dr_runtime,
-    }
-    manifest_path = args.manifest or (dataset_root / "recording_manifest.json")
-    manifest_path.parent.mkdir(parents=True, exist_ok=True)
-    manifest_path.write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
+    complete = successes >= args.episodes and (not args.require_coverage or not missing_coverage)
+    manifest = manifest_payload("complete" if complete else "incomplete")
+    atomic_write_json(staging_root / "recording_manifest.json", manifest)
+    atomic_write_json(staging_root / "recording_progress.json", manifest)
 
     print(f"[record] done: {successes} successes (+{failures_saved} failures saved) in {attempts} attempts")
-    print(f"[record] dataset -> {dataset_root}")
-    print(f"[record] manifest -> {manifest_path}")
     if successes < args.episodes:
         print(f"[record] WARNING: only {successes}/{args.episodes} successes before max_attempts={max_attempts}")
+        print(f"[record] incomplete data kept only at: {staging_root}")
         return 2
     if args.require_coverage and missing_coverage:
         print(f"[record] ERROR: missing successful episodes for tasks: {missing_coverage}")
+        print(f"[record] incomplete data kept only at: {staging_root}")
         return 3
+
+    try:
+        verified = LeRobotDataset(args.repo_id, root=str(staging_root), video_backend="pyav")
+        expected_episodes = successes + failures_saved
+        actual_episodes = int(getattr(verified, "num_episodes", -1))
+        if actual_episodes != expected_episodes or len(verified) <= 0:
+            raise RuntimeError(
+                f"Finalized dataset verification failed: episodes={actual_episodes}/{expected_episodes}, "
+                f"frames={len(verified)}"
+            )
+        del verified
+    except Exception as exc:
+        invalid_manifest = manifest_payload("invalid", error=f"{type(exc).__name__}: {exc}")
+        atomic_write_json(staging_root / "recording_manifest.json", invalid_manifest)
+        atomic_write_json(staging_root / "recording_progress.json", invalid_manifest)
+        print(f"[record] ERROR: finalized staging dataset cannot be reopened: {exc}")
+        print(f"[record] invalid data kept only at: {staging_root}")
+        return 4
+
+    _promote_dataset(staging_root, dataset_root, overwrite=args.overwrite)
+    manifest_path = args.manifest or (dataset_root / "recording_manifest.json")
+    if args.manifest:
+        atomic_write_json(manifest_path, manifest)
+    print(f"[record] published dataset -> {dataset_root}")
+    print(f"[record] manifest -> {manifest_path}")
     return 0
 
 
