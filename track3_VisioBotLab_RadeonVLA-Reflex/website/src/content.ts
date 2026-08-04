@@ -70,8 +70,8 @@ export const copy = {
   sourceCta: { en: "Explore the source", zh: "查看项目源码" },
   demoCta: { en: "See the evidence plan", zh: "查看演示证据" },
   heroAlt: {
-    en: "Industrial robot holding an apple while a broken stale action path is rerouted to a safe recovery path",
-    zh: "工业机械臂夹持苹果，失效的旧动作路径断开并重新规划为安全恢复路径",
+    en: "Collaborative robot holding an apple as a stale action path stops and a safe recovery path redirects toward the blue bowl",
+    zh: "协作机械臂夹持苹果，失效动作路径停止，安全恢复路径转向蓝色碗",
   },
   placeholder: { en: "Original recovery concept art", zh: "原创恢复机制概念图" },
   proofLabel: { en: "Verified snapshot", zh: "已核验快照" },

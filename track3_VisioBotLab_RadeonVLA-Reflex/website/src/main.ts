@@ -1,6 +1,6 @@
 import architectureEn from "./assets/architecture-en.jpg";
 import architectureZh from "./assets/architecture-zh.jpg";
-import heroImage from "./assets/radeonvla-reflex-hero.png";
+import heroImage from "./assets/radeonvla-reflex-hero-v2.png";
 import {
   copy,
   demos,
@@ -70,25 +70,27 @@ function render(): void {
               <a class="button button-quiet" href="#demo">${t(copy.demoCta, locale)} <span aria-hidden="true">↓</span></a>
             </div>
           </div>
-          <figure class="hero-visual reveal" aria-labelledby="hero-visual-caption">
-            <div class="visual-orbit orbit-one" aria-hidden="true"></div>
-            <div class="visual-orbit orbit-two" aria-hidden="true"></div>
-            <img src="${heroImage}" alt="${t(copy.heroAlt, locale)}" />
-            <figcaption id="hero-visual-caption">
-              <span class="live-dot" aria-hidden="true"></span>
-              ${t(copy.placeholder, locale)}
-            </figcaption>
-            <div class="telemetry-card telemetry-command" aria-hidden="true">
-              <small>COMMAND SESSION</small>
-              <strong>v2</strong>
-              <span>stale chunk → invalid</span>
+          <div class="hero-stage reveal">
+            <figure class="hero-visual" aria-labelledby="hero-visual-caption">
+              <img src="${heroImage}" alt="${t(copy.heroAlt, locale)}" decoding="async" fetchpriority="high" />
+              <figcaption id="hero-visual-caption">
+                <span class="live-dot" aria-hidden="true"></span>
+                ${t(copy.placeholder, locale)}
+              </figcaption>
+            </figure>
+            <div class="hero-telemetry" aria-hidden="true">
+              <div class="telemetry-card telemetry-command">
+                <small>COMMAND SESSION</small>
+                <strong>v2</strong>
+                <span>stale chunk → invalid</span>
+              </div>
+              <div class="telemetry-card telemetry-state">
+                <small>RUNTIME STATE</small>
+                <strong>INTERRUPTED</strong>
+                <span>safe hold active</span>
+              </div>
             </div>
-            <div class="telemetry-card telemetry-state" aria-hidden="true">
-              <small>RUNTIME STATE</small>
-              <strong>INTERRUPTED</strong>
-              <span>safe hold active</span>
-            </div>
-          </figure>
+          </div>
         </div>
         <div class="hero-index" aria-hidden="true">RVR—26</div>
       </section>
