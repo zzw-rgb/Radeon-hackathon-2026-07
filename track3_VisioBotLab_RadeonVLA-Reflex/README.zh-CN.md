@@ -34,7 +34,8 @@ Track 3 基准使用 Genesis、Franka Panda、LeRobot 和 SmolVLA，把 5 种水
 | 赛道 | Track 3 — Physical AI Challenge |
 | 团队 | VisioBot Lab |
 | 项目 | RadeonVLA-Reflex |
-| 成员 | Zhenwei Zhou |
+| 队长 | 周振威 |
+| 队员 | 留安格、王浩然 |
 | 单位 | 南京理工大学 |
 
 ## 目标应用
@@ -577,9 +578,13 @@ python -m radeonvla.submission_audit --final   # PDF 与 checksum 齐备前会�
 
 ## 团队
 
-- Zhenwei Zhou — 系统设计、实现、训练、评测与提交
-- VisioBot Lab
-- 南京理工大学
+**VisioBot Lab** · 南京理工大学
+
+| 成员 | 角色 | 工作量 | 主要工作 |
+|---|---|---:|---|
+| **周振威** | 队长 / 主程 | 约 70% | 系统架构、Genesis 场景与专家策略、严格物理采集、SmolVLA 训练评测、网站与最终提交 |
+| 留安格 | 队员 | 约 15% | 中英文文档润色、任务表述校对、展示文案协助 |
+| 王浩然 | 队员 | 约 15% | 数据抽检、实验记录整理、技术报告与证据打包协助 |
 
 ## 提交
 

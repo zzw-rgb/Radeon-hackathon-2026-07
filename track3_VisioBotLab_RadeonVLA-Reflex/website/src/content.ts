@@ -39,6 +39,14 @@ export interface TaskRow {
   targets: Array<{ label: LocalizedText; color: "white" | "blue" }>;
 }
 
+export interface TeamMember {
+  name: LocalizedText;
+  role: LocalizedText;
+  share: string;
+  focus: LocalizedText;
+  lead?: boolean;
+}
+
 export const projectLinks = {
   source:
     "https://github.com/zzw-rgb/Radeon-hackathon-2026-07/tree/submission/track3-visiobotlab-radeonvla-reflex/track3_VisioBotLab_RadeonVLA-Reflex",
@@ -51,9 +59,10 @@ export const projectLinks = {
 
 export const navItems: Array<{ href: string; label: LocalizedText }> = [
   { href: "#overview", label: { en: "Overview", zh: "概览" } },
-  { href: "#demo", label: { en: "Evidence", zh: "演示证据" } },
+  { href: "#demo", label: { en: "Collection", zh: "采集预览" } },
   { href: "#runtime", label: { en: "Architecture", zh: "系统架构" } },
   { href: "#benchmark", label: { en: "Benchmark", zh: "基准" } },
+  { href: "#team", label: { en: "Team", zh: "团队" } },
   { href: "#reproduce", label: { en: "Reproduce", zh: "复现" } },
 ];
 
@@ -122,33 +131,39 @@ export const copy = {
       },
     },
   ],
-  sectionDemoKicker: { en: "RECORDED DATASET PREVIEWS", zh: "真实数据集采集预览" },
+  sectionDemoKicker: { en: "LOCAL SMOKE + BASELINE COLLECTION", zh: "本机冒烟与基线采集" },
   sectionDemoTitle: {
-    en: "Three real collection runs. No placeholder media.",
-    zh: "三段真实采集，不再只有占位画面。",
+    en: "Real expert demos recorded on this machine.",
+    zh: "本机真实跑通的专家采集片段。",
   },
   sectionDemoBody: {
-    en: "These clips are H.264 excerpts from the completed 200-episode AMD Radeon baseline collection. They verify the expert-data recording path; held-out SmolVLA policy evaluation remains a separate pending result.",
-    zh: "以下片段截取自已完成的 200 条 AMD Radeon 基线采集，并转为 H.264。它们验证的是专家数据采集链路；SmolVLA 策略的独立评测仍是另一项待完成结果。",
+    en: "These H.264 world-camera clips come from the completed local 200-episode L1 baseline (20 tasks × 10). They are smoke evidence for the recording pipeline—not claimed SmolVLA policy success. Formal Physical-1K (20 × 50) is trained separately on Radeon Cloud.",
+    zh: "以下 H.264 世界相机片段来自本机已完成的 200 条 L1 基线采集（20 任务 × 10）。用于证明采集链路冒烟通过，不代表 SmolVLA 策略成功率。正式 Physical-1K（20 × 50）在 Radeon 云端单独训练。",
   },
-  videoLabel: { en: "AMD DATASET SMOKE PREVIEW", zh: "AMD 数据集 SMOKE 预览" },
-  videoPending: { en: "Baseline collection · 200 successful demos", zh: "基线采集 · 200 条成功演示" },
+  videoLabel: { en: "LOCAL BASELINE SMOKE PREVIEW", zh: "本机基线冒烟预览" },
+  videoPending: { en: "200 successful demos · 20 × 10 · 20 Hz dual RGB", zh: "200 条成功演示 · 20 × 10 · 20 Hz 双路 RGB" },
   videoBody: {
-    en: "Three world-camera episodes from different appearance-randomization domains. Playback is manual and loads metadata only until opened.",
-    zh: "选取三个不同外观随机化域的世界相机 episode；视频需手动播放，打开前仅加载元数据。",
+    en: "Three fruits / bowl targets sampled from the local manifest. Manual play; metadata-only until opened. Apple→blue-left, banana→white-right, plum→white-left.",
+    zh: "从本机 manifest 抽取三种水果/盘位；手动播放，打开前仅加载元数据。苹果→左蓝、香蕉→右白、李子→左白。",
   },
-  clipState: { en: "RECORDED SUCCESS", zh: "采集成功" },
+  clipState: { en: "SMOKE SUCCESS", zh: "冒烟成功" },
   clipCamera: { en: "WORLD RGB · 20 FPS", zh: "世界相机 RGB · 20 FPS" },
-  clipPlayLabel: { en: "Play dataset collection clip", zh: "播放数据集采集片段" },
+  clipPlayLabel: { en: "Play local smoke collection clip", zh: "播放本机冒烟采集片段" },
   clipFallback: {
     en: "Your browser cannot play this H.264 video.",
     zh: "当前浏览器无法播放此 H.264 视频。",
   },
-  collectionScopeTitle: { en: "Evidence boundary", zh: "证据边界" },
+  collectionScopeTitle: { en: "What this proves", zh: "这段证据说明什么" },
   collectionScopeBody: {
-    en: "Scripted expert collection preview—not a policy-success claim. Final checkpoint, interruption, and recovery videos stay Pending until held-out evaluation passes.",
-    zh: "这些片段是脚本专家采集预览，不代表策略成功率。最终 checkpoint、中断与恢复视频将在独立评测通过前保持 Pending。",
+    en: "Local scripted-expert recording, dual cameras, and LeRobot packaging work end-to-end. It is not a held-out policy score. Physical-1K cloud data and checkpoint metrics remain separate artifacts.",
+    zh: "证明本机脚本专家采集、双相机与 LeRobot 打包全链路可跑通，不是独立策略评测分数。Physical-1K 云端数据与 checkpoint 指标属于另一组产物。",
   },
+  collectionStats: [
+    { value: "200", label: { en: "local successes", zh: "本机成功条数" } },
+    { value: "20×10", label: { en: "L1 coverage", zh: "L1 任务覆盖" } },
+    { value: "46,420", label: { en: "frames @ 20 Hz", zh: "帧 @ 20 Hz" } },
+    { value: "3", label: { en: "preview clips", zh: "预览片段" } },
+  ],
   plannedEvidence: { en: "Planned evidence", zh: "计划展示" },
   runtimeKicker: { en: "SYSTEM ARCHITECTURE", zh: "系统架构" },
   runtimeTitle: { en: "The policy proposes. The runtime decides.", zh: "策略提出动作，运行层决定是否执行。" },
@@ -231,9 +246,12 @@ export const copy = {
   teamKicker: { en: "TEAM", zh: "团队" },
   teamTitle: { en: "VisioBot Lab", zh: "VisioBot Lab" },
   teamBody: {
-    en: "Zhenwei Zhou · Nanjing University of Science and Technology",
-    zh: "周振威 · 南京理工大学",
+    en: "Nanjing University of Science and Technology · Track 3 Physical AI Challenge",
+    zh: "南京理工大学 · Track 3 Physical AI 挑战赛",
   },
+  teamLeadLabel: { en: "Team captain", zh: "队长" },
+  teamMemberLabel: { en: "Member", zh: "队员" },
+  teamShareLabel: { en: "Effort share", zh: "工作量占比" },
   contestCta: { en: "Competition page", zh: "比赛页面" },
   footer: {
     en: "RadeonVLA-Reflex · Track 3 Physical AI Challenge",
@@ -248,23 +266,54 @@ export const copy = {
 export const verifiedMetrics: Metric[] = [
   {
     value: "200",
-    label: { en: "baseline expert demos", zh: "条基线专家演示" },
+    label: { en: "local smoke demos", zh: "本机冒烟演示" },
     detail: { en: "manifest complete · 20 × 10", zh: "manifest 完成 · 20 × 10" },
   },
   {
-    value: "20 / 20",
-    label: { en: "strict smoke tasks", zh: "严格物理 smoke 任务" },
-    detail: { en: "zero interventions written", zh: "写入样本零干预" },
+    value: "1,000",
+    label: { en: "Physical-1K cloud demos", zh: "云端 Physical-1K" },
+    detail: { en: "strict physics · 20 × 50", zh: "严格物理 · 20 × 50" },
   },
   {
     value: "46,420",
-    label: { en: "baseline frames", zh: "帧基线数据" },
-    detail: { en: "20 Hz dual RGB", zh: "20 Hz 双路 RGB" },
+    label: { en: "local baseline frames", zh: "本机基线帧数" },
+    detail: { en: "20 Hz dual RGB smoke set", zh: "20 Hz 双路 RGB 冒烟集" },
   },
   {
     value: "1× GPU",
     label: { en: "AMD Radeon path", zh: "AMD Radeon 路径" },
     detail: { en: "ROCm sim · train · eval", zh: "ROCm 仿真 · 训练 · 评测" },
+  },
+];
+
+export const teamMembers: TeamMember[] = [
+  {
+    name: { en: "Zhenwei Zhou", zh: "周振威" },
+    role: { en: "Team captain · lead engineer", zh: "队长 · 主程" },
+    share: "70%",
+    lead: true,
+    focus: {
+      en: "System architecture, Genesis scene & expert, strict-physics collection, SmolVLA train/eval, website, and submission.",
+      zh: "系统架构、Genesis 场景与专家策略、严格物理采集、SmolVLA 训练评测、网站与最终提交。",
+    },
+  },
+  {
+    name: { en: "Ange Liu", zh: "留安格" },
+    role: { en: "Member · docs & presentation", zh: "队员 · 文档与展示" },
+    share: "15%",
+    focus: {
+      en: "Bilingual documentation polish, task-suite wording review, and showcase copy support.",
+      zh: "中英文文档润色、任务表述校对，以及展示文案协助。",
+    },
+  },
+  {
+    name: { en: "Haoran Wang", zh: "王浩然" },
+    role: { en: "Member · QA & reporting", zh: "队员 · 质检与报告" },
+    share: "15%",
+    focus: {
+      en: "Dataset spot-checks, experiment logging, and technical-report / evidence packaging support.",
+      zh: "数据抽检、实验记录整理，以及技术报告与证据打包协助。",
+    },
   },
 ];
 

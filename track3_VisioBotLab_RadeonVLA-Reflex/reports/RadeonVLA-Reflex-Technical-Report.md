@@ -2,8 +2,9 @@
 
 ## Technical Report — Track 3 Physical AI Challenge
 
-**Team:** VisioBot Lab
-**Team Member:** Zhenwei Zhou
+**Team:** VisioBot Lab  
+**Captain:** Zhenwei Zhou  
+**Members:** Ange Liu, Haoran Wang
 **Affiliation:** Nanjing University of Science and Technology
 **Date:** TBD
 **Submitted Commit:** TBD
@@ -211,9 +212,12 @@ Reproduction follows `README.md` inside `track3_VisioBotLab_RadeonVLA-Reflex/`:
 
 ## 17. Team Member and Contribution
 
-**Zhenwei Zhou:** system design, implementation, data generation, model training,
-evaluation, documentation, and submission (VisioBot Lab, Nanjing University of Science
-and Technology).
+**VisioBot Lab** (Nanjing University of Science and Technology):
+
+- **Zhenwei Zhou (captain, ~70%):** system design, implementation, data generation, model training,
+  evaluation, website, documentation, and submission
+- **Ange Liu (~15%):** bilingual documentation polish, task-suite wording review, showcase copy
+- **Haoran Wang (~15%):** dataset spot-checks, experiment logging, technical-report packaging
 
 ## 18. Limitations and Future Work
 

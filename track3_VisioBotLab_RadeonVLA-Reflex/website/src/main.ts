@@ -10,6 +10,7 @@ import {
   projectLinks,
   t,
   taskRows,
+  teamMembers,
   type Locale,
   verifiedMetrics,
 } from "./content";
@@ -156,6 +157,17 @@ function render(): void {
               <strong>${t(copy.videoPending, locale)}</strong>
               <p>${t(copy.videoBody, locale)}</p>
             </div>
+          </div>
+          <div class="collection-stat-row reveal" aria-label="Local smoke collection stats">
+            ${copy.collectionStats
+              .map(
+                (stat) => `
+                  <div class="collection-stat">
+                    <strong>${stat.value}</strong>
+                    <span>${t(stat.label, locale)}</span>
+                  </div>`,
+              )
+              .join("")}
           </div>
           <div class="collection-video-grid">
             ${collectionClips
@@ -383,20 +395,42 @@ function render(): void {
         </aside>
       </section>
 
-      <section class="team section-block" aria-labelledby="team-title">
-        <div class="section-shell team-inner reveal">
-          <div>
-            <p class="eyebrow">${t(copy.teamKicker, locale)}</p>
-            <h2 id="team-title">${t(copy.teamTitle, locale)}</h2>
-            <p>${t(copy.teamBody, locale)}</p>
+      <section class="team section-block" id="team" aria-labelledby="team-title">
+        <div class="section-shell">
+          <div class="team-header reveal">
+            <div>
+              <p class="eyebrow">${t(copy.teamKicker, locale)}</p>
+              <h2 id="team-title">${t(copy.teamTitle, locale)}</h2>
+              <p>${t(copy.teamBody, locale)}</p>
+            </div>
+            <div class="team-actions">
+              <a class="button button-light" href="${projectLinks.contest}" target="_blank" rel="noreferrer">
+                ${t(copy.contestCta, locale)} ${iconArrow()}
+              </a>
+              <a class="button button-outline-light" href="${projectLinks.source}" target="_blank" rel="noreferrer">
+                GitHub ${iconArrow()}
+              </a>
+            </div>
           </div>
-          <div class="team-actions">
-            <a class="button button-light" href="${projectLinks.contest}" target="_blank" rel="noreferrer">
-              ${t(copy.contestCta, locale)} ${iconArrow()}
-            </a>
-            <a class="button button-outline-light" href="${projectLinks.source}" target="_blank" rel="noreferrer">
-              GitHub ${iconArrow()}
-            </a>
+          <div class="team-grid">
+            ${teamMembers
+              .map(
+                (member) => `
+                  <article class="team-card reveal ${member.lead ? "team-card-lead" : ""}">
+                    <div class="team-card-top">
+                      <span>${member.lead ? t(copy.teamLeadLabel, locale) : t(copy.teamMemberLabel, locale)}</span>
+                      <strong>${member.share}</strong>
+                    </div>
+                    <h3>${t(member.name, locale)}</h3>
+                    <p class="team-role">${t(member.role, locale)}</p>
+                    <p class="team-focus">${t(member.focus, locale)}</p>
+                    <div class="team-share-bar" aria-hidden="true">
+                      <i style="width:${member.share}"></i>
+                    </div>
+                    <small>${t(copy.teamShareLabel, locale)} · ${member.share}</small>
+                  </article>`,
+              )
+              .join("")}
           </div>
         </div>
       </section>

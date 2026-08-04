@@ -38,7 +38,8 @@ open `track3_VisioBotLab_RadeonVLA-Reflex/` and follow this README to reproduce 
 | Track | Track 3 — Physical AI Challenge |
 | Team | VisioBot Lab |
 | Project | RadeonVLA-Reflex |
-| Team member | Zhenwei Zhou |
+| Captain | Zhenwei Zhou |
+| Members | Ange Liu, Haoran Wang |
 | Affiliation | Nanjing University of Science and Technology |
 
 ## Target application
@@ -615,9 +616,13 @@ project code for RadeonVLA-Reflex; see THIRD_PARTY_NOTICES.md for dependency not
 
 ## Team
 
-- Zhenwei Zhou — system design, implementation, training, evaluation, and submission
-- VisioBot Lab
-- Nanjing University of Science and Technology
+**VisioBot Lab** · Nanjing University of Science and Technology
+
+| Member | Role | Effort | Focus |
+|---|---|---:|---|
+| **Zhenwei Zhou** | Team captain / lead engineer | ~70% | System architecture, Genesis scene & expert, strict-physics collection, SmolVLA train/eval, website, and submission |
+| Ange Liu | Member | ~15% | Bilingual documentation polish, task-suite wording review, showcase copy support |
+| Haoran Wang | Member | ~15% | Dataset spot-checks, experiment logging, technical-report / evidence packaging support |
 
 ## Submission
 
