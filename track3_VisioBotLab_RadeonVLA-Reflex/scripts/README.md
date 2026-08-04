@@ -10,6 +10,7 @@ is loaded automatically when present (see `.env.example`).
 | `run_expert_demo.sh` | Scripted demos across basic / hard tasks |
 | `run_pipeline_smoke.sh` | Fast 1-episode smoke + train dry-run |
 | `run_full_remote.sh` | **Full AMD path**: check → record → train → eval → benchmark |
+| `finish_physical_1k.sh` | Wait for six audited shards → merge exact 20×50 → validate → run the full AMD path |
 | `run_reflex_demo.sh` | Normal + interrupt + target-shift videos from an existing checkpoint |
 | `check_local.sh` | Env + audit + pytest + ruff |
 | `check_remote_amd.sh` | Strict ROCm gate + scene/benchmark |
@@ -25,6 +26,9 @@ is loaded automatically when present (see `.env.example`).
 | `REPO_ID` / `DATASET_ROOT` | suite-based | record / train |
 | `DR` | `0` local / `1` remote | domain randomization |
 | `TRAIN_STEPS` | `10000` | full remote |
+| `EVAL_SEED_START` | `50000` | held-out formal evaluation |
+| `INTERRUPT_SEED_START` | `60000` | interrupt/reflex comparison |
+| `PERTURB_SEED_START` | `60100` | target-shift recovery comparison |
 | `CKPT` | auto under `outputs/train/...` | eval when `SKIP_TRAIN=1` |
 | `SKIP_RECORD` | `0` | reuse an already validated dataset on remote |
 | `SOURCE_COMMIT` | auto from Git | explicit 40-hex source revision for source-only remote copies |

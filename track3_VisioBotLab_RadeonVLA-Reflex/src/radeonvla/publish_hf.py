@@ -183,14 +183,22 @@ def _publish_dataset(args: argparse.Namespace, api, *, private: bool) -> dict:
     revision = api.dataset_info(args.dataset_repo).sha
     if not args.skip_reload_check:
         with tempfile.TemporaryDirectory(prefix="radeonvla-hf-dataset-") as temporary:
+            reloaded_root = Path(temporary) / "dataset"
             reloaded = LeRobotDataset(
                 args.dataset_repo,
-                root=Path(temporary) / "dataset",
+                root=reloaded_root,
                 revision=revision,
                 video_backend="pyav",
             )
             if int(reloaded.num_episodes) != args.expected_episodes or len(reloaded) <= 0:
                 raise RuntimeError("Immutable Hub dataset reload verification failed")
+            _validate_local_dataset(
+                args.dataset_repo,
+                reloaded_root,
+                expected_episodes=args.expected_episodes,
+                episodes_per_task=args.episodes_per_task,
+                report_path=None,
+            )
     return {
         "repo_id": args.dataset_repo,
         "revision": revision,

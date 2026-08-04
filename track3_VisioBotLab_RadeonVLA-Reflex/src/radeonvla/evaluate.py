@@ -602,7 +602,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         choices=sorted(SUITES),
         help="Task suite when --tasks is omitted (default: 20-task basic benchmark).",
     )
-    parser.add_argument("--seed-start", type=int, default=20000)
+    parser.add_argument("--seed-start", type=int, default=50000)
     parser.add_argument("--max-retries", type=int, default=1)
     parser.add_argument("--max-steps", type=int, default=None, help="Optional per-episode cap for smoke tests.")
     parser.add_argument("--device", default="cuda")

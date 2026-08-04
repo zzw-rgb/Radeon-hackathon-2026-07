@@ -2,7 +2,7 @@ from dataclasses import asdict
 from pathlib import Path
 
 from radeonvla.artifact_io import validate_evaluation_payload
-from radeonvla.evaluate import EpisodeResult, summarize
+from radeonvla.evaluate import EpisodeResult, parse_args, summarize
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -69,3 +69,7 @@ def test_episode_result_and_summary_match_formal_schema() -> None:
         "episodes": [asdict(result)],
     }
     validate_evaluation_payload(payload, ROOT / "artifacts" / "evaluation.schema.json")
+
+
+def test_default_evaluation_seed_is_held_out_from_physical_1k() -> None:
+    assert parse_args(["--policy-path", "dummy"]).seed_start == 50000

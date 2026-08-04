@@ -1,7 +1,8 @@
 base_config: configs/base.yaml
 
 evaluation:
-  seed_start: 20000
+  # 20k-29k is reserved for Physical-1K training collection.
+  seed_start: 50000
   episodes_per_task: 5
   max_retries: 1
   save_video: true

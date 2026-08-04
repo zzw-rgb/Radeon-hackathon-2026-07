@@ -22,6 +22,9 @@ TRAIN_OUTPUT="${TRAIN_OUTPUT:-outputs/train/smolvla_$(basename "$DATASET_ROOT")}
 DEVICE="${DEVICE:-cuda}"
 BATCH_SIZE="${BATCH_SIZE:-4}"
 EVAL_PER_TASK="${EVAL_PER_TASK:-10}"
+EVAL_SEED_START="${EVAL_SEED_START:-50000}"
+INTERRUPT_SEED_START="${INTERRUPT_SEED_START:-60000}"
+PERTURB_SEED_START="${PERTURB_SEED_START:-60100}"
 SKIP_TRAIN="${SKIP_TRAIN:-0}"
 SKIP_RECORD="${SKIP_RECORD:-0}"
 DR="${DR:-1}"
@@ -138,6 +141,7 @@ run_py -m radeonvla.evaluate \
   --backend "$BACKEND" \
   --suite "$SUITE" \
   --episodes-per-task "$EVAL_PER_TASK" \
+  --seed-start "$EVAL_SEED_START" \
   --checkpoint-sha256 "$CKPT_SHA256" \
   "${GIT_COMMIT_ARGS[@]}" \
   --output artifacts/evaluation.json \
@@ -151,6 +155,7 @@ run_py -m radeonvla.evaluate \
   --backend "$BACKEND" \
   --tasks banana_white_left \
   --episodes-per-task 1 \
+  --seed-start "$INTERRUPT_SEED_START" \
   --interrupt-demo \
   --checkpoint-sha256 "$CKPT_SHA256" \
   "${GIT_COMMIT_ARGS[@]}" \
@@ -164,6 +169,7 @@ run_py -m radeonvla.evaluate \
   --backend "$BACKEND" \
   --tasks banana_white_left \
   --episodes-per-task 1 \
+  --seed-start "$INTERRUPT_SEED_START" \
   --interrupt-demo \
   --disable-reflex \
   --checkpoint-sha256 "$CKPT_SHA256" \
@@ -177,6 +183,7 @@ run_py -m radeonvla.evaluate \
   --backend "$BACKEND" \
   --tasks banana_white_left lemon_blue_right plum_white_right \
   --episodes-per-task 2 \
+  --seed-start "$PERTURB_SEED_START" \
   --perturbation target_shift \
   --perturb-at-step 30 \
   --checkpoint-sha256 "$CKPT_SHA256" \
