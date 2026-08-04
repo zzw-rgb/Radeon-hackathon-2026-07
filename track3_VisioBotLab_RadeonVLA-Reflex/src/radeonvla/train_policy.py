@@ -11,9 +11,12 @@ from pathlib import Path
 from radeonvla.paths import DATASETS_DIR, PROJECT_ROOT, TRAIN_DIR
 from radeonvla.protocol import SMOLVLA_INPUT_FEATURES, SMOLVLA_RENAME_MAP
 
+SMOLVLA_BASE_REVISION = "c83c3163b8ca9b7e67c509fffd9121e66cb96205"
+
 PRESETS: dict[str, dict] = {
     "smolvla": {
         "policy_arg": ("path", "lerobot/smolvla_base"),
+        "pretrained_revision": SMOLVLA_BASE_REVISION,
         "batch_size": 4,
         "rename_map": SMOLVLA_RENAME_MAP,
         "input_features": SMOLVLA_INPUT_FEATURES,
@@ -60,6 +63,12 @@ def build_command(args: argparse.Namespace, passthrough: list[str]) -> list[str]
     ]
     if args.video_backend:
         cmd.append(f"--dataset.video_backend={args.video_backend}")
+
+    passthrough_has_revision = any(p.startswith("--policy.pretrained_revision") for p in passthrough)
+    if not passthrough_has_revision:
+        preset_revision = PRESETS[args.policy].get("pretrained_revision")
+        if preset_revision:
+            cmd.append(f"--policy.pretrained_revision={preset_revision}")
 
     passthrough_has_rename = any(p.startswith("--rename_map") for p in passthrough)
     if args.rename_map is not None:

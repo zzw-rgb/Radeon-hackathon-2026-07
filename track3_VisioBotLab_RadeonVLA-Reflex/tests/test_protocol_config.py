@@ -9,7 +9,7 @@ from radeonvla.protocol import (
     SMOLVLA_RENAME_MAP,
     dataset_features,
 )
-from radeonvla.train_policy import PRESETS, build_command
+from radeonvla.train_policy import PRESETS, SMOLVLA_BASE_REVISION, build_command
 
 
 def test_dataset_features_shapes() -> None:
@@ -52,6 +52,7 @@ def test_smolvla_train_command_includes_rename_map() -> None:
     joined = " ".join(cmd)
     assert "lerobot.scripts.lerobot_train" in joined
     assert "rename_map" in joined
+    assert f"--policy.pretrained_revision={SMOLVLA_BASE_REVISION}" in cmd
     assert PRESETS["smolvla"]["rename_map"] == SMOLVLA_RENAME_MAP
     feature_arg = next(item for item in cmd if item.startswith("--policy.input_features="))
     features = json.loads(feature_arg.split("=", 1)[1])
@@ -81,6 +82,9 @@ def test_explicit_input_features_override_wins() -> None:
         rename_map = None
 
     override = "--policy.input_features=null"
-    cmd = build_command(Args(), [override])
+    revision = "--policy.pretrained_revision=deadbeef"
+    cmd = build_command(Args(), [override, revision])
     assert cmd.count(override) == 1
     assert sum(item.startswith("--policy.input_features") for item in cmd) == 1
+    assert cmd.count(revision) == 1
+    assert sum(item.startswith("--policy.pretrained_revision") for item in cmd) == 1
