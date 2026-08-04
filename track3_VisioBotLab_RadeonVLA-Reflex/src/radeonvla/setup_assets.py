@@ -34,7 +34,7 @@ SHA256SUMS = ASSETS_DIR / "SHA256SUMS"
 
 # Official-style YCB google_16k archives used by many robotics stacks.
 # Host: caltech-hosted mirror used by the YCB Object and Model Set project pages.
-# If a host becomes unavailable, the submitted repo still contains the extracted files.
+# If a host becomes unavailable, the project tree still contains the extracted files.
 YCB_TARBALL_URLS: dict[str, tuple[str, ...]] = {
     "011_banana": (
         "https://huggingface.co/datasets/lerobot/ycb_assets/resolve/main/011_banana.tar.gz",
@@ -147,7 +147,7 @@ def _download(url: str, dest: Path, timeout: float = 120.0) -> None:
 
 
 def _try_download_ycb(name: str, dst: Path) -> bool:
-    """Best-effort download; returns True on success. Safe to fail for offline judges."""
+    """Attempt an optional download and return whether the asset became available."""
     urls = YCB_TARBALL_URLS.get(name, ())
     cache = Path.home() / ".cache" / "radeonvla" / "downloads"
     cache.mkdir(parents=True, exist_ok=True)
@@ -217,7 +217,7 @@ def setup_assets(*, force: bool = False, download: bool = False) -> Path:
         hint = (
             "Missing assets:\n  "
             + "\n  ".join(missing)
-            + "\n\nThe submission repository is expected to ship extracted meshes under assets/.\n"
+            + "\n\nThe project repository ships extracted meshes under assets/.\n"
             "If this is a sparse checkout, re-clone the full branch or run:\n"
             "  python -m radeonvla.setup_assets --download\n"
             "Franka can also be recovered from a genesis-world install.\n"

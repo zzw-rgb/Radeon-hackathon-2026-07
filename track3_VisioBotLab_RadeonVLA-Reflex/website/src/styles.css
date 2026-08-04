@@ -608,7 +608,12 @@ a:focus-visible,
 }
 
 .collection-showcase-compact .collection-video-frame {
-  max-height: 200px;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+}
+
+.collection-showcase-compact .collection-video-frame video {
+  object-position: center;
 }
 
 .collection-showcase-compact .collection-video-card {

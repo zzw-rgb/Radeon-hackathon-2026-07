@@ -1,6 +1,6 @@
 # Evaluation Artifacts
 
-This directory stores small, reviewable evidence files:
+This directory stores compact, structured evidence files:
 
 ~~~text
 environment.remote.json
@@ -19,6 +19,6 @@ SHA256SUMS
 
 Large videos, datasets, and checkpoints must be hosted outside the Git repository.
 
-The final evaluation.json must validate against evaluation.schema.json. `evaluate.py`
+The final `evaluation.json` validates against `evaluation.schema.json`. `evaluate.py`
 automatically writes JSON, flattened CSV, and a Markdown summary while hashing the actual
-checkpoint tree. Tables in the technical report must be generated from these immutable results.
+checkpoint tree. Technical-report tables are generated from these immutable results.

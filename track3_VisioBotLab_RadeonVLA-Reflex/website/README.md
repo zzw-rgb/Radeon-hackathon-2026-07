@@ -1,6 +1,6 @@
 # RadeonVLA-Reflex showcase site
 
-Static, bilingual project site for the Track 3 submission. It uses Vite and native
+Static, bilingual project site for RadeonVLA-Reflex. It uses Vite and native
 TypeScript with no runtime framework, analytics, remote fonts, or CDN dependencies.
 Node.js 20.19 or newer is required.
 
@@ -24,13 +24,13 @@ npm run preview -- --host 127.0.0.1
 The production build is written to `dist/`. `vite.config.ts` uses a relative asset base,
 so the same build can be hosted at a repository subpath such as GitHub Pages.
 
-## Updating content
+## Content and evidence policy
 
 All bilingual copy, verified metrics, task rows, and external URLs live in
-`src/content.ts`. Keep these rules when final evidence arrives:
+`src/content.ts`. Published content follows these rules:
 
 - only publish numbers present in immutable evaluation artifacts;
-- replace `Pending` only after held-out evaluation passes;
+- publish policy metrics only after held-out evaluation passes;
 - distinguish a target (for example 1,000 demonstrations) from a completed result;
 - update Dataset Card, Model Card, technical report, and this site from the same run;
 - keep the simulation-only limitation visible.
@@ -51,12 +51,12 @@ episodes 000, 047, and 158. They are world-camera previews of scripted expert da
 collection, selected across different appearance-randomization domains. Posters use WebP;
 videos use H.264, `yuv420p`, and fast-start for browser compatibility.
 
-Keep their UI copy explicit: these clips validate the collection path and are not evidence
-of held-out policy success, interruption handling, or recovery performance.
+Their UI scope is limited to collection-path validation. Held-out policy success,
+interruption handling, and recovery performance belong to the policy evaluation suite.
 
-## Adding the final video
+## Policy evaluation video
 
-The current video area is deliberately a `Pending` panel. When the three demo runs pass:
+The evaluation-status panel is replaced after all three policy runs pass:
 
 1. export a 3+ minute narrated H.264 MP4 with `yuv420p` and fast-start;
 2. create a lightweight WebP poster and WebVTT captions;
@@ -65,6 +65,6 @@ The current video area is deliberately a `Pending` panel. When the three demo ru
    and a direct-download fallback;
 5. test playback without autoplay in current Chromium, Firefox, and Safari.
 
-Do not present the stitched AV1 dataset videos—or the small H.264 collection excerpts—as
-the final policy demo. The stitched files are training data, large, and not universally
-browser-compatible; the excerpts are intentionally labeled as dataset previews only.
+Stitched AV1 dataset videos and the compact H.264 excerpts remain collection artifacts.
+The release policy video is a separate H.264 export with captions, synchronized runtime
+telemetry, and direct-download fallback.

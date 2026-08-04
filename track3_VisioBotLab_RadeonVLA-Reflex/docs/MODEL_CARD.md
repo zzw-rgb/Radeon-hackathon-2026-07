@@ -12,21 +12,21 @@ tags:
 
 # RadeonVLA-Reflex SmolVLA-1K Model Card
 
-> Status: draft. Fill measured fields after the final checkpoint is selected.
+> Release status: pre-release. Publication metadata is bound by the validated release workflow.
 
 ## Model
 
 - Base model: lerobot/smolvla_base
 - Base revision: `c83c3163b8ca9b7e67c509fffd9121e66cb96205`
-- Fine-tuned checkpoint: TBD
-- Public URL: TBD
-- SHA256: TBD
-- Training commit: TBD
-- Dataset version: TBD
+- Fine-tuned checkpoint: Selected from the validated release run
+- Public URL: Published by release workflow
+- SHA256: Computed at release
+- Training commit: Bound from the dataset manifest at release
+- Dataset version: Bound from the validated dataset at release
 
 ## Intended use
 
-Language-conditioned Franka fruit sorting in the submitted Genesis scene.
+Language-conditioned Franka fruit sorting in the project Genesis scene.
 
 ## Inputs and outputs
 
@@ -41,21 +41,21 @@ Language-conditioned Franka fruit sorting in the submitted Genesis scene.
 
 | Item | Value |
 |---|---|
-| Radeon GPU | TBD |
-| ROCm | TBD |
-| PyTorch | TBD |
-| Precision | TBD |
-| Batch size | TBD |
-| Gradient accumulation | TBD |
-| Training steps | TBD |
-| Training time | TBD |
-| Peak VRAM | TBD |
+| Radeon GPU | Recorded from release artifacts |
+| ROCm | Recorded from release artifacts |
+| PyTorch | Recorded from release artifacts |
+| Precision | Recorded from training configuration |
+| Batch size | Recorded from training configuration |
+| Gradient accumulation | Recorded from training configuration |
+| Training steps | Recorded from training summary |
+| Training time | Recorded from training summary |
+| Peak VRAM | Recorded from release artifacts |
 
 ## Evaluation
 
-I will link this card to the immutable `artifacts/evaluation.json` and
-record task/episode counts, first-attempt vs final success, recovery success, inference
-latency, and known failure modes after the remote AMD evaluation.
+The published card links to immutable `artifacts/evaluation.json` and records
+task and episode counts, first-attempt and final success, recovery success, inference
+latency, and observed failure modes from the remote AMD evaluation.
 
 The formal evidence bundle also reports safe-interrupt rate, command-to-invalidation
 steps, unprotected post-interrupt action steps, and success under deterministic target
@@ -64,10 +64,10 @@ same checkpoint and held-out seeds.
 
 ## Limitations
 
-This model is trained and evaluated in Genesis simulation only; I do not claim real-robot
-transfer. Coverage is limited to the registered language/task suite, dual RGB cameras at
-320×240, and 9-D absolute joint actions. Observed failure modes will be listed after the
-final evaluation run.
+Training and evaluation are limited to Genesis simulation. Coverage includes the
+registered language and task suite, dual RGB cameras at 320×240, and 9-D absolute joint
+actions. Real-robot transfer is outside the current evaluation scope. The published card
+lists failure modes observed in the final evaluation run.
 
 ## License note
 

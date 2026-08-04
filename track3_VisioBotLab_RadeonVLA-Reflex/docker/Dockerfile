@@ -14,8 +14,8 @@ ENV DEBIAN_FRONTEND=noninteractive \
     PYTHONUNBUFFERED=1 \
     PIP_DISABLE_PIP_VERSION_CHECK=1
 
-# Keep the default build portable, while allowing a reachable package mirror on
-# restricted contest networks:
+# Keep the default build portable while allowing a reachable package mirror on
+# restricted networks:
 #   docker build --build-arg PIP_INDEX_URL=https://pypi.tuna.tsinghua.edu.cn/simple \
 #     --build-arg PIP_TRUSTED_HOST=pypi.tuna.tsinghua.edu.cn ...
 ARG PIP_INDEX_URL=https://pypi.org/simple

@@ -44,7 +44,7 @@ class TaskSpec:
 
     @property
     def target_object(self) -> str:
-        """Backward-compatible primary object (first named goal or placeholder)."""
+        """Return the first named goal or the backward-compatible fallback object."""
         g0 = self.goals[0]
         if g0.object_name is not None:
             return g0.object_name
@@ -190,7 +190,7 @@ L1_TASKS: dict[str, TaskSpec] = {
 }
 
 # ---------------------------------------------------------------------------
-# L2 — spatial grounding (must look at relative layout after randomization)
+# L2 — spatial grounding from the scene-relative layout after randomization.
 # ---------------------------------------------------------------------------
 L2_TASKS: dict[str, TaskSpec] = {
     "leftmost_to_white_left": _l2(

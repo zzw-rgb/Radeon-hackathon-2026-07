@@ -18,7 +18,7 @@ help:
 	@echo "  make all-local       # full local one-click record pipeline"
 	@echo "  make remote-check    # strict AMD gate (on Radeon machine)"
 	@echo "  make remote-full     # full AMD train/eval pipeline"
-	@echo "  make audit           # submission structure audit only"
+	@echo "  make audit           # release structure audit only"
 	@echo "  make docker-build    # build the self-contained ROCm image"
 	@echo "  make docker-check    # run strict AMD checks inside the image"
 	@echo ""

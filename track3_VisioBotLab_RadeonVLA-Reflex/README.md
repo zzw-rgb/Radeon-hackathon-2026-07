@@ -1,7 +1,7 @@
 # RadeonVLA-Reflex
 
-> **Language:** English (official submission). Chinese version: [README.zh-CN.md](README.zh-CN.md).  
-> Contest materials and PR text must be in English per the official repository rules.
+> **Language:** English project guide. Chinese version: [README.zh-CN.md](README.zh-CN.md).
+> Release materials and Pull Request text use English under the repository rules.
 
 RadeonVLA-Reflex is an **interruptible and recoverable VLA execution runtime** for
 dynamic robotic sorting on one AMD Radeon GPU. The Track 3 benchmark uses a Franka
@@ -20,18 +20,19 @@ Design focus of this codebase:
 6. **Single-GPU ROCm path** — simulation, data, training, inference, and evaluation on AMD Radeon;
 7. **Partial multi-goal metrics** — success-by-tier and partial completion rates for long-horizon tasks.
 8. **Repeatable stress tests** — deterministic target/container shifts with normal-vs-Reflex ablations;
-9. **Reviewable evidence** — per-episode JSON, flattened CSV, Markdown summaries, videos with live
+9. **Structured evidence** — per-episode JSON, flattened CSV, Markdown summaries, videos with live
    runtime state, and deterministic checkpoint hashes;
 10. **Crash-safe collection** — incomplete runs remain in a staging directory and never replace the
     last validated dataset.
 
-> Status: pipeline code is complete. Measured AMD results, trained checkpoints, formal
-> metrics, the final report PDF, and the demo video will be filled in after remote Radeon runs.
+> Release status: the pipeline and local validation path are complete. Formal policy metrics,
+> trained checkpoints, the report PDF, and the policy video are produced by the remote Radeon
+> release workflow.
 
-This directory is the self-contained submission unit. From the contest repository root,
-open `track3_VisioBotLab_RadeonVLA-Reflex/` and follow this README to reproduce the work.
+This directory is the self-contained project unit. From the repository root, open
+`track3_VisioBotLab_RadeonVLA-Reflex/` and follow this README to reproduce the system.
 
-## Submission information
+## Project information
 
 | Field | Value |
 |---|---|
@@ -99,7 +100,7 @@ Chinese diagram: [`docs/figures/architecture-zh.jpg`](docs/figures/architecture-
 
 ```text
 track3_VisioBotLab_RadeonVLA-Reflex/
-├── README.md                 # English (official)
+├── README.md                 # English project guide
 ├── README.zh-CN.md           # Chinese companion
 ├── pyproject.toml
 ├── environment.local.yml
@@ -150,7 +151,7 @@ PyTorch is installed separately from the project dependencies because its build 
 match the execution platform:
 
 - the checked local environment uses CPU-only PyTorch for imports and unit tests;
-- the competition environment must use a PyTorch HIP build matching its ROCm version;
+- the remote Radeon environment must use a PyTorch HIP build matching its ROCm version;
 - a generic PyPI torch dependency is deliberately absent from pyproject.toml;
 - installing the remaining dependencies must not replace the validated PyTorch build.
 
@@ -227,7 +228,7 @@ ruff check src tests
 python -m radeonvla.submission_audit
 ```
 
-Local results are not accepted as Radeon or ROCm evidence.
+Local runs validate portability and code quality but are excluded from Radeon performance metrics.
 
 ## Remote AMD Radeon setup
 
@@ -311,7 +312,7 @@ All stages below are implemented as `python -m radeonvla.<module>` entry points.
 | Benchmark | `benchmark` | Sim SPS / optional inference latency |
 | Pipeline | `pipeline` | Orchestrate stages (`all-smoke`, etc.) |
 
-### One-click scripts (recommended)
+### Standard workflow scripts
 
 | Script / Make target | What it does |
 |---|---|
@@ -320,7 +321,7 @@ All stages below are implemented as `python -m radeonvla.<module>` entry points.
 | `bash scripts/run_expert_demo.sh` / `make expert-demo` | Scripted demos (basic / hard mix) |
 | `bash scripts/run_pipeline_smoke.sh` / `make smoke` | 1-episode smoke + train dry-run |
 | `bash scripts/run_full_remote.sh` / `make remote-full` | Full AMD: check → record → train → eval → benchmark |
-| `bash scripts/run_reflex_demo.sh` | Normal + command-interrupt + target-shift judge demos |
+| `bash scripts/run_reflex_demo.sh` | Normal + command-interrupt + target-shift policy recordings |
 | `bash scripts/check_local.sh` / `make check` | Env + audit + pytest + ruff |
 | `bash scripts/check_remote_amd.sh` / `make remote-check` | Strict ROCm gate |
 
@@ -416,8 +417,8 @@ python -m radeonvla.validate_dataset \
   --dataset-root datasets/radeonvla_reflex_physical_1k \
   --expected-episodes 1000 --episodes-per-task 50 --require-strict-physics
 
-# After the final cards contain no TBD/PENDING fields, authenticate without
-# putting a write token in a command, repository file, or shell history:
+# Release authentication uses an interactive login after measured card metadata
+# is available. The write token stays out of commands, repository files, and shell history.
 hf auth login
 
 # Publish private first. The command validates 20×50, uploads the full dataset
@@ -482,7 +483,7 @@ bash scripts/run_full_remote.sh
 EPISODES=200 SUITE=basic TRAIN_STEPS=10000 bash scripts/run_full_remote.sh
 ```
 
-### Self-contained Docker (preferable for Track 3)
+### Self-contained Docker runtime
 
 ```bash
 docker build --pull -f docker/Dockerfile -t radeonvla-reflex:rocm7.2.1 .
@@ -499,7 +500,7 @@ docker run --rm -it --device=/dev/kfd --device=/dev/dri \
 docker compose -f docker/compose.yaml run --rm radeonvla check-amd
 ```
 
-The source, configs, scripts, assets, report templates, and tests are inside the image;
+The source, configs, scripts, assets, report sources, and tests are inside the image;
 only mutable datasets, checkpoints, outputs, and evidence are mounted. Container commands
 are `help`, `check-amd`, `smoke`, `remote-full`, `reflex-demo`, and `shell`.
 
@@ -528,10 +529,11 @@ Seed splits:
 
 | Split | Seeds |
 |---|---|
-| Training | 0–9999 |
-| Validation | 10000–10999 |
-| Formal evaluation | 20000–29999 |
-| Interrupt / recovery | 30000–30999 |
+| Strict smoke | 12000–12999 |
+| Training | 20000–29999 |
+| Validation | 40000–40999 |
+| Formal evaluation | 50000–59999 |
+| Interrupt / recovery | 60000–60999 |
 
 ## Evaluation protocol
 
@@ -562,7 +564,7 @@ command version, retry count, scenario, and measured inference latency.
 
 ## Reproduction sequence
 
-1. clone the repository at the submitted commit;
+1. clone the repository at the release commit;
 2. configure a matching ROCm/PyTorch environment;
 3. install project dependencies (`requirements.remote.txt` + `pip install -e .`);
 4. run `python -m radeonvla.setup_assets` (or provide assets as documented);
@@ -573,8 +575,7 @@ command version, retry count, scenario, and measured inference latency.
 9. run held-out evaluation and write JSON + videos;
 10. compare generated metadata with the technical report.
 
-No private account, unpublished file, or source edit should be required for the final
-release revision.
+The final release revision requires no private account, unpublished file, or source edit.
 
 ## Deliverables
 
@@ -582,16 +583,16 @@ release revision.
 |---|---|---|
 | Source code | Pipeline implemented | This self-contained directory |
 | Reproducibility README | This file | README.md |
-| Technical report (MD) | Draft structure | reports/RadeonVLA-Reflex-Technical-Report.md |
-| Technical report PDF | Export after final metrics | `reports/RadeonVLA-Reflex-Technical-Report.pdf` |
-| Demo video | Generate from the selected checkpoint | `outputs/eval_videos/` |
-| Model checkpoint | Select the latest validated numeric checkpoint | `outputs/train/*/checkpoints/*/pretrained_model` |
+| Technical report (MD) | Maintained source | reports/RadeonVLA-Reflex-Technical-Report.md |
+| Technical report PDF | Produced by the release workflow | `reports/RadeonVLA-Reflex-Technical-Report.pdf` |
+| Demo video | Produced by the policy evaluation suite | `outputs/eval_videos/` |
+| Model checkpoint | Bound to the latest validated numeric checkpoint | `outputs/train/*/checkpoints/*/pretrained_model` |
 | Dataset or dataset documentation | Implemented | `docs/DATASET_CARD.md` |
-| Raw evaluation results | Generated by the remote workflow | `artifacts/evaluation.json` |
-| SHA256 checksums | Generated by the remote workflow | `artifacts/SHA256SUMS` |
-| Docker image definition | Self-contained; AMD build verification pending | docker/Dockerfile |
+| Raw evaluation results | Produced by held-out evaluation | `artifacts/evaluation.json` |
+| SHA256 checksums | Produced by the release workflow | `artifacts/SHA256SUMS` |
+| Docker image definition | Self-contained runtime definition | docker/Dockerfile |
 
-Submission-authoring files:
+Release documentation:
 
 - `docs/DATASET_CARD.md`
 - `docs/MODEL_CARD.md`
@@ -611,8 +612,8 @@ python -m radeonvla.submission_audit --final   # fails until PDF + checksums exi
 - Hugging Face LeRobot / SmolVLA
 - YCB Object and Model Set
 
-I studied upstream repositories outside this submission directory. This tree is original
-project code for RadeonVLA-Reflex; see THIRD_PARTY_NOTICES.md for dependency notices.
+Upstream repositories are maintained outside this project directory. This tree contains
+the RadeonVLA-Reflex project code; dependency notices are listed in THIRD_PARTY_NOTICES.md.
 
 ## Team
 
@@ -620,7 +621,7 @@ project code for RadeonVLA-Reflex; see THIRD_PARTY_NOTICES.md for dependency not
 
 | Member | Role | Effort | Focus |
 |---|---|---:|---|
-| **Zhenwei Zhou** | Team captain / lead engineer | ~70% | System architecture, Genesis scene & expert, strict-physics collection, SmolVLA train/eval, website, and submission |
+| **Zhenwei Zhou** | Team captain / lead engineer | ~70% | System architecture, Genesis scene & expert, strict-physics collection, SmolVLA train/eval, website, and release engineering |
 | Ange Liu | Member | ~15% | Bilingual documentation polish, task-suite wording review, showcase copy support |
 | Haoran Wang | Member | ~15% | Dataset spot-checks, experiment logging, technical-report / evidence packaging support |
 
@@ -632,4 +633,4 @@ Official Pull Request title:
 Track 3, VisioBot Lab, RadeonVLA-Reflex
 ```
 
-All submission materials, project descriptions, and Pull Request text will be in English.
+Submission materials, project descriptions, and Pull Request text use English.

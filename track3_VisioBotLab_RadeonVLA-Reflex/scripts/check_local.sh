@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Local quality gate: env report + submission audit + pytest + ruff
+# Local quality gate: environment report + release audit + pytest + ruff.
 set -euo pipefail
 # shellcheck source=lib.sh
 source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/lib.sh"

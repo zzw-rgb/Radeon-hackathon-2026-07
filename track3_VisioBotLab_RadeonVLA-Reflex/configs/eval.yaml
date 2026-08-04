@@ -7,7 +7,7 @@ evaluation:
   max_retries: 1
   save_video: true
   keep_failures: true
-  # Primary award benchmark: 20 L1 tasks. Run advanced explicitly for L2–L4.
+  # Primary L1 benchmark: 20 tasks. Advanced suites enable L2–L4 explicitly.
   suite: basic
   tasks: null
 

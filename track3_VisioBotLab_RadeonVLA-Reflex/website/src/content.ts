@@ -88,7 +88,7 @@ export const copy = {
     zh: "RadeonVLA-Reflex 在视觉语言动作策略外加入指令失效、安全中断与单次恢复机制，避免过期动作块继续控制机械臂。",
   },
   sourceCta: { en: "Explore the source", zh: "查看项目源码" },
-  demoCta: { en: "See the core demo plan", zh: "查看核心演示" },
+  demoCta: { en: "See the core demonstration", zh: "查看核心演示" },
   heroAlt: {
     en: "Collaborative robot holding an apple as a stale action path stops and a safe recovery path redirects toward the blue bowl",
     zh: "协作机械臂夹持苹果，失效动作路径停止，安全恢复路径转向蓝色碗",
@@ -96,10 +96,10 @@ export const copy = {
   placeholder: { en: "Original recovery concept art", zh: "原创恢复机制概念图" },
   proofLabel: { en: "Verified snapshot", zh: "已核验快照" },
   proofNote: {
-    en: "Numbers below are from completed, audited artifacts only. Formal policy success on the Physical-1K checkpoint remains pending held-out evaluation.",
-    zh: "下列数字仅来自已完成且可审计的产物；Physical-1K 最终 checkpoint 的策略成功率仍待独立评测。",
+    en: "This snapshot separates completed local artifacts from formal release targets. Policy metrics are published from held-out evaluation artifacts.",
+    zh: "该快照区分已完成的本地产物与正式发布目标；策略指标以独立评测产物为准。",
   },
-  overviewKicker: { en: "WHAT WE BUILT", zh: "项目是什么" },
+  overviewKicker: { en: "SYSTEM OVERVIEW", zh: "系统概览" },
   overviewTitle: {
     en: "A safety layer around action-chunk VLA control.",
     zh: "为动作块 VLA 控制加上可审计的安全层。",
@@ -131,48 +131,48 @@ export const copy = {
       },
     },
   ],
-  sectionDemoKicker: { en: "JUDGE-FACING STORY", zh: "核心演示故事线" },
+  sectionDemoKicker: { en: "CORE DEMONSTRATION", zh: "核心演示" },
   sectionDemoTitle: {
     en: "Three moments. One execution layer.",
     zh: "三个关键时刻，一套执行层。",
   },
   sectionDemoBody: {
-    en: "The final narrated walkthrough will show the same checkpoint under normal execution, a mid-command change, and recovery after a detected failure. That policy video is the core evidence—not the data-collection smoke clips below.",
-    zh: "最终解说视频将使用同一 checkpoint，展示正常执行、中途改指令，以及检测到失败后的恢复。那才是核心演示证据——下方的数据采集冒烟片段只是辅助。",
+    en: "The core walkthrough uses one checkpoint for normal execution, a mid-command change, and recovery after a detected failure. Data-collection clips are documented separately as pipeline checks.",
+    zh: "核心演示使用同一 checkpoint 展示正常执行、中途改指令，以及检测到失败后的恢复；数据采集片段单独作为链路检查记录。",
   },
   videoLabel: { en: "3+ MIN POLICY WALKTHROUGH", zh: "3 分钟以上策略解说视频" },
-  videoPending: { en: "Pending final evaluation recordings", zh: "等待最终评测录制" },
+  videoPending: { en: "Evaluation recording scheduled", zh: "评测录制计划" },
   videoBody: {
-    en: "Interrupt / recover / success narrative with captions. Collection smoke clips are filed separately under Data pipeline and are not a substitute for this slot.",
-    zh: "中断 / 恢复 / 成功叙事，并配字幕。采集冒烟片段放在「数据链路」辅助区，不占用本核心位。",
+    en: "The release recording covers interruption, recovery, and success with captions and synchronized runtime telemetry.",
+    zh: "发布版录制覆盖中断、恢复与成功流程，并包含字幕和同步运行遥测。",
   },
-  // Secondary appendix: local data-collection smoke only (not policy demo)
+  // Supporting appendix for local data-collection smoke clips.
   collectionKicker: { en: "DATA PIPELINE APPENDIX", zh: "数据链路附录" },
   collectionTitle: {
-    en: "Local collection smoke clips (not the final demo).",
-    zh: "本机采集冒烟片段（非最终演示）。",
+    en: "Local data-collection smoke clips.",
+    zh: "本机数据采集冒烟片段。",
   },
   collectionBody: {
-    en: "Optional H.264 excerpts from the local 200-episode expert baseline. They only prove the recording path; they are not the Track 3 policy demonstration video.",
-    zh: "可选的本机 200 条专家基线 H.264 摘录，仅证明采集链路可跑通，不是赛道最终策略演示视频。",
+    en: "Three H.264 excerpts verify the recording path of the local 200-episode scripted-expert baseline. Their scope is data collection rather than policy evaluation.",
+    zh: "三段 H.264 摘录用于验证本机 200 条脚本专家基线的采集链路，范围限定为数据采集而非策略评测。",
   },
-  videoCollectionLabel: { en: "COLLECTION SMOKE ONLY", zh: "仅采集冒烟" },
-  videoCollectionPending: { en: "Expert recording preview · not policy eval", zh: "专家采集预览 · 非策略评测" },
+  videoCollectionLabel: { en: "DATA-COLLECTION CHECK", zh: "数据采集检查" },
+  videoCollectionPending: { en: "Scripted-expert recording preview", zh: "脚本专家采集预览" },
   videoCollectionBody: {
-    en: "Apple→blue-left, banana→white-right, plum→white-left. Compact previews—open only if you want data-path detail.",
-    zh: "苹果→左蓝、香蕉→右白、李子→左白。紧凑预览，仅在需要核对数据链路时展开。",
+    en: "Apple→blue-left, banana→white-right, and plum→white-left provide compact coverage of the recording path.",
+    zh: "苹果→左蓝、香蕉→右白、李子→左白，紧凑覆盖三条采集路径。",
   },
   clipState: { en: "COLLECTION CLIP", zh: "采集片段" },
   clipCamera: { en: "WORLD RGB · 20 FPS", zh: "世界相机 RGB · 20 FPS" },
   clipPlayLabel: { en: "Play collection smoke clip", zh: "播放采集冒烟片段" },
   clipFallback: {
-    en: "Your browser cannot play this H.264 video.",
+    en: "H.264 playback is unavailable in this browser.",
     zh: "当前浏览器无法播放此 H.264 视频。",
   },
   collectionScopeTitle: { en: "Scope", zh: "范围" },
   collectionScopeBody: {
-    en: "Scripted expert data only. Does not replace the pending interrupt/recovery policy video in the core evidence section.",
-    zh: "仅脚本专家数据。不能替代核心证据区待补的中断/恢复策略视频。",
+    en: "These clips document scripted-expert collection. Interrupt and recovery performance is measured in the policy evaluation suite.",
+    zh: "这些片段记录脚本专家采集；中断与恢复性能由策略评测套件单独衡量。",
   },
   collectionStats: [
     { value: "200", label: { en: "local successes", zh: "本机成功条数" } },
@@ -210,8 +210,8 @@ export const copy = {
   targetLabel: { en: "Destination", zh: "目标盘位" },
   objectLabel: { en: "Object", zh: "物体" },
   demosLabel: { en: "10 baseline · 50 formal", zh: "基线 10 · 正式 50" },
-  evidenceKicker: { en: "NO PLACEHOLDER CLAIMS", zh: "不使用占位成绩" },
-  evidenceTitle: { en: "Measured results, or a clear Pending.", zh: "只展示实测结果，否则明确标记待完成。" },
+  evidenceKicker: { en: "EVALUATION STATUS", zh: "评测状态" },
+  evidenceTitle: { en: "Evidence organized by completion state.", zh: "按完成状态组织评测证据。" },
   evidenceBody: {
     en: "The baseline dataset proves the recording path. Physical-1K collection, SmolVLA fine-tuning, latency, and Reflex ablations publish only from immutable evaluation artifacts.",
     zh: "基线数据集证明采集链路可用。Physical-1K 采集、SmolVLA 微调、延迟与 Reflex 消融仅从不可变评测产物发布。",
@@ -222,10 +222,10 @@ export const copy = {
     { en: "Baseline vs Reflex", zh: "Baseline 与 Reflex 对照" },
     { en: "Final checkpoint", zh: "最终 checkpoint" },
   ],
-  pending: { en: "Pending", zh: "待完成" },
+  pending: { en: "Evaluation scheduled", zh: "待评测" },
   resultPendingNote: {
-    en: "Filled only after held-out evaluation on the final checkpoint.",
-    zh: "仅在最终 checkpoint 完成独立评测后填写。",
+    en: "Published from held-out evaluation of the release checkpoint.",
+    zh: "由发布 checkpoint 的独立评测产物生成。",
   },
   releaseTarget: { en: "Formal training target", zh: "正式训练目标" },
   releaseTargetValue: { en: "1,000 demos · 20 × 50", zh: "1,000 条演示 · 20 × 50" },
@@ -240,7 +240,7 @@ export const copy = {
     zh: "使用双路 RGB 与语言输入，微调为 9 维绝对关节位置控制。",
   },
   baseModelCta: { en: "Open base model", zh: "查看基础模型" },
-  reproduceKicker: { en: "REVIEWABLE BY DESIGN", zh: "为可审阅而设计" },
+  reproduceKicker: { en: "REPRODUCIBLE PIPELINE", zh: "可复现链路" },
   reproduceTitle: { en: "From command to checksum.", zh: "从指令到校验和，全链路可审阅。" },
   reproduceBody: {
     en: "The repository separates source, datasets, checkpoints, and small evidence artifacts. Evaluation emits JSON, CSV, Markdown summaries, videos, and a deterministic checkpoint hash.",
@@ -256,8 +256,8 @@ export const copy = {
   commandLabel: { en: "Reproduce the local checks", zh: "复现本地检查" },
   limitationLabel: { en: "Scope", zh: "适用范围" },
   limitationBody: {
-    en: "Simulation-only. RadeonVLA-Reflex does not claim real-robot transfer. Object, language, and camera coverage are limited to the submitted Genesis benchmark.",
-    zh: "当前仅限仿真。RadeonVLA-Reflex 不声称可直接迁移到真实机械臂；物体、语言和相机覆盖限于提交的 Genesis 基准。",
+    en: "Scope is limited to Genesis simulation, the registered fruit-and-bowl tasks, two RGB views, and 9-D joint-position control. Real-robot transfer is outside the current evaluation.",
+    zh: "当前范围限于 Genesis 仿真、已注册的水果与碗任务、双路 RGB 和 9 维关节位置控制；真实机械臂迁移不在本轮评测范围内。",
   },
   teamKicker: { en: "TEAM", zh: "团队" },
   teamTitle: { en: "VisioBot Lab", zh: "VisioBot Lab" },
@@ -274,8 +274,8 @@ export const copy = {
     zh: "RadeonVLA-Reflex · Track 3 Physical AI 挑战赛",
   },
   attribution: {
-    en: "Hero concept art generated for RadeonVLA-Reflex. Third-party software and simulation credits are listed in THIRD_PARTY_NOTICES.md.",
-    zh: "Hero 概念图为 RadeonVLA-Reflex 项目生成；第三方软件与仿真署名详见 THIRD_PARTY_NOTICES.md。",
+    en: "Project-owned RadeonVLA-Reflex hero concept. Third-party software and simulation credits are listed in THIRD_PARTY_NOTICES.md.",
+    zh: "RadeonVLA-Reflex 项目自有封面概念图；第三方软件与仿真署名详见 THIRD_PARTY_NOTICES.md。",
   },
 } satisfies Record<string, unknown>;
 
@@ -287,7 +287,7 @@ export const verifiedMetrics: Metric[] = [
   },
   {
     value: "1,000",
-    label: { en: "Physical-1K cloud demos", zh: "云端 Physical-1K" },
+    label: { en: "Physical-1K release target", zh: "Physical-1K 发布目标" },
     detail: { en: "strict physics · 20 × 50", zh: "严格物理 · 20 × 50" },
   },
   {
@@ -309,8 +309,8 @@ export const teamMembers: TeamMember[] = [
     share: "70%",
     lead: true,
     focus: {
-      en: "System architecture, Genesis scene & expert, strict-physics collection, SmolVLA train/eval, website, and submission.",
-      zh: "系统架构、Genesis 场景与专家策略、严格物理采集、SmolVLA 训练评测、网站与最终提交。",
+      en: "System architecture, Genesis scene and expert, strict-physics collection, SmolVLA training and evaluation, website, and release engineering.",
+      zh: "系统架构、Genesis 场景与专家策略、严格物理采集、SmolVLA 训练评测、网站与发布工程。",
     },
   },
   {

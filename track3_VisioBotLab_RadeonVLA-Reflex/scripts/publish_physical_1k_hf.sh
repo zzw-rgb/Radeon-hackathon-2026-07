@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Fill release cards from measured artifacts and privately publish Physical-1K.
+# Bind release-card metadata from measured artifacts and publish Physical-1K privately.
 #
 # Prerequisites:
 #   - datasets/radeonvla_reflex_physical_1k exists and has passed strict validation
@@ -56,7 +56,7 @@ FILLED_MODEL_CARD="${FILLED_MODEL_CARD:-artifacts/MODEL_CARD.filled.md}"
 [[ -d "$DATASET_ROOT" ]] || die "Dataset root missing: $DATASET_ROOT"
 [[ -f "$MANIFEST_JSON" ]] || die "Manifest missing: $MANIFEST_JSON"
 
-section "Fill measured release cards"
+section "Bind measured release metadata"
 "$PYTHON_BIN" - <<PY
 import hashlib
 import json
@@ -79,23 +79,23 @@ dataset_digest = dataset_sha.hexdigest()
 def fill(text: str, mapping: dict[str, str]) -> str:
     for key, value in mapping.items():
         text = text.replace(key, value)
-    # final hard fail if draft markers remain
-    leftovers = [m for m in ("TBD", "[PENDING]") if m in text]
+    # Release cards must contain measured metadata before publication.
+    leftovers = [m for m in ("Release status: pre-release", "TBD", "[PENDING]") if m in text]
     if leftovers:
         raise SystemExit(f"Card still contains {leftovers}")
     return text
 
 dataset_map = {
-    "Version: TBD": f"Version: physical-1k-{successes}",
-    "Generator commit: TBD": f"Generator commit: \`{source_commit}\`",
-    "Public URL: TBD": f"Public URL: https://huggingface.co/datasets/$DATASET_REPO",
-    "SHA256 or dataset revision: TBD": f"SHA256 (local tree): \`{dataset_digest}\`",
+    "Version: Assigned by release workflow": f"Version: physical-1k-{successes}",
+    "Generator commit: Bound from the dataset manifest at release": f"Generator commit: \`{source_commit}\`",
+    "Public URL: Published by release workflow": f"Public URL: https://huggingface.co/datasets/$DATASET_REPO",
+    "SHA256 or dataset revision: Computed at release": f"SHA256 (local tree): \`{dataset_digest}\`",
 }
 dataset_card = Path("$DATASET_CARD").read_text(encoding="utf-8")
-dataset_card = dataset_card.replace("> Status: draft. Fill measured fields after the demonstration dataset is finalized.\n\n", "")
+dataset_card = dataset_card.replace("> Release status: pre-release. Publication metadata is bound by the validated release workflow.\n\n", "")
 dataset_card = dataset_card.replace(
-    "all `TBD` fields only after the 1,000-episode validator passes.",
-    "the measured episode/frame fields after the 1,000-episode validator passed.",
+    "Episode counts, frame counts, source revision, and checksums\nare bound to the published card only after the 1,000-episode validator passes.",
+    "Episode counts, frame counts, source revision, and checksums are bound to this card from the validated release artifacts.",
 )
 dataset_card = fill(dataset_card, dataset_map)
 Path("$FILLED_DATASET_CARD").parent.mkdir(parents=True, exist_ok=True)
@@ -115,23 +115,23 @@ if policy.is_dir():
     if train_summary_path.is_file():
         train_steps = str(json.loads(train_summary_path.read_text(encoding="utf-8")).get("steps", train_steps))
     model_map = {
-        "Fine-tuned checkpoint: TBD": f"Fine-tuned checkpoint: \`$POLICY_PATH\`",
-        "Public URL: TBD": f"Public URL: https://huggingface.co/$MODEL_REPO",
-        "SHA256: TBD": f"SHA256 (local tree): \`{policy_sha.hexdigest()}\`",
-        "Training commit: TBD": f"Training commit: \`{source_commit}\`",
-        "Dataset version: TBD": f"Dataset version: physical-1k-{successes}",
-        "| Radeon GPU | TBD |": f"| Radeon GPU | {env.get('gpu_name', 'AMD Radeon (ROCm)')} |",
-        "| ROCm | TBD |": f"| ROCm | {env.get('rocm_version', 'see environment receipt')} |",
-        "| PyTorch | TBD |": f"| PyTorch | {env.get('torch_version', 'see environment receipt')} |",
-        "| Precision | TBD |": "| Precision | bf16/fp32 per train config |",
-        "| Batch size | TBD |": "| Batch size | 4 |",
-        "| Gradient accumulation | TBD |": "| Gradient accumulation | train config default |",
-        "| Training steps | TBD |": f"| Training steps | {train_steps} |",
-        "| Training time | TBD |": f"| Training time | filled at {datetime.now(UTC).isoformat()} |",
-        "| Peak VRAM | TBD |": f"| Peak VRAM | {env.get('peak_vram', 'see train logs')} |",
+        "Fine-tuned checkpoint: Selected from the validated release run": f"Fine-tuned checkpoint: \`$POLICY_PATH\`",
+        "Public URL: Published by release workflow": f"Public URL: https://huggingface.co/$MODEL_REPO",
+        "SHA256: Computed at release": f"SHA256 (local tree): \`{policy_sha.hexdigest()}\`",
+        "Training commit: Bound from the dataset manifest at release": f"Training commit: \`{source_commit}\`",
+        "Dataset version: Bound from the validated dataset at release": f"Dataset version: physical-1k-{successes}",
+        "| Radeon GPU | Recorded from release artifacts |": f"| Radeon GPU | {env.get('gpu_name', 'AMD Radeon (ROCm)')} |",
+        "| ROCm | Recorded from release artifacts |": f"| ROCm | {env.get('rocm_version', 'see environment receipt')} |",
+        "| PyTorch | Recorded from release artifacts |": f"| PyTorch | {env.get('torch_version', 'see environment receipt')} |",
+        "| Precision | Recorded from training configuration |": "| Precision | bf16/fp32 per train config |",
+        "| Batch size | Recorded from training configuration |": "| Batch size | 4 |",
+        "| Gradient accumulation | Recorded from training configuration |": "| Gradient accumulation | train config default |",
+        "| Training steps | Recorded from training summary |": f"| Training steps | {train_steps} |",
+        "| Training time | Recorded from training summary |": f"| Training time | recorded at {datetime.now(UTC).isoformat()} |",
+        "| Peak VRAM | Recorded from release artifacts |": f"| Peak VRAM | {env.get('peak_vram', 'see train logs')} |",
     }
     model_card = Path("$MODEL_CARD").read_text(encoding="utf-8")
-    model_card = model_card.replace("> Status: draft. Fill measured fields after the final checkpoint is selected.\n\n", "")
+    model_card = model_card.replace("> Release status: pre-release. Publication metadata is bound by the validated release workflow.\n\n", "")
     model_card = fill(model_card, model_map)
     Path("$FILLED_MODEL_CARD").write_text(model_card, encoding="utf-8")
     print(f"[publish] wrote $FILLED_MODEL_CARD")

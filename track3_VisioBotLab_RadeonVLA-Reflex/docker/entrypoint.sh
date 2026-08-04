@@ -19,7 +19,7 @@ RadeonVLA-Reflex container commands:
   remote-full  Run data collection, SmolVLA training, evaluation, demos, and benchmark
   reflex-demo  Record normal, interrupt, and target-shift demos from CKPT
 
-You may also pass an arbitrary executable, for example:
+Arbitrary executable example:
   python -m radeonvla.scene --backend amdgpu --steps 50 --save-frames
 EOF
     ;;

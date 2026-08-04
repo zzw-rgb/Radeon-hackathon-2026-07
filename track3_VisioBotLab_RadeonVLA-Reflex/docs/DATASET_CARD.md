@@ -13,18 +13,18 @@ tags:
 
 # RadeonVLA-Reflex Physical-1K Dataset Card
 
-> Status: draft. Fill measured fields after the demonstration dataset is finalized.
+> Release status: pre-release. Publication metadata is bound by the validated release workflow.
 
 ## Overview
 
 - Dataset name: RadeonVLA-Reflex Physical-1K
-- Version: TBD
-- Generator commit: TBD
+- Version: Assigned by release workflow
+- Generator commit: Bound from the dataset manifest at release
 - Genesis version: 1.1.2
 - LeRobot version: 0.6.0
 - License: CC BY 4.0
-- Public URL: TBD
-- SHA256 or dataset revision: TBD
+- Public URL: Published by release workflow
+- SHA256 or dataset revision: Computed at release
 
 ## Task coverage
 
@@ -38,8 +38,8 @@ The primary L1 dataset has 20 variations: five fruits × four bowl positions.
 | apple | white-left, blue-left, white-right, blue-right | 50 each | 5 each | 10 each |
 | orange | white-left, blue-left, white-right, blue-right | 50 each | 5 each | 10 each |
 
-The release table will replace planned counts with the immutable dataset manifest. L2–L4
-data are reported separately and are not implied by the primary L1 total.
+The release table is generated from the immutable dataset manifest. L2–L4 data are
+reported separately and are not implied by the primary L1 total.
 
 ## Frame schema
 
@@ -54,7 +54,7 @@ data are reported separately and are not implied by the primary L1 total.
 | episode_index | integer | Episode identifier |
 | frame_index | integer | Frame within episode |
 | seed | integer | Reset seed in the external per-episode certificate |
-| success | boolean | Strict judgement in the external per-episode certificate |
+| success | boolean | Strict success verdict in the per-episode certificate |
 
 `seed` and `success` are not tensor columns in the LeRobot frame schema. They live in
 `certificates/episode_XXXXXX.json`, one atomic certificate for each committed episode.
@@ -70,7 +70,7 @@ data are reported separately and are not implied by the primary L1 total.
 
 ## Data generation
 
-I collect data with the scripted multi-goal expert (`python -m radeonvla.record_dataset`):
+Data collection uses the scripted multi-goal expert (`python -m radeonvla.record_dataset`):
 
 1. expert states follow resolved L1–L4 goals after scene randomization;
 2. success requires every fruit center to finish inside the inner bowl footprint after
@@ -82,7 +82,7 @@ I collect data with the scripted multi-goal expert (`python -m radeonvla.record_
 6. failed episodes are discarded and are not part of Physical-1K;
 7. `validate_dataset` checks schema, non-finite values, image statistics, exact 20×50
    coverage, unique seeds, zero interventions, and certificate/episode correspondence;
-8. I spot-check camera videos under `datasets/*/videos/` before training;
+8. camera videos under `datasets/*/videos/` are spot-checked before training;
 9. Recording happens under `.inprogress`; the target path is replaced only after finalize,
    coverage checks, and a successful LeRobot reopen.
 10. `--resume-incomplete` reconstructs saved counts from LeRobot metadata and reconciles
@@ -116,8 +116,8 @@ license, credits the YCB authors, and notes that blue bowl appearance is applied
 build time. The Franka MJCF bundled by Genesis carries Apache-2.0 terms.
 
 This dataset is simulation-only; object and language coverage are limited to the
-registered fruit/bowl suite. Final episode/frame counts and immutable revision replace
-all `TBD` fields only after the 1,000-episode validator passes.
+registered fruit/bowl suite. Episode counts, frame counts, source revision, and checksums
+are bound to the published card only after the 1,000-episode validator passes.
 
 ## YCB attribution
 

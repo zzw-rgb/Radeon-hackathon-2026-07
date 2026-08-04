@@ -1,4 +1,4 @@
-"""Filesystem layout for the self-contained submission directory."""
+"""Filesystem layout for the self-contained project directory."""
 
 from __future__ import annotations
 

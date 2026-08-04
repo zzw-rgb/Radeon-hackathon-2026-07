@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Record the three short, judge-facing Reflex demos from an existing checkpoint.
+# Record three short Reflex policy demonstrations from an existing checkpoint.
 set -euo pipefail
 # shellcheck source=lib.sh
 source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/lib.sh"

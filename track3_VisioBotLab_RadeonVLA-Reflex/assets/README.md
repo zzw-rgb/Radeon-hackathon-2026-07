@@ -1,8 +1,8 @@
 # Assets
 
-Simulation meshes required to run the Franka dual-bowl scene ship **inside this
-repository** under `assets/` so evaluators can reproduce results after a normal
-`git clone` without private mirrors.
+Simulation meshes required by the Franka dual-bowl scene ship **inside this
+repository** under `assets/`. A normal `git clone` is sufficient for reproduction;
+no private mirror is required.
 
 ## Layout
 
@@ -39,7 +39,7 @@ python -m radeonvla.setup_assets --download
 
 Fallback order implemented in `radeonvla.setup_assets`:
 
-1. files already under `assets/` (submitted tree);
+1. files already under `assets/` (project tree);
 2. local development mirrors (optional);
 3. Franka model from the installed `genesis-world` package;
 4. with `--download`, optional YCB archive URLs listed in `setup_assets.py`.

@@ -1,11 +1,11 @@
 # Remote ROCm Setup
 
-I separate environment detection from installation: check the remote instance first,
-then install wheels only if the existing HIP PyTorch build is missing or mismatched.
+Environment detection is separate from installation. The remote instance is inspected
+first; wheels are installed only when the existing HIP PyTorch build is missing or mismatched.
 
 ## Validated Radeon Cloud runtime (2026-08-04)
 
-The submitted native run used one device reported by PyTorch as `AMD Radeon Graphics`
+The validated native run used one device reported by PyTorch as `AMD Radeon Graphics`
 (`gfx1100`, 48, 48.1 GiB visible memory) with this stack:
 
 | Component | Measured value |
@@ -20,8 +20,8 @@ The submitted native run used one device reported by PyTorch as `AMD Radeon Grap
 `check_env --require-amd --init-genesis` executed a real tensor/backward pass on
 `cuda:0` and initialized the Genesis AMD backend. The contest notebook itself is an
 unprivileged Kubernetes container, so it cannot start a nested Docker daemon or apply
-container image layers (`CAP_SYS_ADMIN` is unavailable). On that host I therefore ran
-the exact dependency stack natively, and separately validated the Compose model,
+container image layers (`CAP_SYS_ADMIN` is unavailable). The validated run therefore used
+the exact dependency stack natively, with separate checks for the Compose model,
 Dockerfile stages, pinned base-image digest, and container contract. The image remains
 runnable on a normal ROCm Docker host with `/dev/kfd` and `/dev/dri` access.
 

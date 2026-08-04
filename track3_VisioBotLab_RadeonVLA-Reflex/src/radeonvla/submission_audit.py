@@ -1,4 +1,4 @@
-"""Audit the repository against the public Track 3 submission structure."""
+"""Audit the repository against the Track 3 release structure."""
 
 from __future__ import annotations
 
@@ -72,7 +72,8 @@ REPORT_HEADINGS = (
     "## 17. Team Member and Contribution",
 )
 
-PLACEHOLDERS = (
+UNFINALIZED_MARKERS = (
+    "pre-release",
     "TBD",
     "<GITHUB_ID>",
     "<PVC_ROOT>",
@@ -118,17 +119,17 @@ def audit_project(root: Path, *, final: bool = False) -> AuditResult:
         if heading not in report:
             result.errors.append(f"Technical report is missing heading: {heading}")
 
-    placeholder_files = (
+    release_files = (
         root / "README.md",
         root / "docs/DATASET_CARD.md",
         root / "docs/MODEL_CARD.md",
         root / "reports/RadeonVLA-Reflex-Technical-Report.md",
     )
-    for path in placeholder_files:
+    for path in release_files:
         text = _read(path, result)
-        found = sorted(token for token in PLACEHOLDERS if token in text)
+        found = sorted(token for token in UNFINALIZED_MARKERS if token in text)
         if found:
-            message = f"{path.relative_to(root)} contains placeholders: {', '.join(found)}"
+            message = f"{path.relative_to(root)} contains pre-release markers: {', '.join(found)}"
             if final:
                 result.errors.append(message)
             else:
@@ -162,7 +163,7 @@ def main() -> int:
         print(f"ERROR: {error}")
 
     if result.ok:
-        print("Submission structure audit passed.")
+        print("Release structure audit passed.")
         return 0
     return 1
 

@@ -1,8 +1,15 @@
+from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
 
-from radeonvla.publish_hf import _assert_repo_namespaces, _card_body, _validate_pairs, parse_args
+from radeonvla.publish_hf import (
+    _assert_repo_namespaces,
+    _card_body,
+    _read_release_card,
+    _validate_pairs,
+    parse_args,
+)
 
 
 def test_public_publish_requires_explicit_confirmation() -> None:
@@ -31,6 +38,14 @@ def test_publish_pairs_and_namespace_are_fail_closed() -> None:
 def test_card_body_preserves_only_markdown_body() -> None:
     markdown = "---\nlicense: cc-by-4.0\n---\n\n# Dataset\n"
     assert _card_body(markdown) == "\n# Dataset\n"
+
+
+def test_pre_release_card_requires_explicit_draft_mode(tmp_path: Path) -> None:
+    card = tmp_path / "README.md"
+    card.write_text("> Release status: pre-release.\n", encoding="utf-8")
+    with pytest.raises(ValueError, match="pre-release"):
+        _read_release_card(card, allow_draft=False)
+    assert _read_release_card(card, allow_draft=True).startswith("> Release status")
 
 
 def test_publish_requires_at_least_one_complete_pair() -> None:

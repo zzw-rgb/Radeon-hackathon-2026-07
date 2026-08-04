@@ -88,8 +88,8 @@ def run_tensor_smoke(require_amd: bool) -> dict[str, Any]:
 
 def init_genesis(require_amd: bool) -> dict[str, str]:
     # Numba otherwise tries to cache compiled Genesis helpers next to the installed
-    # package or below the user's cache directory. Both locations can be read-only in
-    # contest containers and restricted development environments.
+    # package or below the default cache directory. Both locations can be read-only in
+    # restricted containers and managed development environments.
     cache_dir = Path(tempfile.gettempdir()) / "radeonvla-numba-cache"
     cache_dir.mkdir(parents=True, exist_ok=True)
     os.environ.setdefault("NUMBA_CACHE_DIR", str(cache_dir))

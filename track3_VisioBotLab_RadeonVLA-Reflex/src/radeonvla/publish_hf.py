@@ -72,9 +72,10 @@ def _read_release_card(path: Path, *, allow_draft: bool) -> str:
     if not path.is_file():
         raise FileNotFoundError(f"Release card not found: {path}")
     text = path.read_text(encoding="utf-8")
-    placeholders = [marker for marker in ("TBD", "[PENDING]") if marker in text]
-    if placeholders and not allow_draft:
-        raise ValueError(f"Release card still contains placeholders {placeholders}: {path}")
+    draft_markers = ("Release status: pre-release", "TBD", "[PENDING]")
+    found_markers = [marker for marker in draft_markers if marker in text]
+    if found_markers and not allow_draft:
+        raise ValueError(f"Release card still contains pre-release markers {found_markers}: {path}")
     return text
 
 
