@@ -1,3 +1,5 @@
+import architectureEn from "./assets/architecture-en.jpg";
+import architectureZh from "./assets/architecture-zh.jpg";
 import heroImage from "./assets/radeonvla-reflex-hero.png";
 import {
   copy,
@@ -91,6 +93,25 @@ function render(): void {
         <div class="hero-index" aria-hidden="true">RVR—26</div>
       </section>
 
+      <section class="overview section-shell section-block" id="overview" aria-labelledby="overview-title">
+        <div class="section-intro reveal">
+          <p class="eyebrow">${t(copy.overviewKicker, locale)}</p>
+          <h2 id="overview-title">${t(copy.overviewTitle, locale)}</h2>
+          <p>${t(copy.overviewBody, locale)}</p>
+        </div>
+        <div class="overview-grid">
+          ${copy.overviewPoints
+            .map(
+              (point) => `
+                <article class="overview-card reveal">
+                  <h3>${t(point.title, locale)}</h3>
+                  <p>${t(point.body, locale)}</p>
+                </article>`,
+            )
+            .join("")}
+        </div>
+      </section>
+
       <section class="proof-band" aria-labelledby="proof-heading">
         <div class="section-shell">
           <div class="proof-heading reveal">
@@ -157,6 +178,15 @@ function render(): void {
             <h2 id="runtime-title">${t(copy.runtimeTitle, locale)}</h2>
             <p>${t(copy.runtimeBody, locale)}</p>
           </div>
+          <figure class="architecture-diagram reveal">
+            <img
+              src="${locale === "zh" ? architectureZh : architectureEn}"
+              alt="${t(copy.architectureDiagramAlt, locale)}"
+              loading="lazy"
+              decoding="async"
+            />
+            <figcaption>${t(copy.architectureDiagramCaption, locale)}</figcaption>
+          </figure>
           <div class="architecture reveal" aria-label="${t(copy.architectureLabel, locale)}">
             <div class="architecture-track" aria-hidden="true"></div>
             <div class="architecture-node input-node">

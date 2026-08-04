@@ -701,6 +701,34 @@ a:focus-visible,
   font-size: 0.66rem;
 }
 
+.overview-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.overview-card {
+  min-height: 180px;
+  padding: 28px 24px;
+  border: 1px solid var(--line);
+  background:
+    linear-gradient(160deg, rgba(215, 255, 67, 0.05), transparent 55%),
+    var(--bg-soft);
+}
+
+.overview-card h3 {
+  margin: 0 0 12px;
+  font-size: 1.15rem;
+  letter-spacing: -0.03em;
+}
+
+.overview-card p {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.65;
+  font-size: 0.92rem;
+}
+
 .runtime {
   color: var(--ink);
   background: var(--paper);
@@ -713,6 +741,28 @@ a:focus-visible,
 
 .runtime .section-intro > p:last-child {
   color: #5f5f59;
+}
+
+.architecture-diagram {
+  margin: 0 0 36px;
+  overflow: hidden;
+  border: 1px solid var(--line-dark);
+  background: #fff;
+}
+
+.architecture-diagram img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.architecture-diagram figcaption {
+  padding: 14px 18px 16px;
+  color: #5f5f59;
+  border-top: 1px solid var(--line-dark);
+  background: #f4f2ea;
+  font-size: 0.82rem;
+  line-height: 1.5;
 }
 
 .architecture {
@@ -1193,6 +1243,10 @@ a:focus-visible,
 
   .section-intro > p:last-child {
     grid-column: 2;
+  }
+
+  .overview-grid {
+    grid-template-columns: 1fr;
   }
 
   .pending-results {

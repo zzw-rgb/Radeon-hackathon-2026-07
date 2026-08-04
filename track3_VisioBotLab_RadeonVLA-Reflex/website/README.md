@@ -36,8 +36,13 @@ All bilingual copy, verified metrics, task rows, and external URLs live in
 - keep the simulation-only limitation visible.
 
 The project-owned hero concept is bundled from
-`src/assets/radeonvla-reflex-hero.png`. Keep the software and simulation credits in
-`../THIRD_PARTY_NOTICES.md` when editing the footer.
+`src/assets/radeonvla-reflex-hero.png`. System architecture diagrams (EN/ZH) live under
+`src/assets/architecture-*.jpg` and mirror `../docs/figures/`. Keep the software and
+simulation credits in `../THIRD_PARTY_NOTICES.md` when editing the footer.
+
+Public deploy: GitHub Pages workflow
+`.github/workflows/radeonvla-reflex-pages.yml` builds this folder on the submission
+branch. Live URL: https://zzw-rgb.github.io/Radeon-hackathon-2026-07/
 
 ## Adding the final video
 

@@ -31,13 +31,17 @@ export interface TaskRow {
 export const projectLinks = {
   source:
     "https://github.com/zzw-rgb/Radeon-hackathon-2026-07/tree/submission/track3-visiobotlab-radeonvla-reflex/track3_VisioBotLab_RadeonVLA-Reflex",
+  pages: "https://zzw-rgb.github.io/Radeon-hackathon-2026-07/",
   contest: "https://modelscope.cn/events/299/比赛介绍",
   baseModel: "https://huggingface.co/lerobot/smolvla_base",
+  technicalReport:
+    "https://github.com/zzw-rgb/Radeon-hackathon-2026-07/blob/submission/track3-visiobotlab-radeonvla-reflex/track3_VisioBotLab_RadeonVLA-Reflex/reports/RadeonVLA-Reflex-Technical-Report.md",
 };
 
 export const navItems: Array<{ href: string; label: LocalizedText }> = [
+  { href: "#overview", label: { en: "Overview", zh: "概览" } },
   { href: "#demo", label: { en: "Evidence", zh: "演示证据" } },
-  { href: "#runtime", label: { en: "Runtime", zh: "运行机制" } },
+  { href: "#runtime", label: { en: "Architecture", zh: "系统架构" } },
   { href: "#benchmark", label: { en: "Benchmark", zh: "基准" } },
   { href: "#reproduce", label: { en: "Reproduce", zh: "复现" } },
 ];
@@ -72,9 +76,41 @@ export const copy = {
   placeholder: { en: "Original recovery concept art", zh: "原创恢复机制概念图" },
   proofLabel: { en: "Verified snapshot", zh: "已核验快照" },
   proofNote: {
-    en: "Values below come from the completed local dataset manifest. Formal policy metrics remain pending.",
-    zh: "下列数字来自已完成的数据集 manifest；正式策略指标仍待最终评测。",
+    en: "Numbers below are from completed, audited artifacts only. Formal policy success on the Physical-1K checkpoint remains pending held-out evaluation.",
+    zh: "下列数字仅来自已完成且可审计的产物；Physical-1K 最终 checkpoint 的策略成功率仍待独立评测。",
   },
+  overviewKicker: { en: "WHAT WE BUILT", zh: "项目是什么" },
+  overviewTitle: {
+    en: "A safety layer around action-chunk VLA control.",
+    zh: "为动作块 VLA 控制加上可审计的安全层。",
+  },
+  overviewBody: {
+    en: "Fruit sorting is the Track 3 proving ground. The product idea is an interruptible, recoverable execution stack on one AMD Radeon GPU: Genesis dual-bowl simulation, LeRobot 0.6 recording, SmolVLA fine-tuning, and a Reflex monitor that can drop stale chunks when the operator changes the command.",
+    zh: "水果分拣是 Track 3 的验证场景。产品形态是一张 AMD Radeon 上的可中断、可恢复执行栈：Genesis 双碗仿真、LeRobot 0.6 采集、SmolVLA 微调，以及操作员改指令时能丢弃过期动作块的 Reflex 监视器。",
+  },
+  overviewPoints: [
+    {
+      title: { en: "Language-addressable dual bowls", zh: "语言可区分的双碗布局" },
+      body: {
+        en: "Five YCB fruits × four fixed bowls (white/blue × left/right) yield twenty L1 tasks, plus L2–L4 spatial, sequential, and rule suites.",
+        zh: "五种 YCB 水果 × 四个固定碗（白/蓝 × 左/右）构成 20 个 L1 任务，并扩展 L2–L4 空间、序列与规则套件。",
+      },
+    },
+    {
+      title: { en: "Strict physical demonstrations", zh: "严格物理的专家演示" },
+      body: {
+        en: "Training data forbids kinematic grasp glue and placement teleports. Each episode carries a certificate with zero intervention counts.",
+        zh: "训练数据禁止运动学粘附抓取与放置瞬移；每条 episode 附带干预计数为 0 的严格物理证书。",
+      },
+    },
+    {
+      title: { en: "Single-GPU ROCm path", zh: "单卡 ROCm 全链路" },
+      body: {
+        en: "Record, train, evaluate, and benchmark on one visible Radeon device with immutable JSON/CSV/Markdown evidence.",
+        zh: "在单张可见 Radeon 上完成采集、训练、评测与压力测试，并输出不可变 JSON/CSV/Markdown 证据。",
+      },
+    },
+  ],
   sectionDemoKicker: { en: "JUDGE-FACING STORY", zh: "面向评委的故事线" },
   sectionDemoTitle: {
     en: "Three moments. One execution layer.",
@@ -91,13 +127,21 @@ export const copy = {
     zh: "最终 Radeon 实跑完成后接入播放器，并提供字幕与直接下载备用链接。",
   },
   plannedEvidence: { en: "Planned evidence", zh: "计划展示" },
-  runtimeKicker: { en: "WHY REFLEX", zh: "为什么需要 REFLEX" },
+  runtimeKicker: { en: "SYSTEM ARCHITECTURE", zh: "系统架构" },
   runtimeTitle: { en: "The policy proposes. The runtime decides.", zh: "策略提出动作，运行层决定是否执行。" },
   runtimeBody: {
-    en: "Action chunking improves throughput, but an old chunk can outlive the instruction that created it. Reflex adds a deterministic boundary between learned control and the simulator.",
-    zh: "动作分块可以提升吞吐，但旧动作块可能比生成它的指令活得更久。Reflex 在学习控制与仿真器之间加入确定性边界。",
+    en: "Action chunking improves throughput, but an old chunk can outlive the instruction that created it. Reflex is the deterministic boundary between learned control and Genesis.",
+    zh: "动作分块可以提升吞吐，但旧动作块可能比生成它的指令活得更久。Reflex 是学习控制与 Genesis 之间的确定性边界。",
   },
-  architectureLabel: { en: "Execution path", zh: "执行路径" },
+  architectureDiagramAlt: {
+    en: "System architecture diagram: world and wrist RGB plus robot state feed SmolVLA; action chunks pass through the execution safety monitor into Genesis Franka dual-bowl simulation",
+    zh: "系统架构图：世界/腕部 RGB 与机器人状态输入 SmolVLA；动作块经执行安全监视器进入 Genesis Franka 双碗仿真",
+  },
+  architectureDiagramCaption: {
+    en: "Closed loop — perception → SmolVLA → Reflex safety monitor → Genesis dual-bowl sim → next observation.",
+    zh: "闭环：感知 → SmolVLA → Reflex 安全监视器 → Genesis 双碗仿真 → 下一帧观测。",
+  },
+  architectureLabel: { en: "Compact execution path", zh: "精简执行路径" },
   architectureInput: { en: "Language + RGB + state", zh: "语言 + RGB + 状态" },
   architecturePolicy: { en: "SmolVLA policy", zh: "SmolVLA 策略" },
   architectureReflex: { en: "Reflex runtime", zh: "Reflex 运行层" },
@@ -106,17 +150,17 @@ export const copy = {
   benchmarkKicker: { en: "PRIMARY BENCHMARK", zh: "主要基准" },
   benchmarkTitle: { en: "Five fruits. Four destinations. Twenty tasks.", zh: "五种水果，四个盘位，二十项任务。" },
   benchmarkBody: {
-    en: "The L1 suite crosses every fruit with every language-addressable bowl position. Each row currently contains 10 completed expert demonstrations.",
-    zh: "L1 套件将每种水果与每个可由语言指定的盘位组合。当前每个组合包含 10 条已完成专家演示。",
+    en: "L1 crosses every fruit with every language-addressable bowl. Baseline demos: 10 per task (200 total). Formal Physical-1K target: 50 per task (1,000 total) under strict physics.",
+    zh: "L1 将每种水果与每个语言可指定盘位交叉。基线演示：每任务 10 条（共 200）。正式 Physical-1K 目标：严格物理下每任务 50 条（共 1,000）。",
   },
   targetLabel: { en: "Destination", zh: "目标盘位" },
   objectLabel: { en: "Object", zh: "物体" },
-  demosLabel: { en: "10 demos", zh: "10 条演示" },
+  demosLabel: { en: "10 baseline · 50 formal", zh: "基线 10 · 正式 50" },
   evidenceKicker: { en: "NO PLACEHOLDER CLAIMS", zh: "不使用占位成绩" },
   evidenceTitle: { en: "Measured results, or a clear Pending.", zh: "只展示实测结果，否则明确标记待完成。" },
   evidenceBody: {
-    en: "The initial dataset proves the recording and training path, not policy success. Final success, latency, memory, and Reflex ablations will be published from immutable evaluation artifacts.",
-    zh: "初始数据集证明采集与训练链路可运行，但不等于策略成功。最终成功率、延迟、显存和 Reflex 消融将从不可变评测产物中发布。",
+    en: "The baseline dataset proves the recording path. Physical-1K collection, SmolVLA fine-tuning, latency, and Reflex ablations publish only from immutable evaluation artifacts.",
+    zh: "基线数据集证明采集链路可用。Physical-1K 采集、SmolVLA 微调、延迟与 Reflex 消融仅从不可变评测产物发布。",
   },
   resultLabels: [
     { en: "Final policy success", zh: "最终策略成功率" },
@@ -129,11 +173,11 @@ export const copy = {
     en: "Filled only after held-out evaluation on the final checkpoint.",
     zh: "仅在最终 checkpoint 完成独立评测后填写。",
   },
-  releaseTarget: { en: "Next release target", zh: "下一版本目标" },
+  releaseTarget: { en: "Formal training target", zh: "正式训练目标" },
   releaseTargetValue: { en: "1,000 demos · 20 × 50", zh: "1,000 条演示 · 20 × 50" },
   releaseTargetBody: {
-    en: "A balanced expert dataset with a separate validation seed range. This is a target—not a completed result.",
-    zh: "均衡专家数据集，并使用独立验证 seed 范围。这是目标，不是已完成成绩。",
+    en: "Balanced strict-physics expert set with a disjoint validation seed range. Cloud collection runs in fruit shards then merges under certificate checks.",
+    zh: "均衡的严格物理专家集，验证 seed 与训练不相交。云端按水果分片采集，再经证书校验合并。",
   },
   modelLabel: { en: "Base policy", zh: "基础策略" },
   modelValue: { en: "LeRobot / SmolVLA", zh: "LeRobot / SmolVLA" },
@@ -181,23 +225,23 @@ export const copy = {
 export const verifiedMetrics: Metric[] = [
   {
     value: "200",
-    label: { en: "expert demonstrations", zh: "条专家演示" },
-    detail: { en: "manifest status: complete", zh: "manifest 状态：complete" },
+    label: { en: "baseline expert demos", zh: "条基线专家演示" },
+    detail: { en: "manifest complete · 20 × 10", zh: "manifest 完成 · 20 × 10" },
   },
   {
     value: "20 / 20",
-    label: { en: "L1 tasks covered", zh: "L1 任务已覆盖" },
-    detail: { en: "10 episodes per task", zh: "每项任务 10 条" },
+    label: { en: "strict smoke tasks", zh: "严格物理 smoke 任务" },
+    detail: { en: "zero interventions written", zh: "写入样本零干预" },
   },
   {
     value: "46,420",
-    label: { en: "recorded frames", zh: "帧已录制" },
-    detail: { en: "at 20 Hz", zh: "采样频率 20 Hz" },
+    label: { en: "baseline frames", zh: "帧基线数据" },
+    detail: { en: "20 Hz dual RGB", zh: "20 Hz 双路 RGB" },
   },
   {
-    value: "2",
-    label: { en: "RGB camera views", zh: "路 RGB 相机" },
-    detail: { en: "world + wrist", zh: "世界视角 + 腕部视角" },
+    value: "1× GPU",
+    label: { en: "AMD Radeon path", zh: "AMD Radeon 路径" },
+    detail: { en: "ROCm sim · train · eval", zh: "ROCm 仿真 · 训练 · 评测" },
   },
 ];
 

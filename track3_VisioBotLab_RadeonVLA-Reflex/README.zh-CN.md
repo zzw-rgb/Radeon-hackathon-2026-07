@@ -71,31 +71,20 @@ Track 3 基准使用 Genesis、Franka Panda、LeRobot 和 SmolVLA，把 5 种水
 
 ## 系统架构
 
-```text
-自然语言指令 ───────────────────────┐
-世界相机 RGB ───────────────────────┤
-腕部相机 RGB ───────────────────────┤
-机器人与夹爪状态 ───────────────────┤
-                                    ↓
-                          SmolVLA 策略
-                                    ↓
-                              动作块
-                                    ↓
-                         执行安全监视器
-                         ├─ 关节限幅 / 速率限制
-                         ├─ 指令版本变更
-                         ├─ 空抓检测
-                         ├─ 超时 + 一次恢复重试
-                         └─ 事件 / 延迟遥测
-                                    ↓
-                    Genesis Franka 双碗仿真
-                                    ↓
-                              下一帧观测
-```
+![RadeonVLA-Reflex 系统架构：世界/腕部 RGB 与机器人状态输入 SmolVLA；动作块经执行安全监视器（关节/速率限幅、指令版本、空抓检测、一次重试、延迟遥测）后进入 Genesis Franka 双碗仿真](docs/figures/architecture-zh.jpg)
+
+闭环流程：
+
+1. **感知与状态** — 世界相机 RGB、腕部相机 RGB，以及机器人与夹爪状态（关节角 \(q\)、关节速度 \(\dot q\)、夹爪开度 \(g\)、末端位姿 \(T\)）。
+2. **SmolVLA 策略** — 视觉-语言-动作模型输出动作块（\(\Delta q\)、\(\Delta g\)、\(\Delta T\) 等）。
+3. **执行安全监视器（Reflex）** — 关节限幅/速率限制、限制在安全范围、指令版本变更与平滑、空抓检测、超时后**仅重试一次**、事件/延迟遥测。
+4. **Genesis Franka 双碗仿真** — 只执行安全指令；下一帧观测回馈闭环。
 
 学习栈为语言与视觉条件下的端到端关节位置控制。
-指令作废与恢复为策略外的确定性安全层（不重新训练 VLA）。评测可确定性注入水果或盘位
+指令作废与恢复为策略外的**确定性安全层**（不重新训练 VLA）。评测可确定性注入水果或盘位
 移动，并把 `RUNNING / INTERRUPTED / RECOVERING / SUCCESS` 直接叠加到演示视频。
+
+英文架构图见 [`docs/figures/architecture-en.jpg`](docs/figures/architecture-en.jpg)。PNG 原图备份：[`architecture-zh.png`](docs/figures/architecture-zh.png)。
 
 ## 仓库结构
 

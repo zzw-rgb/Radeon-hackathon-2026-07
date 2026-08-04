@@ -78,32 +78,21 @@ rule tasks are resolved at episode start by `radeonvla.grounding` after pose ran
 
 ## System architecture
 
-```text
-Language command ───────────────────────┐
-World RGB camera ───────────────────────┤
-Wrist RGB camera ───────────────────────┤
-Robot and gripper state ────────────────┤
-                                        ↓
-                              SmolVLA policy
-                                        ↓
-                                action chunk
-                                        ↓
-                         execution safety monitor
-                         ├─ joint bounds / rate limit
-                         ├─ versioned command invalidation
-                         ├─ empty-grasp detection
-                         ├─ timeout + one recovery retry
-                         └─ event/latency telemetry
-                                        ↓
-                    Genesis Franka dual-bowl simulation
-                                        ↓
-                                next observation
-```
+![RadeonVLA-Reflex system architecture: dual RGB cameras and robot state condition a SmolVLA policy; action chunks pass through an execution safety monitor (joint/velocity limits, command versioning, empty-grasp detection, one-shot retry, latency telemetry) before Genesis Franka dual-bowl simulation](docs/figures/architecture-en.jpg)
+
+The closed loop is:
+
+1. **Perception + state** — world RGB, wrist RGB, and robot/gripper state (joint positions \(q\), velocities \(\dot q\), gripper opening \(g\), end-effector pose \(T\)).
+2. **SmolVLA policy** — vision-language-action model produces action chunks (\(\Delta q\), \(\Delta g\), \(\Delta T\)).
+3. **Execution safety monitor (Reflex)** — joint/velocity limits, safe region, command-version invalidation, empty-grasp detection, timeout + **one** recovery retry, event/latency telemetry.
+4. **Genesis Franka dual-bowl simulation** — executes only the safe command; next observation feeds back into the loop.
 
 The learned stack is end-to-end joint-position control conditioned on language and
-vision. Interrupt invalidation and recovery are deterministic safety layers around the
-policy (they do not retrain the VLA). Evaluation can inject a repeatable target or bowl
+vision. Interrupt invalidation and recovery are **deterministic safety layers around the
+policy** (they do not retrain the VLA). Evaluation can inject a repeatable target or bowl
 shift and renders `RUNNING / INTERRUPTED / RECOVERING / SUCCESS` directly on demo video.
+
+Chinese diagram: [`docs/figures/architecture-zh.jpg`](docs/figures/architecture-zh.jpg).
 
 ## Repository layout
 
