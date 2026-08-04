@@ -27,6 +27,7 @@ is loaded automatically when present (see `.env.example`).
 | `TRAIN_STEPS` | `10000` | full remote |
 | `CKPT` | auto under `outputs/train/...` | eval when `SKIP_TRAIN=1` |
 | `SKIP_RECORD` | `0` | reuse an already validated dataset on remote |
+| `SOURCE_COMMIT` | auto from Git | explicit 40-hex source revision for source-only remote copies |
 | `OVERWRITE` | `0` | replace a published dataset only after the new staging run validates |
 | `DISCARD_INCOMPLETE` | `0` | explicitly remove the target's stale `.inprogress` directory |
 | `HIP_VISIBLE_DEVICES` | `0` | remote AMD |

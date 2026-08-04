@@ -35,6 +35,7 @@ services:
       EVAL_PER_TASK: "${EVAL_PER_TASK:-10}"
       SKIP_RECORD: "${SKIP_RECORD:-0}"
       SKIP_TRAIN: "${SKIP_TRAIN:-0}"
+      SOURCE_COMMIT: "${SOURCE_COMMIT:-}"
       DR: "${DR:-1}"
       DR_REBUILD_EVERY: "${DR_REBUILD_EVERY:-20}"
       OVERWRITE: "${OVERWRITE:-0}"
