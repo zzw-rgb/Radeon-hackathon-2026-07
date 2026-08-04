@@ -17,6 +17,17 @@ export interface Demo {
   event: LocalizedText;
 }
 
+export interface CollectionClip {
+  index: string;
+  episode: string;
+  duration: string;
+  frames: LocalizedText;
+  video: string;
+  poster: string;
+  title: LocalizedText;
+  instruction: LocalizedText;
+}
+
 export interface Feature {
   eyebrow: string;
   title: LocalizedText;
@@ -111,20 +122,32 @@ export const copy = {
       },
     },
   ],
-  sectionDemoKicker: { en: "JUDGE-FACING STORY", zh: "面向评委的故事线" },
+  sectionDemoKicker: { en: "RECORDED DATASET PREVIEWS", zh: "真实数据集采集预览" },
   sectionDemoTitle: {
-    en: "Three moments. One execution layer.",
-    zh: "三个关键时刻，一套执行层。",
+    en: "Three real collection runs. No placeholder media.",
+    zh: "三段真实采集，不再只有占位画面。",
   },
   sectionDemoBody: {
-    en: "The final narrated video will show the same checkpoint under normal execution, a mid-command change, and a deterministic target shift. Media is intentionally not fabricated before those runs pass.",
-    zh: "最终解说视频将使用同一 checkpoint，展示正常执行、中途改指令和确定性目标扰动。正式实跑通过前，本站不会使用伪造媒体。",
+    en: "These clips are H.264 excerpts from the completed 200-episode AMD Radeon baseline collection. They verify the expert-data recording path; held-out SmolVLA policy evaluation remains a separate pending result.",
+    zh: "以下片段截取自已完成的 200 条 AMD Radeon 基线采集，并转为 H.264。它们验证的是专家数据采集链路；SmolVLA 策略的独立评测仍是另一项待完成结果。",
   },
-  videoLabel: { en: "3+ MIN NARRATED WALKTHROUGH", zh: "3 分钟以上解说视频" },
-  videoPending: { en: "Pending final evaluation recordings", zh: "等待最终评测录制" },
+  videoLabel: { en: "AMD DATASET SMOKE PREVIEW", zh: "AMD 数据集 SMOKE 预览" },
+  videoPending: { en: "Baseline collection · 200 successful demos", zh: "基线采集 · 200 条成功演示" },
   videoBody: {
-    en: "The player will be connected after the final Radeon run, with captions and a direct download fallback.",
-    zh: "最终 Radeon 实跑完成后接入播放器，并提供字幕与直接下载备用链接。",
+    en: "Three world-camera episodes from different appearance-randomization domains. Playback is manual and loads metadata only until opened.",
+    zh: "选取三个不同外观随机化域的世界相机 episode；视频需手动播放，打开前仅加载元数据。",
+  },
+  clipState: { en: "RECORDED SUCCESS", zh: "采集成功" },
+  clipCamera: { en: "WORLD RGB · 20 FPS", zh: "世界相机 RGB · 20 FPS" },
+  clipPlayLabel: { en: "Play dataset collection clip", zh: "播放数据集采集片段" },
+  clipFallback: {
+    en: "Your browser cannot play this H.264 video.",
+    zh: "当前浏览器无法播放此 H.264 视频。",
+  },
+  collectionScopeTitle: { en: "Evidence boundary", zh: "证据边界" },
+  collectionScopeBody: {
+    en: "Scripted expert collection preview—not a policy-success claim. Final checkpoint, interruption, and recovery videos stay Pending until held-out evaluation passes.",
+    zh: "这些片段是脚本专家采集预览，不代表策略成功率。最终 checkpoint、中断与恢复视频将在独立评测通过前保持 Pending。",
   },
   plannedEvidence: { en: "Planned evidence", zh: "计划展示" },
   runtimeKicker: { en: "SYSTEM ARCHITECTURE", zh: "系统架构" },
@@ -242,6 +265,48 @@ export const verifiedMetrics: Metric[] = [
     value: "1× GPU",
     label: { en: "AMD Radeon path", zh: "AMD Radeon 路径" },
     detail: { en: "ROCm sim · train · eval", zh: "ROCm 仿真 · 训练 · 评测" },
+  },
+];
+
+export const collectionClips: CollectionClip[] = [
+  {
+    index: "01",
+    episode: "000",
+    duration: "10.45 s",
+    frames: { en: "209 frames", zh: "209 帧" },
+    video: "videos/dataset-apple-blue-left.mp4",
+    poster: "videos/dataset-apple-blue-left.webp",
+    title: { en: "Apple → blue bowl, left", zh: "苹果 → 左侧蓝碗" },
+    instruction: {
+      en: "Pick the apple and place it in the blue bowl on the left.",
+      zh: "抓取苹果并放入左侧蓝碗。",
+    },
+  },
+  {
+    index: "02",
+    episode: "047",
+    duration: "12.55 s",
+    frames: { en: "251 frames", zh: "251 帧" },
+    video: "videos/dataset-banana-white-right.mp4",
+    poster: "videos/dataset-banana-white-right.webp",
+    title: { en: "Banana → white bowl, right", zh: "香蕉 → 右侧白碗" },
+    instruction: {
+      en: "Pick the banana and place it in the white bowl on the right.",
+      zh: "抓取香蕉并放入右侧白碗。",
+    },
+  },
+  {
+    index: "03",
+    episode: "158",
+    duration: "12.10 s",
+    frames: { en: "242 frames", zh: "242 帧" },
+    video: "videos/dataset-plum-white-left.mp4",
+    poster: "videos/dataset-plum-white-left.webp",
+    title: { en: "Plum → white bowl, left", zh: "李子 → 左侧白碗" },
+    instruction: {
+      en: "Pick the plum and place it in the white bowl on the left.",
+      zh: "抓取李子并放入左侧白碗。",
+    },
   },
 ];
 

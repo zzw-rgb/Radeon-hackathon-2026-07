@@ -36,13 +36,23 @@ All bilingual copy, verified metrics, task rows, and external URLs live in
 - keep the simulation-only limitation visible.
 
 The project-owned hero concept is bundled from
-`src/assets/radeonvla-reflex-hero.png`. System architecture diagrams (EN/ZH) live under
+`src/assets/radeonvla-reflex-hero-v2.png`. System architecture diagrams (EN/ZH) live under
 `src/assets/architecture-*.jpg` and mirror `../docs/figures/`. Keep the software and
 simulation credits in `../THIRD_PARTY_NOTICES.md` when editing the footer.
 
 Public deploy: GitHub Pages workflow
 `.github/workflows/radeonvla-reflex-pages.yml` builds this folder on the submission
 branch. Live URL: https://zzw-rgb.github.io/Radeon-hackathon-2026-07/
+
+## Dataset collection previews
+
+Three short H.264 excerpts under `public/videos/` come from completed baseline dataset
+episodes 000, 047, and 158. They are world-camera previews of scripted expert data
+collection, selected across different appearance-randomization domains. Posters use WebP;
+videos use H.264, `yuv420p`, and fast-start for browser compatibility.
+
+Keep their UI copy explicit: these clips validate the collection path and are not evidence
+of held-out policy success, interruption handling, or recovery performance.
 
 ## Adding the final video
 
@@ -55,5 +65,6 @@ The current video area is deliberately a `Pending` panel. When the three demo ru
    and a direct-download fallback;
 5. test playback without autoplay in current Chromium, Firefox, and Safari.
 
-Do not reuse the stitched AV1 dataset videos as the public demo: they are training data,
-large, and not universally browser-compatible.
+Do not present the stitched AV1 dataset videos—or the small H.264 collection excerpts—as
+the final policy demo. The stitched files are training data, large, and not universally
+browser-compatible; the excerpts are intentionally labeled as dataset previews only.

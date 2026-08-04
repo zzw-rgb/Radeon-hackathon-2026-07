@@ -20,6 +20,9 @@ datasets/
 checkpoints/
 outputs/
 videos/
+!website/public/videos/
+!website/public/videos/*.mp4
+!website/public/videos/*.webp
 # Local-only planning / intro notes — never commit
 _local/
 *.safetensors
