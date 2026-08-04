@@ -75,6 +75,19 @@ def _load_certificates(root: Path, expected_episodes: int) -> list[dict]:
     return certificates
 
 
+def _manifest_source_commits(manifest: dict) -> set[str]:
+    """Return the audited source revisions represented by one dataset manifest."""
+    raw = manifest.get("source_commits")
+    if raw is None:
+        raw = [manifest.get("source_commit")]
+    if not isinstance(raw, list):
+        raise RuntimeError("Manifest source_commits must be a list when present")
+    revisions = {str(item) for item in raw}
+    if not revisions or revisions & {"unknown", "None", ""}:
+        raise RuntimeError(f"Manifest does not contain known source revisions: {sorted(revisions)}")
+    return revisions
+
+
 def _preflight_source(root: Path) -> tuple[dict, list[dict]]:
     info_path = root / "meta" / "info.json"
     if not info_path.is_file():
@@ -99,6 +112,13 @@ def _preflight_source(root: Path) -> tuple[dict, list[dict]]:
     manifest_successes = int(manifest.get("successes", -1))
     if manifest_successes != episodes:
         raise RuntimeError(f"Manifest successes {manifest_successes} != episodes {episodes}: {root}")
+    certificate_revisions = {str(item.get("source_commit")) for item in certificates}
+    manifest_revisions = _manifest_source_commits(manifest)
+    if certificate_revisions != manifest_revisions:
+        raise RuntimeError(
+            f"Certificate source revisions {sorted(certificate_revisions)} do not match "
+            f"manifest revisions {sorted(manifest_revisions)}: {root}"
+        )
     return manifest, certificates
 
 
@@ -142,9 +162,14 @@ def _combined_manifest(
     if len(set(seeds)) != len(seeds):
         raise RuntimeError("Merged shards contain duplicate rollout seeds")
     revisions = {str(item.get("source_commit")) for item in flat}
-    revisions.update(str(manifest.get("source_commit")) for manifest in manifests)
-    if len(revisions) != 1 or "unknown" in revisions or "None" in revisions:
-        raise RuntimeError(f"Merged shards do not share one known source revision: {sorted(revisions)}")
+    manifest_revisions = set().union(*(_manifest_source_commits(item) for item in manifests))
+    if not revisions or revisions & {"unknown", "None", ""}:
+        raise RuntimeError(f"Merged shards contain unknown source revisions: {sorted(revisions)}")
+    if revisions != manifest_revisions:
+        raise RuntimeError(
+            f"Certificate source revisions {sorted(revisions)} do not match "
+            f"source manifests {sorted(manifest_revisions)}"
+        )
 
     first = manifests[0]
     attempts = sum(int(item.get("attempts", 0)) for item in manifests)
@@ -191,7 +216,8 @@ def _combined_manifest(
         "strict_physics": True,
         "rigid_pose_write_guard": True,
         "certificate_schema_version": first.get("certificate_schema_version", 1),
-        "source_commit": revisions.pop(),
+        "source_commit": next(iter(revisions)) if len(revisions) == 1 else None,
+        "source_commits": sorted(revisions),
         "source_dirty": None,
         "collection_mode": "parallel_task_shards",
         "aggregation_sources": [
@@ -200,6 +226,7 @@ def _combined_manifest(
                 "root": str(root),
                 "successes": len(shard),
                 "seed": manifest.get("seed"),
+                "source_commits": sorted(_manifest_source_commits(manifest)),
             }
             for root, manifest, shard in zip(source_roots, manifests, certificates, strict=True)
         ],

@@ -136,12 +136,19 @@ def main(argv: list[str] | None = None) -> int:
         ]
         if task_mismatches:
             report["errors"].append(f"Certificate/dataset instruction mismatches: {task_mismatches}")
-        certificate_commits = {item.get("source_commit") for item in certificates}
-        manifest_commit = manifest.get("source_commit") if manifest is not None else None
-        if certificate_commits != {manifest_commit}:
+        certificate_commits = {str(item.get("source_commit")) for item in certificates}
+        raw_manifest_commits = manifest.get("source_commits") if manifest is not None else None
+        if raw_manifest_commits is None:
+            raw_manifest_commits = [manifest.get("source_commit") if manifest is not None else None]
+        manifest_commits = {str(item) for item in raw_manifest_commits}
+        if manifest_commits & {"unknown", "None", ""}:
+            report["errors"].append(
+                f"Manifest contains unknown source revisions: {sorted(manifest_commits)}"
+            )
+        if certificate_commits != manifest_commits:
             report["errors"].append(
                 f"Certificate source revisions {sorted(map(str, certificate_commits))} "
-                f"do not match manifest {manifest_commit!r}"
+                f"do not match manifest revisions {sorted(manifest_commits)}"
             )
 
     if args.episodes_per_task > 0:
