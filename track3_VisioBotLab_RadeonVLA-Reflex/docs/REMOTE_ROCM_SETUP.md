@@ -3,6 +3,28 @@
 I separate environment detection from installation: check the remote instance first,
 then install wheels only if the existing HIP PyTorch build is missing or mismatched.
 
+## Validated Radeon Cloud runtime (2026-08-04)
+
+The submitted native run used one device reported by PyTorch as `AMD Radeon Graphics`
+(`gfx1100`, 48, 48.1 GiB visible memory) with this stack:
+
+| Component | Measured value |
+|---|---|
+| Python | 3.12.3 |
+| PyTorch | 2.9.1+rocm7.2.1.gitff65f5bc |
+| HIP runtime reported by PyTorch | 7.2.53211-e1a6bc5663 |
+| Genesis | 1.1.2 (`gs.amdgpu`, device `cuda:0`) |
+| LeRobot | 0.6.0 |
+| Transformers | 5.5.4 |
+
+`check_env --require-amd --init-genesis` executed a real tensor/backward pass on
+`cuda:0` and initialized the Genesis AMD backend. The contest notebook itself is an
+unprivileged Kubernetes container, so it cannot start a nested Docker daemon or apply
+container image layers (`CAP_SYS_ADMIN` is unavailable). On that host I therefore ran
+the exact dependency stack natively, and separately validated the Compose model,
+Dockerfile stages, pinned base-image digest, and container contract. The image remains
+runnable on a normal ROCm Docker host with `/dev/kfd` and `/dev/dri` access.
+
 ## Step 1: Record the untouched environment
 
 ~~~bash

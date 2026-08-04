@@ -4,7 +4,7 @@ RadeonVLA-Reflex depends on or references the following upstream projects:
 
 | Project | Purpose | Source |
 |---|---|---|
-| Genesis World | Physics simulation | https://github.com/Genesis-Embodied-AI/genesis-world |
+| Genesis World | Physics simulation | https://github.com/Genesis-Embodied-AI/Genesis |
 | LeRobot | Dataset, policy training, and SmolVLA | https://github.com/huggingface/lerobot |
 | SmolVLA | Vision-language-action base model | https://huggingface.co/lerobot/smolvla_base |
 | Franka Fruit-Pick Demo | Track 3 workflow reference | https://github.com/wangxunx/franka_fruit_pick_demo |

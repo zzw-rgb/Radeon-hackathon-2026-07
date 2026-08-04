@@ -95,6 +95,15 @@ def load_policy(
     cfg.pretrained_path = policy_path
     cfg.device = str(device)
 
+    local_vlm_assets = Path(policy_path) / "vlm_assets"
+    if local_vlm_assets.is_dir():
+        # The checkpoint already contains all trained model tensors. Construct
+        # the architecture and tokenizer from the small vendored files instead
+        # of downloading the upstream ~2 GB VLM weights before overwriting them.
+        cfg.vlm_model_name = str(local_vlm_assets.resolve())
+        cfg.load_vlm_weights = False
+        print(f"[eval] using vendored VLM config/tokenizer: {local_vlm_assets}")
+
     if rename_map is None:
         rename_map = _load_rename_map(policy_path)
     if rename_map:

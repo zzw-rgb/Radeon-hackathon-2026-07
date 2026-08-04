@@ -105,6 +105,7 @@ if [[ -z "$CKPT" ]]; then
 fi
 [[ -d "$CKPT" ]] || die "CKPT not found: $CKPT"
 log "Resolved checkpoint: $CKPT"
+run_py -m radeonvla.vendor_vlm_assets --policy-path "$CKPT"
 
 section "5 evaluate"
 [[ -d "$CKPT" ]] || die "Checkpoint missing: $CKPT (set CKPT=... or disable SKIP_TRAIN)"
