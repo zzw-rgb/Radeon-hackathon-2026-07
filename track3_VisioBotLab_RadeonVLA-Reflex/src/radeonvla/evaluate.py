@@ -27,10 +27,22 @@ from radeonvla.safety import (
 from radeonvla.scene import AppearanceDR, build_scene, init_genesis
 from radeonvla.scene_config import FRANKA_QPOS
 from radeonvla.stress import PERTURBATIONS, inject_perturbation
-from radeonvla.tasks import SUITES, get_task, list_task_ids
+from radeonvla.tasks import SUITES, TaskSpec, get_task, list_task_ids
 
 STATE_KEY = "observation.state"
 POST_SUCCESS_SECONDS = 0.6
+INSTRUCTION_SOURCES = ("collected", "heldout")
+
+
+def select_instruction(task: TaskSpec, source: str, variation: int = 0) -> str:
+    """Select language without silently paraphrasing the collected commands."""
+    if source == "collected":
+        pool = task.training_instructions
+    elif source == "heldout":
+        pool = task.evaluation_instructions
+    else:
+        raise ValueError(f"Unknown instruction source {source!r}; expected one of {INSTRUCTION_SOURCES}")
+    return pool[variation % len(pool)]
 
 
 @dataclass
@@ -279,6 +291,7 @@ def run_episode(
     max_retries: int = 1,
     interrupt_at_step: int | None = None,
     interrupt_task_id: str | None = None,
+    instruction_source: str = "collected",
     perturbation: str = "none",
     perturb_at_step: int | None = None,
     perturb_distance: float = 0.06,
@@ -288,7 +301,7 @@ def run_episode(
 ) -> EpisodeResult:
     task = get_task(task_id)
     max_steps = max_steps or task.max_steps
-    instruction = instruction or task.evaluation_instructions[0]
+    instruction = instruction or select_instruction(task, instruction_source)
     session = CommandSession(instruction=instruction, task_id=task_id)
     safety = SafetyMonitor()
     recovery = RecoveryPolicy(max_retries=max_retries if reflex_enabled else 0)
@@ -352,7 +365,7 @@ def run_episode(
 
         if interrupt_at_step is not None and policy_step == interrupt_at_step and interrupt_task_id:
             new_task = get_task(interrupt_task_id)
-            new_instruction = new_task.evaluation_instructions[0]
+            new_instruction = select_instruction(new_task, instruction_source)
             session.set_command(instruction=new_instruction, task_id=interrupt_task_id, step=policy_step)
             task = new_task
             max_steps = max(max_steps, task.max_steps)
@@ -604,6 +617,15 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     )
     parser.add_argument("--seed-start", type=int, default=50000)
     parser.add_argument("--max-retries", type=int, default=1)
+    parser.add_argument(
+        "--instruction-source",
+        choices=INSTRUCTION_SOURCES,
+        default="collected",
+        help=(
+            "Language used by the policy. 'collected' (default) uses the exact commands stored in "
+            "the training dataset; 'heldout' is a separate paraphrase/generalization test."
+        ),
+    )
     parser.add_argument("--max-steps", type=int, default=None, help="Optional per-episode cap for smoke tests.")
     parser.add_argument("--device", default="cuda")
     parser.add_argument("--cpu", action="store_true")
@@ -659,7 +681,7 @@ def main(argv: list[str] | None = None) -> int:
     video_dir = EVAL_VIDEOS_DIR / f"eval_{stamp}"
 
     for task_id in tasks:
-        for _ in range(per_task):
+        for task_episode_index in range(per_task):
             seed = args.seed_start + ep_index
             video_path = video_dir / f"{task_id}_{seed}.mp4" if args.save_video else None
             interrupt_at = 40 if args.interrupt_demo and ep_index == 0 else None
@@ -686,10 +708,14 @@ def main(argv: list[str] | None = None) -> int:
                 pb,
                 task_id=task_id,
                 seed=seed,
+                instruction=select_instruction(
+                    get_task(task_id), args.instruction_source, task_episode_index
+                ),
                 max_retries=args.max_retries,
                 max_steps=args.max_steps,
                 interrupt_at_step=interrupt_at,
                 interrupt_task_id=interrupt_task,
+                instruction_source=args.instruction_source,
                 perturbation=args.perturbation,
                 perturb_at_step=args.perturb_at_step,
                 perturb_distance=args.perturb_distance,
@@ -735,6 +761,7 @@ def main(argv: list[str] | None = None) -> int:
         },
         "config": {
             "tasks": tasks,
+            "instruction_source": args.instruction_source,
             "seed_start": args.seed_start,
             "max_retries": args.max_retries,
             "backend": backend,

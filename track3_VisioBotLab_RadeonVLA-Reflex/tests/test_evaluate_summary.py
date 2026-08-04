@@ -2,7 +2,8 @@ from dataclasses import asdict
 from pathlib import Path
 
 from radeonvla.artifact_io import validate_evaluation_payload
-from radeonvla.evaluate import EpisodeResult, parse_args, summarize
+from radeonvla.evaluate import EpisodeResult, parse_args, select_instruction, summarize
+from radeonvla.tasks import get_task
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -73,3 +74,21 @@ def test_episode_result_and_summary_match_formal_schema() -> None:
 
 def test_default_evaluation_seed_is_held_out_from_physical_1k() -> None:
     assert parse_args(["--policy-path", "dummy"]).seed_start == 50000
+
+
+def test_evaluation_defaults_to_exact_collected_language() -> None:
+    args = parse_args(["--policy-path", "dummy"])
+    assert args.instruction_source == "collected"
+    task = get_task("apple_blue_left")
+    assert select_instruction(task, args.instruction_source, 0) == (
+        "Pick the apple and place it in the blue bowl on the left."
+    )
+    assert select_instruction(task, args.instruction_source, 1) == (
+        "Sort the apple into the blue bowl on the left."
+    )
+
+
+def test_heldout_language_is_explicit_opt_in() -> None:
+    args = parse_args(["--policy-path", "dummy", "--instruction-source", "heldout"])
+    task = get_task("plum_white_right")
+    assert select_instruction(task, args.instruction_source) in task.evaluation_instructions
