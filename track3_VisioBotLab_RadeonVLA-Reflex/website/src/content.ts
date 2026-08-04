@@ -62,8 +62,8 @@ export const navItems: Array<{ href: string; label: LocalizedText }> = [
   { href: "#demo", label: { en: "Evidence", zh: "核心演示" } },
   { href: "#runtime", label: { en: "Architecture", zh: "系统架构" } },
   { href: "#benchmark", label: { en: "Benchmark", zh: "基准" } },
-  { href: "#team", label: { en: "Team", zh: "团队" } },
   { href: "#reproduce", label: { en: "Reproduce", zh: "复现" } },
+  { href: "#team", label: { en: "Team", zh: "团队" } },
 ];
 
 export const copy = {

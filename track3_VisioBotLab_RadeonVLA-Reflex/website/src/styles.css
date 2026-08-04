@@ -103,7 +103,8 @@ a:focus-visible,
   min-height: 78px;
   padding: 12px max(24px, calc((100% - var(--max-width)) / 2));
   border-bottom: 1px solid var(--line);
-  background: rgba(16, 17, 15, 0.82);
+  background: rgba(16, 17, 15, 0.94);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.1);
   backdrop-filter: blur(18px);
 }
 
@@ -1582,26 +1583,44 @@ a:focus-visible,
 
   .hero {
     min-height: auto;
-    padding-top: 48px;
+    padding-block: 34px 42px;
+  }
+
+  .hero-grid {
+    gap: 12px;
+  }
+
+  .badge {
+    gap: 8px;
+    margin-bottom: 14px;
+    padding: 8px 10px;
+    font-size: 0.58rem;
   }
 
   .hero h1 {
-    margin-bottom: 24px;
-    font-size: clamp(3.2rem, 15.5vw, 5rem);
-    line-height: 0.9;
+    margin: 0 0 18px;
+    font-size: clamp(2.8rem, 13.2vw, 4.15rem);
+    line-height: 0.92;
+  }
+
+  .hero-lede {
+    font-size: 0.92rem;
+    line-height: 1.58;
   }
 
   .hero-actions {
-    margin-top: 30px;
+    gap: 8px;
+    margin-top: 22px;
   }
 
   .hero-actions .button {
-    flex: 1 1 190px;
+    min-height: 46px;
+    flex: 1 1 100%;
   }
 
   .hero-stage {
     width: 100%;
-    margin: 16px auto 0;
+    margin: 4px auto 0;
     padding: 10px;
   }
 
@@ -1715,6 +1734,19 @@ a:focus-visible,
     padding: 24px 20px;
   }
 
+  .collection-appendix-intro {
+    display: block;
+    margin-bottom: 24px;
+  }
+
+  .collection-appendix-intro .eyebrow {
+    margin: 0 0 14px;
+  }
+
+  .collection-appendix-intro h2 {
+    font-size: clamp(1.8rem, 9vw, 2.35rem);
+  }
+
   .collection-head > div:last-child {
     margin-top: 20px;
   }
@@ -1779,7 +1811,12 @@ a:focus-visible,
   }
 
   .team-actions {
-    margin-top: 40px;
+    width: 100%;
+    margin-top: 0;
+  }
+
+  .team-actions .button {
+    flex: 1 1 150px;
   }
 }
 
