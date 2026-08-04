@@ -403,6 +403,29 @@ python -m radeonvla.validate_dataset \
   --dataset-root datasets/radeonvla_reflex_physical_1k \
   --expected-episodes 1000 --episodes-per-task 50 --require-strict-physics
 
+# 最终卡片不再包含 TBD/PENDING 后交互式登录；不要把 write token 写进
+# 命令、仓库文件或 shell 历史。
+hf auth login
+
+# 先私有发布。命令会再次验证 20×50，上传完整数据和自包含 checkpoint，
+# 再从不可变 Hub revision 回下载并验证。
+python -m radeonvla.publish_hf \
+  --dataset-repo YOUR_HF_NAMESPACE/radeonvla-reflex-physical-1k \
+  --dataset-root datasets/radeonvla_reflex_physical_1k \
+  --dataset-validation artifacts/dataset_validation_physical_1k.json \
+  --model-repo YOUR_HF_NAMESPACE/radeonvla-reflex-smolvla-1k \
+  --policy-path outputs/train/smolvla_physical_1k/checkpoints/020000/pretrained_model \
+  --private
+
+# 只有私有版本回载验证通过后才显式转为公开。
+python -m radeonvla.publish_hf \
+  --dataset-repo YOUR_HF_NAMESPACE/radeonvla-reflex-physical-1k \
+  --dataset-root datasets/radeonvla_reflex_physical_1k \
+  --dataset-validation artifacts/dataset_validation_physical_1k.json \
+  --model-repo YOUR_HF_NAMESPACE/radeonvla-reflex-smolvla-1k \
+  --policy-path outputs/train/smolvla_physical_1k/checkpoints/020000/pretrained_model \
+  --public --confirm-public-release
+
 # M4/M5 — 训练 SmolVLA（需要非空数据集）
 python -m radeonvla.train_policy smolvla \
   --repo-id visiobot/radeonvla_reflex \

@@ -426,6 +426,29 @@ python -m radeonvla.validate_dataset \
   --dataset-root datasets/radeonvla_reflex_physical_1k \
   --expected-episodes 1000 --episodes-per-task 50 --require-strict-physics
 
+# After the final cards contain no TBD/PENDING fields, authenticate without
+# putting a write token in a command, repository file, or shell history:
+hf auth login
+
+# Publish private first. The command validates 20×50, uploads the full dataset
+# and self-contained checkpoint, then reloads both from immutable Hub revisions.
+python -m radeonvla.publish_hf \
+  --dataset-repo YOUR_HF_NAMESPACE/radeonvla-reflex-physical-1k \
+  --dataset-root datasets/radeonvla_reflex_physical_1k \
+  --dataset-validation artifacts/dataset_validation_physical_1k.json \
+  --model-repo YOUR_HF_NAMESPACE/radeonvla-reflex-smolvla-1k \
+  --policy-path outputs/train/smolvla_physical_1k/checkpoints/020000/pretrained_model \
+  --private
+
+# Make the already verified release public only with an explicit confirmation.
+python -m radeonvla.publish_hf \
+  --dataset-repo YOUR_HF_NAMESPACE/radeonvla-reflex-physical-1k \
+  --dataset-root datasets/radeonvla_reflex_physical_1k \
+  --dataset-validation artifacts/dataset_validation_physical_1k.json \
+  --model-repo YOUR_HF_NAMESPACE/radeonvla-reflex-smolvla-1k \
+  --policy-path outputs/train/smolvla_physical_1k/checkpoints/020000/pretrained_model \
+  --public --confirm-public-release
+
 # M4/M5 — train SmolVLA (needs a non-empty recorded dataset)
 python -m radeonvla.train_policy smolvla \
   --repo-id visiobot/radeonvla_reflex \

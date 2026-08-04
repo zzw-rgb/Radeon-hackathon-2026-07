@@ -1,10 +1,23 @@
-# RadeonVLA-Reflex Model Card
+---
+license: other
+library_name: lerobot
+base_model: lerobot/smolvla_base
+tags:
+  - robotics
+  - vision-language-action
+  - imitation-learning
+  - amd-rocm
+  - genesis
+---
+
+# RadeonVLA-Reflex SmolVLA-1K Model Card
 
 > Status: draft. Fill measured fields after the final checkpoint is selected.
 
 ## Model
 
 - Base model: lerobot/smolvla_base
+- Base revision: `c83c3163b8ca9b7e67c509fffd9121e66cb96205`
 - Fine-tuned checkpoint: TBD
 - Public URL: TBD
 - SHA256: TBD
@@ -55,3 +68,12 @@ This model is trained and evaluated in Genesis simulation only; I do not claim r
 transfer. Coverage is limited to the registered language/task suite, dual RGB cameras at
 320×240, and 9-D absolute joint actions. Observed failure modes will be listed after the
 final evaluation run.
+
+## License note
+
+The upstream `lerobot/smolvla_base` repository did not declare license metadata when the
+base revision above was frozen. This model card therefore uses Hugging Face's `other`
+marker instead of inventing a permissive license. The Physical-1K training dataset is
+CC BY 4.0 and its attribution requirements remain applicable to the dataset and rendered
+examples. Users must review the upstream base-model terms before redistribution or
+commercial use.

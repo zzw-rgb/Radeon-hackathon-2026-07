@@ -1,15 +1,28 @@
-# RadeonVLA-Reflex Dataset Card
+---
+license: cc-by-4.0
+task_categories:
+  - robotics
+tags:
+  - lerobot
+  - robotics
+  - imitation-learning
+  - vision-language-action
+  - amd-rocm
+  - genesis
+---
+
+# RadeonVLA-Reflex Physical-1K Dataset Card
 
 > Status: draft. Fill measured fields after the demonstration dataset is finalized.
 
 ## Overview
 
-- Dataset name: RadeonVLA-Reflex Demonstrations
+- Dataset name: RadeonVLA-Reflex Physical-1K
 - Version: TBD
 - Generator commit: TBD
 - Genesis version: 1.1.2
 - LeRobot version: 0.6.0
-- License: TBD after asset-license review
+- License: CC BY 4.0
 - Public URL: TBD
 - SHA256 or dataset revision: TBD
 
@@ -17,13 +30,13 @@
 
 The primary L1 dataset has 20 variations: five fruits × four bowl positions.
 
-| Fruit | Bowl positions | Planned training minimum | Validation | Held-out evaluation |
+| Fruit | Bowl positions | Training target | Validation | Held-out evaluation |
 |---|---|---:|---:|---:|
-| banana | white-left, blue-left, white-right, blue-right | 10 each | 5 each | 10 each |
-| lemon | white-left, blue-left, white-right, blue-right | 10 each | 5 each | 10 each |
-| plum | white-left, blue-left, white-right, blue-right | 10 each | 5 each | 10 each |
-| apple | white-left, blue-left, white-right, blue-right | 10 each | 5 each | 10 each |
-| orange | white-left, blue-left, white-right, blue-right | 10 each | 5 each | 10 each |
+| banana | white-left, blue-left, white-right, blue-right | 50 each | 5 each | 10 each |
+| lemon | white-left, blue-left, white-right, blue-right | 50 each | 5 each | 10 each |
+| plum | white-left, blue-left, white-right, blue-right | 50 each | 5 each | 10 each |
+| apple | white-left, blue-left, white-right, blue-right | 50 each | 5 each | 10 each |
+| orange | white-left, blue-left, white-right, blue-right | 50 each | 5 each | 10 each |
 
 The release table will replace planned counts with the immutable dataset manifest. L2–L4
 data are reported separately and are not implied by the primary L1 total.
@@ -40,8 +53,11 @@ data are reported separately and are not implied by the primary L1 total.
 | timestamp | float | Episode time (dataset metadata) |
 | episode_index | integer | Episode identifier |
 | frame_index | integer | Frame within episode |
-| seed | integer | Reset seed (logged externally) |
-| success | boolean | Independent success judgement (filter at record time) |
+| seed | integer | Reset seed in the external per-episode certificate |
+| success | boolean | Strict judgement in the external per-episode certificate |
+
+`seed` and `success` are not tensor columns in the LeRobot frame schema. They live in
+`certificates/episode_XXXXXX.json`, one atomic certificate for each committed episode.
 
 ## Action protocol
 
@@ -57,21 +73,28 @@ data are reported separately and are not implied by the primary L1 total.
 I collect data with the scripted multi-goal expert (`python -m radeonvla.record_dataset`):
 
 1. expert states follow resolved L1–L4 goals after scene randomization;
-2. success requires all subgoals inside the commanded bowl rim;
+2. success requires every fruit center to finish inside the inner bowl footprint after
+   at least 60 simulation settle steps;
 3. pose jitter is non-overlapping; optional appearance/physics DR flags are supported;
 4. recording rate is 20 Hz (sim 100 Hz, decimated);
-5. failed episodes are discarded by default (`--keep-failures` optional);
-6. `validate_dataset` checks schema, non-finite values, and image statistics;
-7. I spot-check camera videos under `datasets/*/videos/` before training.
-8. Recording happens under `.inprogress`; the target path is replaced only after finalize,
+5. formal collection disables kinematic attachment, placement nudges, and off-table
+   respawns; a context guard aborts any rigid-body pose write during the episode;
+6. failed episodes are discarded and are not part of Physical-1K;
+7. `validate_dataset` checks schema, non-finite values, image statistics, exact 20×50
+   coverage, unique seeds, zero interventions, and certificate/episode correspondence;
+8. I spot-check camera videos under `datasets/*/videos/` before training;
+9. Recording happens under `.inprogress`; the target path is replaced only after finalize,
    coverage checks, and a successful LeRobot reopen.
+10. `--resume-incomplete` reconstructs saved counts from LeRobot metadata and reconciles
+    the two-phase episode certificates before appending with a fresh seed.
 
 ## Split policy
 
-- Training seeds: 0–9999
-- Validation seeds: 10000–10999
-- Formal evaluation seeds: 20000–29999
-- Interruption/recovery seeds: 30000–30999
+- Strict smoke seeds: 12000–12999
+- Training seeds: 20000–29999
+- Validation seeds: 40000–40999
+- Formal evaluation seeds: 50000–59999
+- Interruption/recovery seeds: 60000–60999
 
 No seed may occur in more than one split.
 
@@ -87,6 +110,18 @@ No seed may occur in more than one split.
 ## Assets and limitations
 
 Robot and YCB meshes are populated via `setup_assets` (see `assets/README.md` and
-`THIRD_PARTY_NOTICES.md`). This dataset is simulation-only; object and language coverage
-are limited to the registered fruit/bowl suite. Final episode counts and any class
-imbalance will be written into the tables above when the release revision is frozen.
+`THIRD_PARTY_NOTICES.md`). The YCB data portal publishes the object models under
+[CC BY 4.0](https://creativecommons.org/licenses/by/4.0/); this release preserves that
+license, credits the YCB authors, and notes that blue bowl appearance is applied at scene
+build time. The Franka MJCF bundled by Genesis carries Apache-2.0 terms.
+
+This dataset is simulation-only; object and language coverage are limited to the
+registered fruit/bowl suite. Final episode/frame counts and immutable revision replace
+all `TBD` fields only after the 1,000-episode validator passes.
+
+## YCB attribution
+
+Berk Calli, Aaron Walsman, Arjun Singh, Siddhartha Srinivasa, Pieter Abbeel, and
+Aaron M. Dollar, “The YCB Object and Model Set: Towards Common Benchmarks for
+Manipulation Research,” ICAR 2015. Source: https://www.ycbbenchmarks.com/ and
+https://ycb-benchmarks.s3-website-us-east-1.amazonaws.com/.

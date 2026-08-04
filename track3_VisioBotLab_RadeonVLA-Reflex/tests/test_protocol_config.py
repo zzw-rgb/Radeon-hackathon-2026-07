@@ -1,5 +1,7 @@
 import json
 
+import pytest
+
 from radeonvla.config import load_config
 from radeonvla.paths import PROJECT_ROOT
 from radeonvla.protocol import (
@@ -88,3 +90,31 @@ def test_explicit_input_features_override_wins() -> None:
     assert sum(item.startswith("--policy.input_features") for item in cmd) == 1
     assert cmd.count(revision) == 1
     assert sum(item.startswith("--policy.pretrained_revision") for item in cmd) == 1
+
+
+def test_push_to_hub_requires_explicit_model_repo() -> None:
+    class Args:
+        policy = "smolvla"
+        policy_path = None
+        policy_type = None
+        dataset_root = "datasets/demo"
+        repo_id = "visiobot/demo"
+        batch_size = None
+        name = None
+        output_dir = None
+        steps = 1
+        save_freq = 1
+        log_freq = 1
+        num_workers = 0
+        seed = 0
+        device = "cpu"
+        push_to_hub = True
+        hub_model_id = None
+        wandb = False
+        video_backend = "pyav"
+        rename_map = None
+
+    with pytest.raises(ValueError, match="--hub-model-id"):
+        build_command(Args(), [])
+    Args.hub_model_id = "visiobot/model"
+    assert "--policy.repo_id=visiobot/model" in build_command(Args(), [])

@@ -61,6 +61,11 @@ def build_command(args: argparse.Namespace, passthrough: list[str]) -> list[str]
         f"--policy.push_to_hub={'true' if args.push_to_hub else 'false'}",
         f"--wandb.enable={'true' if args.wandb else 'false'}",
     ]
+    hub_model_id = getattr(args, "hub_model_id", None)
+    if args.push_to_hub:
+        if not hub_model_id:
+            raise ValueError("--push-to-hub requires --hub-model-id so weights are never sent to an implicit repo")
+        cmd.append(f"--policy.repo_id={hub_model_id}")
     if args.video_backend:
         cmd.append(f"--dataset.video_backend={args.video_backend}")
 
@@ -84,10 +89,7 @@ def build_command(args: argparse.Namespace, passthrough: list[str]) -> list[str]
         if preset_inputs:
             # A pretrained config otherwise keeps the base checkpoint's 6-D
             # state declaration even though this dataset contains 9-D states.
-            cmd.append(
-                "--policy.input_features="
-                + json.dumps(preset_inputs, separators=(",", ":"))
-            )
+            cmd.append("--policy.input_features=" + json.dumps(preset_inputs, separators=(",", ":")))
 
     cmd += passthrough
     return cmd
@@ -114,6 +116,7 @@ def parse_args(argv: list[str] | None = None) -> tuple[argparse.Namespace, list[
     parser.add_argument("--video-backend", default="pyav")
     parser.add_argument("--wandb", action="store_true")
     parser.add_argument("--push-to-hub", action="store_true")
+    parser.add_argument("--hub-model-id", default=None, help="Required Hub model repo when --push-to-hub is set.")
     parser.add_argument("--rename-map", default=None)
     parser.add_argument("--policy-type", default=None)
     parser.add_argument("--policy-path", default=None)
