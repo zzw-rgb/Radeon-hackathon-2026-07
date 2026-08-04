@@ -1381,7 +1381,6 @@ a:focus-visible,
 .team-card-top {
   display: flex;
   align-items: center;
-  justify-content: space-between;
   margin-bottom: 18px;
   color: #6a6b64;
   font-size: 0.62rem;
@@ -1392,12 +1391,6 @@ a:focus-visible,
 
 .team-card-lead .team-card-top {
   color: #a8a9a0;
-}
-
-.team-card-top strong {
-  color: var(--acid);
-  font-size: 1.1rem;
-  letter-spacing: -0.03em;
 }
 
 .team-card h3 {
@@ -1426,34 +1419,6 @@ a:focus-visible,
 
 .team-card-lead .team-focus {
   color: #b8b7af;
-}
-
-.team-share-bar {
-  height: 4px;
-  margin: 22px 0 10px;
-  overflow: hidden;
-  background: rgba(17, 18, 15, 0.12);
-}
-
-.team-card-lead .team-share-bar {
-  background: rgba(255, 255, 255, 0.12);
-}
-
-.team-share-bar i {
-  display: block;
-  height: 100%;
-  background: var(--acid);
-}
-
-.team-card small {
-  color: #77786f;
-  font-size: 0.68rem;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-}
-
-.team-card-lead small {
-  color: #8d8e85;
 }
 
 .button-light {

@@ -419,15 +419,10 @@ function render(): void {
                   <article class="team-card reveal ${member.lead ? "team-card-lead" : ""}">
                     <div class="team-card-top">
                       <span>${member.lead ? t(copy.teamLeadLabel, locale) : t(copy.teamMemberLabel, locale)}</span>
-                      <strong>${member.share}</strong>
                     </div>
                     <h3>${t(member.name, locale)}</h3>
                     <p class="team-role">${t(member.role, locale)}</p>
                     <p class="team-focus">${t(member.focus, locale)}</p>
-                    <div class="team-share-bar" aria-hidden="true">
-                      <i style="width:${member.share}"></i>
-                    </div>
-                    <small>${t(copy.teamShareLabel, locale)} · ${member.share}</small>
                   </article>`,
               )
               .join("")}
