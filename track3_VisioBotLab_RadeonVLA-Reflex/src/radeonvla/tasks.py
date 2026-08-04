@@ -124,8 +124,11 @@ def _l1_auto(fruit: str, side: str) -> TaskSpec:
             f"Sort {f_tr} into {s_tr}.",
         ),
         (
-            f"Move {f_ev} to {s_ev}.",
+            # L1 is the named-object benchmark. Keep the default held-out
+            # instruction named as well; attribute descriptions belong to the
+            # harder grounding stress test and remain available as variation 1.
             f"Put {f_tr} into {s_ev}.",
+            f"Move {f_ev} to {s_ev}.",
         ),
     )
 

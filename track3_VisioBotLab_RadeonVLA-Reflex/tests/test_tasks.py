@@ -32,6 +32,12 @@ def test_training_and_evaluation_language_are_separate() -> None:
         assert set(task.training_instructions).isdisjoint(task.evaluation_instructions)
 
 
+def test_l1_default_evaluation_instruction_names_the_fruit() -> None:
+    for task_id in L1_TASKS:
+        task = get_task(task_id)
+        assert task.target_object in task.evaluation_instructions[0].lower()
+
+
 def test_l3_is_multi_step() -> None:
     task = get_task("seq_banana_white_left_lemon_white_right")
     assert task.tier == "L3"
