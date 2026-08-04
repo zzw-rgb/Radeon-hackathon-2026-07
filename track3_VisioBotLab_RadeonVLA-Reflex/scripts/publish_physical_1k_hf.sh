@@ -43,8 +43,9 @@ if [[ "$HF_NAMESPACE" != "$user_name" && ",$orgs," != *",$HF_NAMESPACE,"* ]]; th
   die "HF_NAMESPACE=$HF_NAMESPACE is not the authenticated user or one of its orgs"
 fi
 
-DATASET_REPO="${DATASET_REPO:-${HF_NAMESPACE}/radeonvla-reflex-physical-1k}"
-MODEL_REPO="${MODEL_REPO:-${HF_NAMESPACE}/radeonvla-reflex-smolvla-1k}"
+# LeRobot / Hub style: lowercase + underscores (not mixed hyphens).
+DATASET_REPO="${DATASET_REPO:-${HF_NAMESPACE}/radeonvla_reflex_physical_1k}"
+MODEL_REPO="${MODEL_REPO:-${HF_NAMESPACE}/radeonvla_reflex_smolvla_1k}"
 VALIDATION_JSON="${VALIDATION_JSON:-artifacts/physical_1k_validation.json}"
 MANIFEST_JSON="${MANIFEST_JSON:-$DATASET_ROOT/recording_manifest.json}"
 DATASET_CARD="${DATASET_CARD:-docs/DATASET_CARD.md}"
