@@ -27,6 +27,7 @@ REQUIRED_FILES = (
     "src/radeonvla/evaluate.py",
     "src/radeonvla/stress.py",
     "src/radeonvla/artifact_io.py",
+    "src/radeonvla/vendor_vlm_assets.py",
     "src/radeonvla/pipeline.py",
     "src/radeonvla/grounding.py",
     "src/radeonvla/tasks.py",

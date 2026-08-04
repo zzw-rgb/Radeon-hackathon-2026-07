@@ -84,6 +84,9 @@ else
 fi
 run_py -m radeonvla.validate_dataset --repo-id "$REPO_ID" --dataset-root "$DATASET_ROOT" \
   --json artifacts/dataset_validation.json
+if [[ -f "$DATASET_ROOT/recording_manifest.json" ]]; then
+  cp "$DATASET_ROOT/recording_manifest.json" artifacts/dataset_manifest.json
+fi
 
 CKPT="${CKPT:-}"
 if [[ "$SKIP_TRAIN" != "1" ]]; then

@@ -128,6 +128,7 @@ track3_VisioBotLab_RadeonVLA-Reflex/
 │   ├── evaluate.py           # closed-loop eval + interrupt + recovery
 │   ├── stress.py             # deterministic target/container perturbations
 │   ├── artifact_io.py        # hashes + JSON/CSV/Markdown evidence
+│   ├── vendor_vlm_assets.py  # offline SmolVLM config/tokenizer bundle
 │   ├── safety.py             # command session, safety, failures
 │   ├── pipeline.py           # stage orchestrator / all-smoke
 │   ├── benchmark.py          # throughput / latency

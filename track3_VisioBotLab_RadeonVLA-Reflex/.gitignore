@@ -35,7 +35,9 @@ artifacts/*.png
 artifacts/*.mp4
 !artifacts/evaluation.schema.json
 !artifacts/environment.remote.json
+!artifacts/dataset_manifest.json
 !artifacts/dataset_validation.json
+!artifacts/training.json
 !artifacts/evaluation.json
 !artifacts/evaluation.csv
 !artifacts/summary.md

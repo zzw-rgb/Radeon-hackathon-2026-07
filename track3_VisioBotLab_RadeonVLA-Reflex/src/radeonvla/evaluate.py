@@ -111,10 +111,17 @@ def load_policy(
 
     policy = make_policy(cfg=cfg, ds_meta=ds_meta, rename_map=rename_map)
     policy.eval()
+    preprocessor_overrides: dict[str, dict[str, Any]] = {
+        "device_processor": {"device": str(device)}
+    }
+    if local_vlm_assets.is_dir():
+        preprocessor_overrides["tokenizer_processor"] = {
+            "tokenizer_name": str(local_vlm_assets.resolve())
+        }
     preprocessor, postprocessor = make_pre_post_processors(
         policy_cfg=cfg,
         pretrained_path=policy_path,
-        preprocessor_overrides={"device_processor": {"device": str(device)}},
+        preprocessor_overrides=preprocessor_overrides,
     )
     image_keys = [k for k in ds_meta.features if k.startswith("observation.images")]
     if not image_keys:

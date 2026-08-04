@@ -4,6 +4,9 @@ This directory stores small, reviewable evidence files:
 
 ~~~text
 environment.remote.json
+dataset_manifest.json
+dataset_validation.json
+training.json
 evaluation.json
 evaluation.csv
 interrupt_evaluation.json
