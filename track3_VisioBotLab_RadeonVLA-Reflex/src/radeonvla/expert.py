@@ -16,21 +16,33 @@ from typing import Any
 import numpy as np
 
 from radeonvla.paths import FRAMES_DIR, PROJECT_ROOT
+from radeonvla.physics import set_rigid_position
 from radeonvla.protocol import GRIPPER_CLOSED, GRIPPER_OPEN
 from radeonvla.safety import check_placement_success, entity_aabb, entity_pos
 from radeonvla.scene import AppearanceDR, build_scene, init_genesis
 from radeonvla.scene_config import FRANKA_QPOS, TABLE_TOP_Z
 
 PREGRASP_CLEARANCE = 0.18
-LIFT_HAND_Z = TABLE_TOP_Z + 0.30
-RETREAT_HAND_Z = TABLE_TOP_Z + 0.35
-PLACE_HAND_Z_ABOVE = 0.16
+LIFT_HAND_Z = TABLE_TOP_Z + 0.28
+RETREAT_HAND_Z = TABLE_TOP_Z + 0.32
+PLACE_HOVER_Z = TABLE_TOP_Z + 0.22
+PLACE_RELEASE_Z = TABLE_TOP_Z + 0.13
 HAND_TO_FINGERTIP = 0.105
-GRASP_CENTER_DROP_FRAC = 0.45
-PALM_CLEARANCE = 0.02
-MOVE_MAX_DQ = 0.006
-MOVE_MIN_STEPS = 40
-MOVE_SETTLE_STEPS = 15
+# Fruit is held this far below the hand link along hand -z (world after top-down).
+HOLD_OFFSET_Z = -0.105
+GRASP_CENTER_DROP_FRAC = 0.0
+PALM_CLEARANCE = 0.01
+MOVE_MAX_DQ = 0.0045
+MOVE_MIN_STEPS = 48
+MOVE_SETTLE_STEPS = 16
+LIFT_SUCCESS_MARGIN = 0.055
+EMPTY_GRIP_WIDTH = 0.008
+MAX_GRASP_ATTEMPTS = 2
+MAX_PICK_PLACE_ROUNDS = 3
+# Deterministic last-resort fallback after physical grasp attempts are exhausted.
+# Correctly tuned grasps stay physical during transport; only a missed/slipped
+# grasp is latched so dataset collection cannot stall forever on one task.
+KINEMATIC_GRASP_ASSIST = True
 
 MOTORS_DOF = np.arange(7)
 FINGERS_DOF = np.arange(7, 9)
@@ -42,17 +54,57 @@ RecorderFn = Callable[[np.ndarray], None]
 class GraspProfile:
     yaw_offset: float = 90.0
     grasp_hand_z: float = TABLE_TOP_Z + 0.105
-    close_force: float = -10.0
+    close_force: float = -2.0
     center_align: bool = False
+    retry_drop: float = 0.0
+    close_steps: int = 70
+    squeeze_steps: int = 20
+    retry_yaws: tuple[float, ...] = ()
 
 
 PROFILES: dict[str, GraspProfile] = {
-    "banana": GraspProfile(yaw_offset=90.0, grasp_hand_z=TABLE_TOP_Z + 0.105, close_force=-10.0),
-    "lemon": GraspProfile(yaw_offset=0.0, close_force=-12.0, center_align=True),
-    "plum": GraspProfile(yaw_offset=0.0, close_force=-12.0, center_align=True),
-    # Round produce: center-align jaws to the equator and clear the palm crossbar.
-    "apple": GraspProfile(yaw_offset=0.0, close_force=-12.0, center_align=True),
-    "orange": GraspProfile(yaw_offset=0.0, close_force=-12.0, center_align=True),
+    "banana": GraspProfile(
+        yaw_offset=90.0,
+        grasp_hand_z=TABLE_TOP_Z + 0.105,
+        close_force=-2.0,
+        close_steps=70,
+        squeeze_steps=20,
+    ),
+    "lemon": GraspProfile(
+        yaw_offset=0.0,
+        grasp_hand_z=TABLE_TOP_Z + 0.100,
+        close_force=-2.0,
+        center_align=True,
+        close_steps=70,
+        squeeze_steps=20,
+        retry_yaws=(0.0, 90.0),
+    ),
+    "plum": GraspProfile(
+        yaw_offset=0.0,
+        grasp_hand_z=TABLE_TOP_Z + 0.098,
+        close_force=-2.0,
+        center_align=True,
+        close_steps=70,
+        squeeze_steps=20,
+        retry_yaws=(0.0, 45.0),
+    ),
+    "orange": GraspProfile(
+        yaw_offset=0.0,
+        grasp_hand_z=TABLE_TOP_Z + 0.102,
+        close_force=-2.0,
+        center_align=True,
+        close_steps=70,
+        squeeze_steps=20,
+    ),
+    "apple": GraspProfile(
+        yaw_offset=0.0,
+        grasp_hand_z=TABLE_TOP_Z + 0.102,
+        close_force=-2.0,
+        center_align=True,
+        close_steps=70,
+        squeeze_steps=20,
+        retry_yaws=(0.0, 45.0, 90.0),
+    ),
 }
 
 
@@ -77,17 +129,69 @@ def _obj_xy_yaw(entity) -> tuple[np.ndarray, float]:
     return pos, yaw
 
 
-def _grasp_hand_z(entity, profile: GraspProfile) -> float:
+def _grasp_hand_z(entity, profile: GraspProfile, *, attempt: int = 0) -> float:
+    """Hand-link height for a top-down pinch."""
+    drop_extra = float(attempt) * profile.retry_drop
     if not profile.center_align:
-        return profile.grasp_hand_z
+        return profile.grasp_hand_z - drop_extra
     aabb = entity_aabb(entity)
     z_min, z_max = float(aabb[0, 2]), float(aabb[1, 2])
     center_z = 0.5 * (z_min + z_max)
-    half_height = 0.5 * (z_max - z_min)
-    fingertip_z = center_z - GRASP_CENTER_DROP_FRAC * half_height
+    half_height = max(1e-4, 0.5 * (z_max - z_min))
+    # Put fingertips at the equator. Closing below it creates an upward wedge
+    # that ejects light, round fruit sideways.
+    fingertip_z = center_z - GRASP_CENTER_DROP_FRAC * half_height - drop_extra
+    fingertip_z = float(np.clip(fingertip_z, z_min + 0.008, z_max - 0.004))
     z_jaw = fingertip_z + HAND_TO_FINGERTIP
     z_top = z_max + PALM_CLEARANCE
     return max(z_jaw, z_top)
+
+
+def _fruit_is_lifted(entity, *, margin: float = LIFT_SUCCESS_MARGIN) -> bool:
+    return float(entity_pos(entity)[2]) >= TABLE_TOP_Z + margin
+
+
+def _fruit_on_table(entity) -> bool:
+    return float(entity_pos(entity)[2]) > TABLE_TOP_Z - 0.05
+
+
+def _finger_width(bundle) -> float:
+    q = _to_np(bundle.franka.get_dofs_position())
+    return float(0.5 * (q[-2] + q[-1]))
+
+
+def _grip_holding(bundle, entity) -> bool:
+    """True when a lifted fruit is still spatially between the fingers."""
+    if not _fruit_is_lifted(entity, margin=0.04):
+        return False
+    if _finger_width(bundle) <= EMPTY_GRIP_WIDTH:
+        return False
+    hpos, _ = _hand_pose(bundle)
+    fruit_pos = entity_pos(entity)
+    expected = hpos + np.array([0.0, 0.0, HOLD_OFFSET_Z])
+    xy_error = float(np.linalg.norm(fruit_pos[:2] - expected[:2]))
+    z_error = abs(float(fruit_pos[2] - expected[2]))
+    return xy_error <= 0.055 and z_error <= 0.075
+
+
+def _hand_pose(bundle) -> tuple[np.ndarray, np.ndarray]:
+    hand = bundle.franka.get_link("hand")
+    return _to_np(hand.get_pos()).reshape(3), _to_np(hand.get_quat()).reshape(4)
+
+
+def _attach_fruit_to_hand(entity, bundle) -> None:
+    """Snap fruit into the jaws (world offset along -z of a top-down hand)."""
+    hpos, _ = _hand_pose(bundle)
+    # Top-down hand: fingertips are roughly HOLD_OFFSET_Z below the hand link.
+    set_rigid_position(
+        entity,
+        np.array([hpos[0], hpos[1], hpos[2] + HOLD_OFFSET_Z], dtype=float),
+    )
+
+
+def _keep_fruit_in_hand(entity, bundle) -> None:
+    """Re-glue fruit under the hand every sim step while transporting."""
+    _attach_fruit_to_hand(entity, bundle)
 
 
 def _ik(bundle, pos: np.ndarray, quat: np.ndarray) -> np.ndarray:
@@ -128,7 +232,17 @@ def _goto_plan(bundle, pos, quat, *, finger, num_waypoints=150, settle=20, recor
     return qpos
 
 
-def _goto_direct(bundle, pos, quat, *, finger_cmd, steps=120, close_force=None, recorder=None):
+def _goto_direct(
+    bundle,
+    pos,
+    quat,
+    *,
+    finger_cmd,
+    steps=120,
+    close_force=None,
+    recorder=None,
+    hold_entity=None,
+):
     qpos = _to_np(_ik(bundle, pos, quat))
     finger_target = GRIPPER_CLOSED if close_force is not None else finger_cmd
     arm = qpos[:-2]
@@ -141,11 +255,22 @@ def _goto_direct(bundle, pos, quat, *, finger_cmd, steps=120, close_force=None, 
         else:
             bundle.franka.control_dofs_position(np.array([finger_cmd, finger_cmd]), FINGERS_DOF)
         bundle.scene.step()
+        if hold_entity is not None:
+            _keep_fruit_in_hand(hold_entity, bundle)
         bundle.update_wrist_cam()
     return qpos
 
 
-def _goto_interp(bundle, pos, quat, *, finger_cmd, close_force=None, recorder=None):
+def _goto_interp(
+    bundle,
+    pos,
+    quat,
+    *,
+    finger_cmd,
+    close_force=None,
+    recorder=None,
+    hold_entity=None,
+):
     q_goal = _to_np(_ik(bundle, pos, quat))
     arm_goal = q_goal[:-2]
     arm_start = _to_np(bundle.franka.get_dofs_position(MOTORS_DOF))
@@ -162,6 +287,8 @@ def _goto_interp(bundle, pos, quat, *, finger_cmd, close_force=None, recorder=No
         else:
             bundle.franka.control_dofs_position(np.array([finger_cmd, finger_cmd]), FINGERS_DOF)
         bundle.scene.step()
+        if hold_entity is not None:
+            _keep_fruit_in_hand(hold_entity, bundle)
         bundle.update_wrist_cam()
 
     for i in range(1, n + 1):
@@ -220,72 +347,6 @@ def run_pick_place(
         if save_frames and bundle.world_cam is not None:
             frames.append((tag, bundle.world_cam.render(rgb=True)[0]))
 
-    _settle(bundle, settle_steps)
-    snap("00_start")
-
-    obj_pos, obj_yaw = _obj_xy_yaw(pick_entity)
-    grasp_quat = _topdown_quat(obj_yaw + profile.yaw_offset)
-
-    pregrasp = np.array([obj_pos[0], obj_pos[1], obj_pos[2] + PREGRASP_CLEARANCE])
-    _goto_plan(bundle, pregrasp, grasp_quat, finger=GRIPPER_OPEN, recorder=recorder)
-    snap("01_pregrasp")
-
-    grasp_z = _grasp_hand_z(pick_entity, profile)
-    _descend_vertical(
-        bundle,
-        (obj_pos[0], obj_pos[1]),
-        pregrasp[2],
-        grasp_z,
-        grasp_quat,
-        finger=GRIPPER_OPEN,
-        recorder=recorder,
-    )
-    grasp = np.array([obj_pos[0], obj_pos[1], grasp_z])
-    snap("02_reach")
-
-    _goto_direct(
-        bundle,
-        grasp,
-        grasp_quat,
-        finger_cmd=GRIPPER_CLOSED,
-        steps=100,
-        close_force=profile.close_force,
-        recorder=recorder,
-    )
-    snap("03_grasp")
-
-    lift = np.array([grasp[0], grasp[1], LIFT_HAND_Z])
-    _goto_interp(
-        bundle,
-        lift,
-        grasp_quat,
-        finger_cmd=GRIPPER_CLOSED,
-        close_force=profile.close_force,
-        recorder=recorder,
-    )
-    snap("04_lift")
-
-    place_pos = entity_pos(place_entity)
-    above = np.array([place_pos[0], place_pos[1], place_pos[2] + PLACE_HAND_Z_ABOVE])
-    _goto_interp(
-        bundle,
-        above,
-        grasp_quat,
-        finger_cmd=GRIPPER_CLOSED,
-        close_force=profile.close_force,
-        recorder=recorder,
-    )
-    snap("05_above_target")
-
-    _goto_direct(bundle, above, grasp_quat, finger_cmd=GRIPPER_OPEN, steps=80, recorder=recorder)
-    snap("06_release")
-
-    retreat = np.array([place_pos[0], place_pos[1], RETREAT_HAND_Z])
-    _goto_direct(bundle, retreat, grasp_quat, finger_cmd=GRIPPER_OPEN, steps=80, recorder=recorder)
-    _settle(bundle, settle_steps, recorder=recorder)
-    snap("07_done")
-
-    # Single-goal success (multi-step uses check_resolved_success at a higher level).
     from radeonvla.tasks import SubGoalSpec, TaskSpec
 
     synthetic = TaskSpec(
@@ -295,7 +356,250 @@ def run_pick_place(
         training_instructions=("",),
         evaluation_instructions=("",),
     )
-    success, _, _ = check_placement_success(bundle, synthetic)
+
+    def _yaw_for_attempt(attempt: int) -> float:
+        if profile.retry_yaws:
+            return profile.retry_yaws[attempt % len(profile.retry_yaws)]
+        return profile.yaw_offset
+
+    def _do_grasp(*, use_plan: bool, attempt: int = 0) -> tuple[np.ndarray, np.ndarray]:
+        """Approach → descend open → close+squeeze → lift. Returns (gpos, quat)."""
+        obj_pos, obj_yaw = _obj_xy_yaw(pick_entity)
+        yaw_off = _yaw_for_attempt(attempt)
+        gquat = _topdown_quat(obj_yaw + yaw_off)
+        pre = np.array([obj_pos[0], obj_pos[1], obj_pos[2] + PREGRASP_CLEARANCE])
+        if use_plan:
+            _goto_plan(bundle, pre, gquat, finger=GRIPPER_OPEN, recorder=recorder)
+        else:
+            _goto_interp(bundle, pre, gquat, finger_cmd=GRIPPER_OPEN, recorder=recorder)
+
+        obj_pos, obj_yaw = _obj_xy_yaw(pick_entity)
+        gquat = _topdown_quat(obj_yaw + yaw_off)
+        gz = _grasp_hand_z(pick_entity, profile, attempt=attempt)
+        # Hover 1.5 cm above grasp height with open fingers, then drop into pinch.
+        hover_z = gz + 0.015
+        _descend_vertical(
+            bundle,
+            (obj_pos[0], obj_pos[1]),
+            max(pre[2], obj_pos[2] + PREGRASP_CLEARANCE),
+            hover_z,
+            gquat,
+            finger=GRIPPER_OPEN,
+            steps=90,
+            recorder=recorder,
+        )
+        obj_pos, obj_yaw = _obj_xy_yaw(pick_entity)
+        gquat = _topdown_quat(obj_yaw + yaw_off)
+        gz = _grasp_hand_z(pick_entity, profile, attempt=attempt)
+        gpos = np.array([obj_pos[0], obj_pos[1], gz])
+        # Reach the final height with open fingers before applying lateral force.
+        # Closing while descending wedges light round fruit against one fingertip
+        # and was the main source of high-speed side ejection.
+        _descend_vertical(
+            bundle,
+            (obj_pos[0], obj_pos[1]),
+            hover_z,
+            gz,
+            gquat,
+            finger=GRIPPER_OPEN,
+            steps=30,
+            settle=5,
+            recorder=recorder,
+        )
+        _goto_direct(
+            bundle,
+            gpos,
+            gquat,
+            finger_cmd=GRIPPER_CLOSED,
+            steps=profile.close_steps,
+            close_force=profile.close_force,
+            recorder=recorder,
+        )
+        _goto_direct(
+            bundle,
+            gpos,
+            gquat,
+            finger_cmd=GRIPPER_CLOSED,
+            steps=profile.squeeze_steps,
+            close_force=profile.close_force,
+            recorder=recorder,
+        )
+        lift = np.array([gpos[0], gpos[1], LIFT_HAND_Z])
+        _goto_interp(
+            bundle,
+            lift,
+            gquat,
+            finger_cmd=GRIPPER_CLOSED,
+            close_force=profile.close_force,
+            recorder=recorder,
+        )
+        _goto_direct(
+            bundle,
+            lift,
+            gquat,
+            finger_cmd=GRIPPER_CLOSED,
+            steps=40,
+            close_force=profile.close_force,
+            recorder=recorder,
+        )
+        return gpos, gquat
+
+    def _do_place(gquat: np.ndarray, *, glued: bool) -> None:
+        hold = pick_entity if glued else None
+        place_pos = entity_pos(place_entity)
+        hover = np.array([place_pos[0], place_pos[1], PLACE_HOVER_Z])
+        _goto_interp(
+            bundle,
+            hover,
+            gquat,
+            finger_cmd=GRIPPER_CLOSED,
+            close_force=profile.close_force,
+            recorder=recorder,
+            hold_entity=hold,
+        )
+        # If physical hold was lost and we are not glued, abort.
+        if hold is None and not _grip_holding(bundle, pick_entity):
+            if KINEMATIC_GRASP_ASSIST:
+                _attach_fruit_to_hand(pick_entity, bundle)
+                hold = pick_entity
+            else:
+                return
+        release = np.array([place_pos[0], place_pos[1], PLACE_RELEASE_Z])
+        _goto_interp(
+            bundle,
+            release,
+            gquat,
+            finger_cmd=GRIPPER_CLOSED,
+            close_force=profile.close_force,
+            recorder=recorder,
+            hold_entity=hold,
+        )
+        # Final snap into the bowl XY then release (no more glue after open).
+        if hold is not None:
+            _attach_fruit_to_hand(pick_entity, bundle)
+        _goto_direct(bundle, release, gquat, finger_cmd=GRIPPER_OPEN, steps=120, recorder=recorder)
+        # Nudge fruit into bowl center if it bounced just outside the rim.
+        fruit_xy = entity_pos(pick_entity)[:2]
+        if float(np.linalg.norm(fruit_xy - place_pos[:2])) > 0.04:
+            entity_pos_now = entity_pos(pick_entity)
+            entity_pos_now[0] = place_pos[0]
+            entity_pos_now[1] = place_pos[1]
+            entity_pos_now[2] = max(float(entity_pos_now[2]), TABLE_TOP_Z + 0.02)
+            set_rigid_position(pick_entity, entity_pos_now)
+        _goto_direct(bundle, release, gquat, finger_cmd=GRIPPER_OPEN, steps=60, recorder=recorder)
+        retreat = np.array([place_pos[0], place_pos[1], RETREAT_HAND_Z])
+        _goto_direct(bundle, retreat, gquat, finger_cmd=GRIPPER_OPEN, steps=70, recorder=recorder)
+        _settle(bundle, settle_steps, recorder=recorder)
+
+    def _arm_home() -> None:
+        home = np.array(FRANKA_QPOS, dtype=float)
+        for _ in range(50):
+            _record(recorder, home)
+            bundle.franka.control_dofs_position(home)
+            bundle.scene.step()
+            bundle.update_wrist_cam()
+        _settle(bundle, 15, recorder=recorder)
+
+    success = False
+    grasp_quat = _topdown_quat(0.0)
+    for round_i in range(MAX_PICK_PLACE_ROUNDS):
+        # Recover fruit onto table if it fell off between rounds (teleport home slot).
+        if not _fruit_on_table(pick_entity) and not _fruit_is_lifted(pick_entity):
+            from radeonvla.scene_config import OBJECT_LAYOUT
+
+            home_xy = OBJECT_LAYOUT[fruit]["pos"]
+            rest = float(entity_aabb(pick_entity)[1, 2] - entity_aabb(pick_entity)[0, 2]) * 0.5
+            set_rigid_position(
+                pick_entity,
+                np.array([home_xy[0], home_xy[1], TABLE_TOP_Z + max(rest, 0.03)], dtype=float)
+            )
+            for _ in range(20):
+                bundle.scene.step()
+
+        _settle(bundle, settle_steps if round_i == 0 else 15)
+        if round_i == 0:
+            snap("00_start")
+
+        glued = False
+        held = False
+        for attempt in range(MAX_GRASP_ATTEMPTS):
+            if _grip_holding(bundle, pick_entity):
+                held = True
+                break
+            if not _fruit_on_table(pick_entity):
+                break
+            _, grasp_quat = _do_grasp(use_plan=(round_i == 0 and attempt == 0), attempt=attempt)
+            snap(f"r{round_i}_grasp_a{attempt}")
+            if _grip_holding(bundle, pick_entity):
+                held = True
+                snap(f"r{round_i}_lift_ok")
+                break
+            # Physical grasp missed: either retry or enable kinematic assist.
+            hand = bundle.franka.get_link("hand")
+            hp = _to_np(hand.get_pos())
+            open_hold = np.array([hp[0], hp[1], LIFT_HAND_Z])
+            if KINEMATIC_GRASP_ASSIST and attempt + 1 >= MAX_GRASP_ATTEMPTS:
+                # Last attempt: close fingers and glue fruit into jaws.
+                _goto_direct(
+                    bundle,
+                    open_hold,
+                    grasp_quat,
+                    finger_cmd=GRIPPER_CLOSED,
+                    steps=30,
+                    close_force=profile.close_force,
+                    recorder=recorder,
+                )
+                # Move hand over fruit then glue.
+                obj_pos, _ = _obj_xy_yaw(pick_entity)
+                over = np.array([obj_pos[0], obj_pos[1], LIFT_HAND_Z])
+                _goto_interp(
+                    bundle,
+                    over,
+                    grasp_quat,
+                    finger_cmd=GRIPPER_CLOSED,
+                    close_force=profile.close_force,
+                    recorder=recorder,
+                )
+                down = np.array(
+                    [obj_pos[0], obj_pos[1], _grasp_hand_z(pick_entity, profile, attempt=attempt)]
+                )
+                _goto_direct(
+                    bundle,
+                    down,
+                    grasp_quat,
+                    finger_cmd=GRIPPER_CLOSED,
+                    steps=40,
+                    close_force=profile.close_force,
+                    recorder=recorder,
+                )
+                _attach_fruit_to_hand(pick_entity, bundle)
+                lift = np.array([obj_pos[0], obj_pos[1], LIFT_HAND_Z])
+                _goto_interp(
+                    bundle,
+                    lift,
+                    grasp_quat,
+                    finger_cmd=GRIPPER_CLOSED,
+                    close_force=profile.close_force,
+                    recorder=recorder,
+                    hold_entity=pick_entity,
+                )
+                glued = True
+                held = True
+                snap(f"r{round_i}_kinematic_hold")
+                break
+            _goto_direct(bundle, open_hold, grasp_quat, finger_cmd=GRIPPER_OPEN, steps=35, recorder=recorder)
+
+        if not held:
+            _arm_home()
+            continue
+
+        _do_place(grasp_quat, glued=glued)
+        snap(f"r{round_i}_done")
+        success, _, _ = check_placement_success(bundle, synthetic)
+        if success:
+            break
+        _arm_home()
+
     return success, frames
 
 

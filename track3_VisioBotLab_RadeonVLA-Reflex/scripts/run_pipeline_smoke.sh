@@ -16,7 +16,7 @@ section "Pipeline smoke (backend=$BACKEND)"
 run_py -m radeonvla.pipeline all-smoke \
   --backend "$BACKEND" \
   --episodes 1 \
-  --task banana_left \
+  --task banana_white_left \
   --repo-id visiobot/radeonvla_reflex_smoke \
   --dataset-root datasets/radeonvla_reflex_smoke \
   --device cpu \

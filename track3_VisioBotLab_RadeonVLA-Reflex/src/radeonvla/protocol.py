@@ -70,14 +70,20 @@ FRUIT_YCB: dict[str, str] = {
     "orange": "017_orange",
 }
 BOWL_YCB = "024_bowl"
-# Four containers: two neutral bowls + two blue bowls (same mesh, painted blue).
+# Four placeable bowls: white+blue pair on the left, white+blue pair on the right.
+# Entity names match "{side}_bowl" with side in CONTAINER_SIDES.
 CONTAINER_TO_ENTITY: dict[str, str] = {
-    "left_bowl": "left_bowl",
-    "right_bowl": "right_bowl",
+    "white_left_bowl": "white_left_bowl",
     "blue_left_bowl": "blue_left_bowl",
+    "white_right_bowl": "white_right_bowl",
     "blue_right_bowl": "blue_right_bowl",
 }
-CONTAINER_SIDES: tuple[str, ...] = ("left", "right", "blue_left", "blue_right")
+CONTAINER_SIDES: tuple[str, ...] = ("white_left", "blue_left", "white_right", "blue_right")
+# Backward-compatible aliases used in older task strings / scripts.
+CONTAINER_ALIASES: dict[str, str] = {
+    "left_bowl": "white_left_bowl",
+    "right_bowl": "white_right_bowl",
+}
 
 
 def vector_feature(names: tuple[str, ...] = JOINT_NAMES) -> dict[str, Any]:

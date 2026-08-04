@@ -13,7 +13,7 @@ def test_clamp_action_bounds() -> None:
 
 
 def test_command_session_versions_on_change() -> None:
-    session = CommandSession(instruction="a", task_id="banana_left")
+    session = CommandSession(instruction="a", task_id="banana_white_left")
     assert session.version == 0
     v1 = session.set_command(instruction="b", task_id="banana_right", step=10)
     assert v1 == 1
@@ -43,5 +43,5 @@ def test_recovery_policy_limits_retries() -> None:
 
 
 def test_task_registry_language_disjoint() -> None:
-    task = get_task("banana_left")
+    task = get_task("banana_white_left")
     assert set(task.training_instructions).isdisjoint(task.evaluation_instructions)

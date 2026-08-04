@@ -21,13 +21,13 @@ run_py -m radeonvla.setup_assets
 
 case "$MODE" in
   basic)
-    TASKS=(banana_left lemon_right plum_left)
+    TASKS=(banana_white_left lemon_blue_left plum_white_right)
     ;;
   hard)
-    TASKS=(leftmost_to_left seq_banana_left_lemon_right rule_yellow_left_purple_right seq_triple_sort)
+    TASKS=(leftmost_to_white_left seq_banana_white_left_lemon_white_right rule_red_blue_left_orange_blue_right seq_triple_sort)
     ;;
   mix|*)
-    TASKS=(banana_left leftmost_to_left seq_banana_left_lemon_right)
+    TASKS=(banana_white_left apple_blue_left seq_apple_blue_left_orange_blue_right)
     ;;
 esac
 

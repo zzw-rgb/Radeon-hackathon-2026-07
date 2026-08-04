@@ -54,7 +54,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     )
     parser.add_argument("--backend", choices=("cpu", "gpu", "amdgpu"), default="cpu")
     parser.add_argument("--episodes", type=int, default=1)
-    parser.add_argument("--task", default=None, help="Single task id (default: banana_left for smoke).")
+    parser.add_argument("--task", default=None, help="Single task id (default: banana_white_left for smoke).")
     parser.add_argument("--suite", default="basic", choices=sorted(SUITES))
     parser.add_argument("--repo-id", default="visiobot/radeonvla_reflex_smoke")
     parser.add_argument("--dataset-root", default="datasets/radeonvla_reflex_smoke")
@@ -76,7 +76,7 @@ def main(argv: list[str] | None = None) -> int:
     if not dataset_path.is_absolute():
         dataset_path = (root / dataset_path).resolve()
     dataset_root = str(dataset_path)
-    task = args.task or "banana_left"
+    task = args.task or "banana_white_left"
     t0 = time.time()
 
     def stage_assets() -> int:
@@ -222,7 +222,7 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.stage == "all-smoke":
         # Force a single easy task for reliable smoke.
-        args.task = args.task or "banana_left"
+        args.task = args.task or "banana_white_left"
         args.episodes = 1
         for name in ("assets", "env", "scene", "expert", "record", "validate"):
             code = stages[name]()

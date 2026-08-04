@@ -208,22 +208,32 @@ def build_scene(
     for name, layout in OBJECT_LAYOUT.items():
         asset = meshes[name]
         x, y, _ = layout["pos"]
-        z = TABLE_TOP_Z + asset.rest_z_offset
+        scale = float(layout.get("scale", 1.0))
+        # rest_z is mesh-local; scale it so the bottom still sits on the table.
+        z = TABLE_TOP_Z + asset.rest_z_offset * scale
         surface = None
         if recolor and name in DR_APPEARANCE_PRIORS:
             surface = gs.surfaces.Default(color=_sample_hsv_color(DR_APPEARANCE_PRIORS[name], rng))
         elif layout.get("color") is not None:
             surface = gs.surfaces.Default(color=tuple(layout["color"]))
+        # Containers are fixed upright place targets so contact cannot tip them over.
+        is_container = layout.get("kind") == "container"
+        fixed = bool(layout.get("fixed", is_container))
         objects[name] = scene.add_entity(
             morph=gs.morphs.Mesh(
                 file=str(asset.mesh_path),
                 pos=(x, y, z),
                 euler=layout["euler"],
+                scale=scale,
                 align=False,
                 convexify=True,
                 decimate_face_num=500,
+                fixed=fixed,
             ),
-            material=gs.materials.Rigid(rho=300.0, friction=layout.get("friction")),
+            material=gs.materials.Rigid(
+                rho=float(layout.get("rho", 300.0)),
+                friction=layout.get("friction"),
+            ),
             surface=surface,
         )
 

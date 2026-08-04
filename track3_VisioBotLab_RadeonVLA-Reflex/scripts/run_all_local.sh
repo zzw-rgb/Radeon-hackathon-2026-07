@@ -5,7 +5,7 @@
 # Usage:
 #   bash scripts/run_all_local.sh
 #   EPISODES=10 SUITE=basic bash scripts/run_all_local.sh
-#   TASK=seq_banana_left_lemon_right EPISODES=3 bash scripts/run_all_local.sh
+#   TASK=seq_banana_white_left_lemon_white_right EPISODES=3 bash scripts/run_all_local.sh
 set -euo pipefail
 # shellcheck source=lib.sh
 source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/lib.sh"
@@ -36,7 +36,7 @@ section "4/6 expert demo"
 if [[ -n "$TASK" ]]; then
   run_py -m radeonvla.expert --backend "$BACKEND" --task "$TASK" --episodes 1 --seed "$SEED"
 else
-  run_py -m radeonvla.expert --backend "$BACKEND" --task banana_left --episodes 1 --seed "$SEED"
+  run_py -m radeonvla.expert --backend "$BACKEND" --task banana_white_left --episodes 1 --seed "$SEED"
 fi
 
 section "5/6 record dataset ($EPISODES successful episodes)"

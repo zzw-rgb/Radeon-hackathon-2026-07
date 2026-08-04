@@ -13,6 +13,7 @@ def test_registry_contains_all_tiers() -> None:
     # 5 fruits × 4 bowls = 20 L1 tasks, plus spatial / multi-step / rules.
     assert len(L1_TASKS) == 20
     assert "apple_blue_left" in L1_TASKS
+    assert "banana_white_left" in L1_TASKS
     assert "orange_blue_right" in L1_TASKS
     assert len(TASKS) >= 30
 
@@ -32,14 +33,14 @@ def test_training_and_evaluation_language_are_separate() -> None:
 
 
 def test_l3_is_multi_step() -> None:
-    task = get_task("seq_banana_left_lemon_right")
+    task = get_task("seq_banana_white_left_lemon_white_right")
     assert task.tier == "L3"
     assert task.is_multi_step
     assert len(task.goals) == 2
 
 
 def test_l4_attribute_expansion() -> None:
-    task = get_task("rule_yellow_left_purple_right")
+    task = get_task("rule_yellow_white_left_purple_white_right")
     expanded = _expand_attribute_goals(task.goals)
     names = [g.object_name for g in expanded]
     assert "banana" in names and "lemon" in names and "plum" in names
@@ -48,12 +49,14 @@ def test_l4_attribute_expansion() -> None:
     assert ATTRIBUTES["orange"] == frozenset({"orange"})
 
 
-def test_new_fruits_and_blue_bowls_in_l1() -> None:
+def test_new_fruits_and_bowls_in_l1() -> None:
     apple = get_task("apple_blue_left")
     assert apple.target_object == "apple"
     assert apple.target_container == "blue_left_bowl"
-    orange = get_task("orange_right")
-    assert orange.target_container == "right_bowl"
+    banana = get_task("banana_white_left")
+    assert banana.target_container == "white_left_bowl"
+    orange = get_task("orange_white_right")
+    assert orange.target_container == "white_right_bowl"
 
 
 def test_spatial_grounding_uses_table_axes() -> None:

@@ -12,7 +12,7 @@ help:
 	@echo "  make check           # env + audit + pytest + ruff"
 	@echo "  make smoke           # 1-episode end-to-end smoke"
 	@echo "  make record-local    # record a few local episodes (SUITE/EPISODES overridable)"
-	@echo "  make record-basic    # alias: basic suite, 10 episodes"
+	@echo "  make record-basic    # all 20 fruit/bowl combinations + validation"
 	@echo "  make expert-demo     # scripted demos (MODE=mix|basic|hard)"
 	@echo "  make all-local       # full local one-click record pipeline"
 	@echo "  make remote-check    # strict AMD gate (on Radeon machine)"
@@ -38,7 +38,7 @@ record-local:
 	bash scripts/run_record.sh
 
 record-basic:
-	EPISODES=$${EPISODES:-10} SUITE=basic bash scripts/run_record.sh
+	EPISODES=$${EPISODES:-20} SUITE=basic bash scripts/run_record.sh
 
 expert-demo:
 	bash scripts/run_expert_demo.sh

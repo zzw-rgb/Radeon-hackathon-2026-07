@@ -43,12 +43,13 @@ RadeonVLA-Reflex 是 AMD AI DevMaster Hackathon **Track 3** 提交项目（团�
 
 | 层级 | 名称 | 策略需要完成的内容 | 示例 |
 |---|---|---|---|
-| **L1** | 基础命名 | 水果 × 碗（5 种水果 × 4 个碗） | `banana_left`、`apple_blue_left`、`orange_blue_right` |
-| **L2** | 空间指代 | 随机化后解析 *最左/最右/最近/最远* | `leftmost_to_left`、`leftmost_to_blue_left` |
-| **L3** | 多步序列 | 同一局内完成**有序**多物体放置 | `seq_banana_left_lemon_right`、`seq_apple_blue_left_orange_blue_right` |
-| **L4** | 属性规则 | 将颜色/形状规则展开为多个子目标 | `rule_yellow_left_purple_right`、`rule_red_blue_left_orange_blue_right` |
+| **L1** | 基础命名 | 水果 × 碗（5 种水果 × 4 个碗） | `banana_white_left`、`apple_blue_left`、`orange_blue_right` |
+| **L2** | 空间指代 | 随机化后解析 *最左/最右/最近/最远* | `leftmost_to_white_left`、`leftmost_to_blue_left` |
+| **L3** | 多步序列 | 同一局内完成**有序**多物体放置 | `seq_banana_white_left_lemon_white_right`、`seq_apple_blue_left_orange_blue_right` |
+| **L4** | 属性规则 | 将颜色/形状规则展开为多个子目标 | `rule_yellow_white_left_purple_white_right`、`rule_red_blue_left_orange_blue_right` |
 
-场景物体：**香蕉、柠檬、李子、苹果、橙子**，以及 **四个碗**（左/右中性色 + 左/右蓝色）。
+场景物体：**香蕉、柠檬、李子、苹果、橙子**，以及 **四个正放固定碗** —
+**左侧白+蓝，右侧白+蓝**（均可放置水果）。
 
 套件（CLI `--suite`）：
 
@@ -327,7 +328,7 @@ EPISODES=100 SUITE=full bash scripts/run_full_remote.sh
 ```bash
 bash scripts/run_pipeline_smoke.sh
 # 等价：
-python -m radeonvla.pipeline all-smoke --backend cpu --episodes 1 --task banana_left
+python -m radeonvla.pipeline all-smoke --backend cpu --episodes 1 --task banana_white_left
 ```
 
 执行顺序：资产 → 环境 → 场景 → 专家(1) → **采集(1)** → 校验 → 训练 dry-run。
@@ -346,7 +347,7 @@ python -m radeonvla.scene --backend cpu --steps 100 --save-frames
 python -m radeonvla.scene --backend amdgpu --steps 100 --save-frames
 
 # M2 — 脚本专家（基础 + 多步）
-python -m radeonvla.expert --task banana_left --episodes 5 --backend cpu
+python -m radeonvla.expert --task banana_white_left --episodes 5 --backend cpu
 python -m radeonvla.expert --task seq_triple_sort --episodes 3 --backend cpu
 python -m radeonvla.expert --suite advanced --episodes 8 --backend amdgpu
 

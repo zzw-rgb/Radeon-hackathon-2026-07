@@ -46,12 +46,13 @@ continuous robot actions, and executes them in a closed loop with safety and rec
 
 | Tier | Name | What the policy must do | Examples |
 |---|---|---|---|
-| **L1** | Basic named | Fruit × bowl (5 fruits × 4 bowls) | `banana_left`, `apple_blue_left`, `orange_blue_right` |
-| **L2** | Spatial grounding | Resolve *leftmost / rightmost / nearest / farthest* after randomization | `leftmost_to_left`, `leftmost_to_blue_left` |
-| **L3** | Multi-step sequence | Complete **ordered** multi-object placements in one episode | `seq_banana_left_lemon_right`, `seq_apple_blue_left_orange_blue_right` |
-| **L4** | Attribute rules | Expand color/shape rules into multiple goals | `rule_yellow_left_purple_right`, `rule_red_blue_left_orange_blue_right` |
+| **L1** | Basic named | Fruit × bowl (5 fruits × 4 bowls) | `banana_white_left`, `apple_blue_left`, `orange_blue_right` |
+| **L2** | Spatial grounding | Resolve *leftmost / rightmost / nearest / farthest* after randomization | `leftmost_to_white_left`, `leftmost_to_blue_left` |
+| **L3** | Multi-step sequence | Complete **ordered** multi-object placements in one episode | `seq_banana_white_left_lemon_white_right`, `seq_apple_blue_left_orange_blue_right` |
+| **L4** | Attribute rules | Expand color/shape rules into multiple goals | `rule_yellow_white_left_purple_white_right`, `rule_red_blue_left_orange_blue_right` |
 
-Scene objects: **banana, lemon, plum, apple, orange** and **four bowls** (left/right neutral + blue left/right).
+Scene objects: **banana, lemon, plum, apple, orange** and **four upright bowls** —
+**left: white + blue**, **right: white + blue** (all placeable; bowls are fixed so they do not tip).
 
 Suites (CLI `--suite`):
 
@@ -335,7 +336,7 @@ Details and env vars: [`scripts/README.md`](scripts/README.md). Optional `.env` 
 ```bash
 bash scripts/run_pipeline_smoke.sh
 # equivalent:
-python -m radeonvla.pipeline all-smoke --backend cpu --episodes 1 --task banana_left
+python -m radeonvla.pipeline all-smoke --backend cpu --episodes 1 --task banana_white_left
 ```
 
 This runs assets → env → scene → expert(1) → **record(1)** → validate → train dry-run.
@@ -354,7 +355,7 @@ python -m radeonvla.scene --backend cpu --steps 100 --save-frames
 python -m radeonvla.scene --backend amdgpu --steps 100 --save-frames
 
 # M2 — scripted expert (basic + hard multi-step)
-python -m radeonvla.expert --task banana_left --episodes 5 --backend cpu
+python -m radeonvla.expert --task banana_white_left --episodes 5 --backend cpu
 python -m radeonvla.expert --task seq_triple_sort --episodes 3 --backend cpu
 python -m radeonvla.expert --suite advanced --episodes 8 --backend amdgpu
 

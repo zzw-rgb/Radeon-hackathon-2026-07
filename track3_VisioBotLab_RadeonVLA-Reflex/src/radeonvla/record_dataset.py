@@ -119,6 +119,12 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         default=0,
         help="Max expert rollouts (0 => 5x episodes). Stops early if successes reached.",
     )
+    parser.add_argument(
+        "--max-fail-streak",
+        type=int,
+        default=5,
+        help="Advance to the next task after this many consecutive fails on one slot.",
+    )
     parser.add_argument("--task", default=None, help="Single task id.")
     parser.add_argument("--tasks", nargs="*", default=None, help="Optional explicit task id list.")
     parser.add_argument(
@@ -149,6 +155,11 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--dr-cam-lookat", type=float, default=0.0)
     parser.add_argument("--keep-failures", action="store_true", help="Also keep failed episodes.")
     parser.add_argument(
+        "--require-coverage",
+        action="store_true",
+        help="Fail unless every selected task has at least one successful episode.",
+    )
+    parser.add_argument(
         "--manifest",
         type=Path,
         default=None,
@@ -172,6 +183,11 @@ def _task_cycle(args: argparse.Namespace) -> list[str]:
             get_task(task_id)  # validate
         return list(args.tasks)
     return list_task_ids(args.suite)
+
+
+def _missing_task_coverage(task_cycle: list[str], per_task: dict[str, int]) -> list[str]:
+    """Return selected tasks that have no successful episode."""
+    return [task_id for task_id in task_cycle if per_task.get(task_id, 0) < 1]
 
 
 def _rebuild_scene(backend: str, seed: int, domain: int, args: argparse.Namespace):
@@ -264,6 +280,10 @@ def main(argv: list[str] | None = None) -> int:
     attempts = 0
     ep = 0
     per_task: dict[str, int] = {t: 0 for t in task_cycle}
+    # Do not stall forever on one hard task (e.g. apple_blue_right): after N
+    # consecutive fails on the current cycle slot, advance to the next task.
+    max_fail_streak = max(1, int(args.max_fail_streak))
+    fail_streak = 0
 
     while successes < args.episodes and attempts < max_attempts:
         if args.dr_rebuild_every and args.dr_appearance and successes > 0:
@@ -296,6 +316,7 @@ def main(argv: list[str] | None = None) -> int:
             successes += 1
             per_task[task.task_id] = per_task.get(task.task_id, 0) + 1
             ep += 1
+            fail_streak = 0
             print(
                 f"[record] success {successes}/{args.episodes} "
                 f"task={task.task_id} tier={task.tier} goals=[{goals_str}] "
@@ -304,19 +325,30 @@ def main(argv: list[str] | None = None) -> int:
         elif args.keep_failures and len(recorder) > 0:
             recorder.flush_to(dataset, "FAILED: " + instruction)
             failures_saved += 1
+            fail_streak += 1
             print(
                 f"[record] failure saved task={task.task_id} tier={task.tier} "
                 f"partial={report.get('partial_success_rate', 0):.2f} frames={len(recorder)}"
             )
         else:
             reason = "empty" if len(recorder) == 0 else "failed"
+            fail_streak += 1
             print(
                 f"[record] discarded ({reason}) task={task.task_id} tier={task.tier} "
                 f"partial={report.get('partial_success_rate', 0):.2f} attempt={attempts}"
             )
 
+        if fail_streak >= max_fail_streak:
+            print(
+                f"[record] skip task={task_id} after {fail_streak} consecutive fails "
+                f"(advance cycle so recording is not stuck)"
+            )
+            ep += 1
+            fail_streak = 0
+
     dataset.finalize()
 
+    missing_coverage = _missing_task_coverage(task_cycle, per_task)
     manifest = {
         "repo_id": args.repo_id,
         "dataset_root": str(dataset_root),
@@ -328,6 +360,9 @@ def main(argv: list[str] | None = None) -> int:
         "failures_saved": failures_saved,
         "attempts": attempts,
         "per_task_successes": per_task,
+        "missing_task_coverage": missing_coverage,
+        "coverage_complete": not missing_coverage,
+        "require_coverage": args.require_coverage,
         "task_cycle": task_cycle,
         "suite": args.suite,
         "seed": args.seed,
@@ -345,6 +380,9 @@ def main(argv: list[str] | None = None) -> int:
     if successes < args.episodes:
         print(f"[record] WARNING: only {successes}/{args.episodes} successes before max_attempts={max_attempts}")
         return 2
+    if args.require_coverage and missing_coverage:
+        print(f"[record] ERROR: missing successful episodes for tasks: {missing_coverage}")
+        return 3
     return 0
 
 

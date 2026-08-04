@@ -41,6 +41,10 @@ if [[ -n "$TASK" ]]; then
   ARGS+=(--task "$TASK")
 else
   ARGS+=(--suite "$SUITE")
+  if [[ "$SUITE" == "basic" && "$EPISODES" -ge 20 ]]; then
+    ARGS+=(--require-coverage)
+    log "Coverage gate: all 20 basic fruit/bowl combinations are required"
+  fi
 fi
 if [[ "$MAX_ATTEMPTS" != "0" ]]; then
   ARGS+=(--max-attempts "$MAX_ATTEMPTS")

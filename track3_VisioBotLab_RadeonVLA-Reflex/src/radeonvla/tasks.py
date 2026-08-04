@@ -24,7 +24,7 @@ Tier = Literal["L1", "L2", "L3", "L4"]
 class SubGoalSpec:
     """One pick-and-place goal, possibly with deferred spatial grounding."""
 
-    container: str  # left_bowl | right_bowl
+    container: str  # white_left_bowl | blue_left_bowl | white_right_bowl | blue_right_bowl
     object_name: str | None = None  # concrete fruit when grounding == named
     grounding: Grounding = "named"
     # For rule-based expansion (L4): attribute filters applied at resolve time.
@@ -67,9 +67,9 @@ class TaskSpec:
 
 
 # Side keys map to container entity names via f"{side}_bowl".
-# Sides: left, right, blue_left, blue_right.
+# Left pair: white_left + blue_left; right pair: white_right + blue_right.
 FRUIT_NAMES: tuple[str, ...] = ("banana", "lemon", "plum", "apple", "orange")
-SIDE_NAMES: tuple[str, ...] = ("left", "right", "blue_left", "blue_right")
+SIDE_NAMES: tuple[str, ...] = ("white_left", "blue_left", "white_right", "blue_right")
 
 FRUIT_TRAIN_PHRASE: dict[str, str] = {
     "banana": "the banana",
@@ -86,16 +86,16 @@ FRUIT_EVAL_PHRASE: dict[str, str] = {
     "orange": "the orange citrus fruit",
 }
 SIDE_TRAIN_PHRASE: dict[str, str] = {
-    "left": "the left bowl",
-    "right": "the right bowl",
+    "white_left": "the white bowl on the left",
     "blue_left": "the blue bowl on the left",
+    "white_right": "the white bowl on the right",
     "blue_right": "the blue bowl on the right",
 }
 SIDE_EVAL_PHRASE: dict[str, str] = {
-    "left": "the container on the left",
-    "right": "the container on the right",
-    "blue_left": "the blue container toward the left",
-    "blue_right": "the blue container toward the right",
+    "white_left": "the white container on the left",
+    "blue_left": "the blue container on the left",
+    "white_right": "the white container on the right",
+    "blue_right": "the blue container on the right",
 }
 
 
@@ -193,56 +193,56 @@ L1_TASKS: dict[str, TaskSpec] = {
 # L2 — spatial grounding (must look at relative layout after randomization)
 # ---------------------------------------------------------------------------
 L2_TASKS: dict[str, TaskSpec] = {
-    "leftmost_to_left": _l2(
-        "leftmost_to_left",
+    "leftmost_to_white_left": _l2(
+        "leftmost_to_white_left",
         "leftmost",
-        "left",
+        "white_left",
         (
-            "Pick the leftmost fruit on the table and put it in the left bowl.",
-            "Sort the fruit that is farthest to the left into the left container.",
+            "Pick the leftmost fruit on the table and put it in the white bowl on the left.",
+            "Sort the fruit farthest left into the left white bowl.",
         ),
         (
-            "Move the fruit closest to the left edge into the left bowl.",
-            "Place whichever fruit sits most to the left into the left container.",
+            "Move the fruit closest to the left edge into the white container on the left.",
+            "Place the leftmost fruit into the left white bowl.",
         ),
     ),
-    "rightmost_to_right": _l2(
-        "rightmost_to_right",
+    "rightmost_to_white_right": _l2(
+        "rightmost_to_white_right",
         "rightmost",
-        "right",
+        "white_right",
         (
-            "Pick the rightmost fruit on the table and put it in the right bowl.",
-            "Sort the fruit that is farthest to the right into the right container.",
+            "Pick the rightmost fruit on the table and put it in the white bowl on the right.",
+            "Sort the fruit farthest right into the right white bowl.",
         ),
         (
-            "Move the fruit closest to the right edge into the right bowl.",
-            "Place whichever fruit sits most to the right into the right container.",
+            "Move the fruit closest to the right edge into the white container on the right.",
+            "Place the rightmost fruit into the right white bowl.",
         ),
     ),
-    "nearest_to_left": _l2(
-        "nearest_to_left",
+    "nearest_to_blue_left": _l2(
+        "nearest_to_blue_left",
         "nearest_robot",
-        "left",
+        "blue_left",
         (
-            "Pick the fruit nearest to the robot base and place it in the left bowl.",
-            "Sort the closest fruit to the arm into the left container.",
+            "Pick the fruit nearest to the robot and place it in the blue bowl on the left.",
+            "Sort the closest fruit into the left blue bowl.",
         ),
         (
-            "Move the fruit that is nearest the manipulator into the left bowl.",
-            "Place the closest reachable fruit into the left container.",
+            "Move the nearest fruit into the blue container on the left.",
+            "Place the closest reachable fruit into the left blue bowl.",
         ),
     ),
-    "farthest_to_right": _l2(
-        "farthest_to_right",
+    "farthest_to_blue_right": _l2(
+        "farthest_to_blue_right",
         "farthest_robot",
-        "right",
+        "blue_right",
         (
-            "Pick the fruit farthest from the robot and place it in the right bowl.",
-            "Sort the most distant fruit into the right container.",
+            "Pick the fruit farthest from the robot and place it in the blue bowl on the right.",
+            "Sort the most distant fruit into the right blue bowl.",
         ),
         (
-            "Move the fruit that is farthest from the manipulator into the right bowl.",
-            "Place the farthest fruit into the right container.",
+            "Move the farthest fruit into the blue container on the right.",
+            "Place the farthest fruit into the right blue bowl.",
         ),
     ),
     "leftmost_to_blue_left": _l2(
@@ -251,24 +251,11 @@ L2_TASKS: dict[str, TaskSpec] = {
         "blue_left",
         (
             "Pick the leftmost fruit and put it in the blue bowl on the left.",
-            "Sort the left-most fruit into the left blue container.",
+            "Sort the left-most fruit into the left blue bowl.",
         ),
         (
             "Move the fruit farthest left into the blue container on the left.",
-            "Place the leftmost fruit into the blue left bowl.",
-        ),
-    ),
-    "rightmost_to_blue_right": _l2(
-        "rightmost_to_blue_right",
-        "rightmost",
-        "blue_right",
-        (
-            "Pick the rightmost fruit and put it in the blue bowl on the right.",
-            "Sort the right-most fruit into the right blue container.",
-        ),
-        (
-            "Move the fruit farthest right into the blue container on the right.",
-            "Place the rightmost fruit into the blue right bowl.",
+            "Place the leftmost fruit into the left blue bowl.",
         ),
     ),
 }
@@ -277,65 +264,71 @@ L2_TASKS: dict[str, TaskSpec] = {
 # L3 — ordered multi-object sequences (long horizon)
 # ---------------------------------------------------------------------------
 L3_TASKS: dict[str, TaskSpec] = {
-    "seq_banana_left_lemon_right": _l3(
-        "seq_banana_left_lemon_right",
+    "seq_banana_white_left_lemon_white_right": _l3(
+        "seq_banana_white_left_lemon_white_right",
         (
-            SubGoalSpec(object_name="banana", container="left_bowl"),
-            SubGoalSpec(object_name="lemon", container="right_bowl"),
+            SubGoalSpec(object_name="banana", container="white_left_bowl"),
+            SubGoalSpec(object_name="lemon", container="white_right_bowl"),
         ),
         (
-            "First put the banana in the left bowl, then put the lemon in the right bowl.",
-            "Sort the banana left and the lemon right, in that order.",
+            "First put the banana in the white bowl on the left, then the lemon in the white bowl on the right.",
+            "Sort the banana into the left white bowl and the lemon into the right white bowl.",
         ),
         (
-            "Place the curved yellow fruit into the left container, then the round yellow fruit into the right.",
-            "Banana goes left, lemon goes right — complete both steps.",
-        ),
-    ),
-    "seq_plum_right_banana_left": _l3(
-        "seq_plum_right_banana_left",
-        (
-            SubGoalSpec(object_name="plum", container="right_bowl"),
-            SubGoalSpec(object_name="banana", container="left_bowl"),
-        ),
-        (
-            "First put the plum in the right bowl, then put the banana in the left bowl.",
-            "Sort the plum right and the banana left, in that order.",
-        ),
-        (
-            "Purple fruit to the right container, then the curved yellow fruit to the left.",
-            "Complete both placements: plum right, banana left.",
+            (
+                "Curved yellow fruit into the left white container, "
+                "then round yellow fruit into the right white container."
+            ),
+            "Complete both white-bowl placements: banana then lemon.",
         ),
     ),
-    "seq_lemon_left_plum_left": _l3(
-        "seq_lemon_left_plum_left",
+    "seq_plum_white_right_banana_white_left": _l3(
+        "seq_plum_white_right_banana_white_left",
         (
-            SubGoalSpec(object_name="lemon", container="left_bowl"),
-            SubGoalSpec(object_name="plum", container="left_bowl"),
+            SubGoalSpec(object_name="plum", container="white_right_bowl"),
+            SubGoalSpec(object_name="banana", container="white_left_bowl"),
         ),
         (
-            "Put the lemon and then the plum into the left bowl.",
-            "Sort both the lemon and the plum into the left container, lemon first.",
+            "First put the plum in the white bowl on the right, then the banana in the white bowl on the left.",
+            "Sort the plum into the right white bowl, then the banana into the left white bowl.",
         ),
         (
-            "Move the round yellow fruit and then the purple fruit into the left bowl.",
-            "Both lemon and plum should end in the left container.",
+            "Purple fruit to the right white container, then the curved yellow fruit to the left white container.",
+            "Complete both placements: plum then banana.",
+        ),
+    ),
+    "seq_lemon_blue_left_plum_blue_left": _l3(
+        "seq_lemon_blue_left_plum_blue_left",
+        (
+            SubGoalSpec(object_name="lemon", container="blue_left_bowl"),
+            SubGoalSpec(object_name="plum", container="blue_left_bowl"),
+        ),
+        (
+            "Put the lemon and then the plum into the blue bowl on the left.",
+            "Sort both the lemon and the plum into the left blue bowl, lemon first.",
+        ),
+        (
+            "Move the round yellow fruit and then the purple fruit into the left blue bowl.",
+            "Both lemon and plum should end in the left blue container.",
         ),
     ),
     "seq_triple_sort": _l3(
         "seq_triple_sort",
         (
-            SubGoalSpec(object_name="banana", container="left_bowl"),
-            SubGoalSpec(object_name="lemon", container="left_bowl"),
-            SubGoalSpec(object_name="plum", container="right_bowl"),
+            SubGoalSpec(object_name="banana", container="white_left_bowl"),
+            SubGoalSpec(object_name="lemon", container="blue_left_bowl"),
+            SubGoalSpec(object_name="plum", container="white_right_bowl"),
         ),
         (
-            "Put the banana and the lemon into the left bowl, and the plum into the right bowl.",
-            "Left bowl: banana then lemon. Right bowl: plum.",
+            (
+                "Put the banana in the white left bowl, the lemon in the blue left bowl, "
+                "and the plum in the white right bowl."
+            ),
+            "Left side: banana (white) then lemon (blue). Right white bowl: plum.",
         ),
         (
-            "Yellow fruits go left; the purple fruit goes right. Handle banana, lemon, then plum.",
-            "Complete the three-way sort: banana left, lemon left, plum right.",
+            "Yellow curved fruit to left white, yellow round fruit to left blue, purple fruit to right white.",
+            "Complete the three-way sort across white and blue bowls.",
         ),
     ),
     "seq_apple_blue_left_orange_blue_right": _l3(
@@ -353,19 +346,19 @@ L3_TASKS: dict[str, TaskSpec] = {
             "Complete both blue-bowl placements: apple then orange.",
         ),
     ),
-    "seq_orange_right_plum_blue_left": _l3(
-        "seq_orange_right_plum_blue_left",
+    "seq_orange_white_right_plum_blue_left": _l3(
+        "seq_orange_white_right_plum_blue_left",
         (
-            SubGoalSpec(object_name="orange", container="right_bowl"),
+            SubGoalSpec(object_name="orange", container="white_right_bowl"),
             SubGoalSpec(object_name="plum", container="blue_left_bowl"),
         ),
         (
-            "First put the orange in the right bowl, then put the plum in the blue bowl on the left.",
-            "Sort the orange right, then the plum into the left blue bowl.",
+            "First put the orange in the white bowl on the right, then the plum in the blue bowl on the left.",
+            "Sort the orange into the right white bowl, then the plum into the left blue bowl.",
         ),
         (
-            "Citrus fruit to the right container, then the purple fruit to the left blue container.",
-            "Complete both steps: orange right, plum blue-left.",
+            "Citrus fruit to the right white container, then the purple fruit to the left blue container.",
+            "Complete both steps: orange then plum.",
         ),
     ),
 }
@@ -374,35 +367,40 @@ L3_TASKS: dict[str, TaskSpec] = {
 # L4 — attribute / rule-based sorting (expanded at resolve time)
 # ---------------------------------------------------------------------------
 L4_TASKS: dict[str, TaskSpec] = {
-    "rule_yellow_left_purple_right": _l4(
-        "rule_yellow_left_purple_right",
+    "rule_yellow_white_left_purple_white_right": _l4(
+        "rule_yellow_white_left_purple_white_right",
         (
-            # attribute markers; grounding expands to concrete fruits in order
-            SubGoalSpec(container="left_bowl", grounding="named", attribute="yellow"),
-            SubGoalSpec(container="right_bowl", grounding="named", attribute="purple"),
+            SubGoalSpec(container="white_left_bowl", grounding="named", attribute="yellow"),
+            SubGoalSpec(container="white_right_bowl", grounding="named", attribute="purple"),
         ),
         (
-            "Put all yellow fruits into the left bowl and the purple fruit into the right bowl.",
-            "Sort by color: yellow to the left container, purple to the right.",
+            (
+                "Put all yellow fruits into the white bowl on the left "
+                "and the purple fruit into the white bowl on the right."
+            ),
+            "Sort by color: yellow→left white bowl, purple→right white bowl.",
         ),
         (
-            "Move every yellow item left and the purple item right.",
-            "Color rule: yellow→left, purple→right.",
+            "Move every yellow item into the left white container and the purple item into the right white container.",
+            "Color rule on white bowls: yellow left, purple right.",
         ),
     ),
-    "rule_round_right_curved_left": _l4(
-        "rule_round_right_curved_left",
+    "rule_curved_white_left_round_blue_right": _l4(
+        "rule_curved_white_left_round_blue_right",
         (
-            SubGoalSpec(container="left_bowl", grounding="named", attribute="curved"),
-            SubGoalSpec(container="right_bowl", grounding="named", attribute="round"),
+            SubGoalSpec(container="white_left_bowl", grounding="named", attribute="curved"),
+            SubGoalSpec(container="blue_right_bowl", grounding="named", attribute="round"),
         ),
         (
-            "Put the curved fruit into the left bowl and the round fruits into the right bowl.",
-            "Shape rule: curved→left, round→right.",
+            (
+                "Put the curved fruit into the white bowl on the left "
+                "and the round fruits into the blue bowl on the right."
+            ),
+            "Shape rule: curved→left white bowl, round→right blue bowl.",
         ),
         (
-            "Banana-like curved item left; spherical items right.",
-            "Sort by shape: curved left, round right.",
+            "Banana-like curved item into the left white container; spherical items into the right blue container.",
+            "Sort by shape across white and blue bowls.",
         ),
     ),
     "rule_red_blue_left_orange_blue_right": _l4(

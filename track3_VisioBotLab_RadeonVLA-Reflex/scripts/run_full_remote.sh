@@ -33,8 +33,8 @@ run_py -m radeonvla.check_env --require-amd --init-genesis --json docs/environme
 section "2 assets + scene + expert smoke"
 run_py -m radeonvla.setup_assets
 run_py -m radeonvla.scene --backend "$BACKEND" --steps 50 --save-frames
-run_py -m radeonvla.expert --backend "$BACKEND" --task banana_left --episodes 2
-run_py -m radeonvla.expert --backend "$BACKEND" --task seq_banana_left_lemon_right --episodes 1
+run_py -m radeonvla.expert --backend "$BACKEND" --task banana_white_left --episodes 2
+run_py -m radeonvla.expert --backend "$BACKEND" --task seq_banana_white_left_lemon_white_right --episodes 1
 
 section "3 record ($EPISODES successes, suite=$SUITE)"
 RECORD_ARGS=(
@@ -83,7 +83,7 @@ run_py -m radeonvla.evaluate \
   --repo-id "$REPO_ID" \
   --dataset-root "$DATASET_ROOT" \
   --backend "$BACKEND" \
-  --tasks banana_left \
+  --tasks banana_white_left \
   --episodes-per-task 1 \
   --interrupt-demo \
   --save-video || log "WARN: interrupt demo returned non-zero"

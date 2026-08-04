@@ -1,9 +1,15 @@
 """Scene layout for language-conditioned multi-bowl fruit sorting.
 
-Layout choices:
-- five pickable fruits (banana, lemon, plum, apple, orange);
-- four destination bowls: left/right neutral + blue left/right;
+Layout (canonical defaults for scene build; episode reset re-samples in zones):
+- five pickable fruits in the fruit zone (robot mid-table);
+- four upright bowls fixed on the table (cannot tip), two per side zone:
+  - left zone (y > 0): white_left + blue_left (color order / front-back randomizable)
+  - right zone (y < 0): white_right + blue_right
 - world + wrist cameras for policy observations, plus a cosmetic video camera.
+
+YCB bowl mesh opens toward local +z (larger rim at +z). Place with euler=(0,0,0)
+so the cavity faces UP. euler=(180,0,0) flips the bowls (verified inverted in
+side-view renders).
 """
 
 from __future__ import annotations
@@ -30,98 +36,140 @@ FRANKA_KV = (450, 450, 350, 350, 200, 200, 200, 10, 10)
 FRANKA_FORCE_MIN = (-87, -87, -87, -87, -12, -12, -12, -100, -100)
 FRANKA_FORCE_MAX = (87, 87, 87, 87, 12, 12, 12, 100, 100)
 
-# Reachable workspace clamp for pose jitter (slightly wider for denser clutter).
-REACH_X = (0.28, 0.50)
-REACH_Y = (-0.28, 0.28)
+# ---------------------------------------------------------------------------
+# Episode layout zones (xy on the table). Used by EnvRandomizer.
+# Axes: +x away from robot base, +y to the robot's left.
+# ---------------------------------------------------------------------------
+# Fruit zone: reachable mid-table, clear of bowl bank.
+FRUIT_ZONE_X = (0.24, 0.40)
+FRUIT_ZONE_Y = (-0.28, 0.28)
+# Left bowl zone (y > 0): white_left + blue_left only (may swap / front-back).
+# Wide enough in x for front-back pairs and in y for side-by-side pairs.
+LEFT_BOWL_ZONE_X = (0.44, 0.76)
+LEFT_BOWL_ZONE_Y = (0.05, 0.40)
+# Right bowl zone (y < 0): white_right + blue_right only.
+RIGHT_BOWL_ZONE_X = (0.44, 0.76)
+RIGHT_BOWL_ZONE_Y = (-0.40, -0.05)
 
-# Solid blue for the two blue bowls (RGBA).
-BLUE_BOWL_COLOR = (0.12, 0.38, 0.88, 1.0)
-# Slight off-white for neutral bowls so they read as non-blue under DR off.
-NEUTRAL_BOWL_COLOR = (0.82, 0.80, 0.76, 1.0)
+# Legacy aliases used by older jitter paths / external scripts.
+REACH_X = FRUIT_ZONE_X
+REACH_Y = FRUIT_ZONE_Y
 
-# Entity layout: five fruits + four bowls.
+# Packing radii (meters). Prefer physical rim / fruit footprint over AABB diagonal.
+# Bowl rim ~0.08 m; use 0.075 so two bowls fit in the zone with clearance.
+BOWL_PACK_RADIUS = 0.075
+FRUIT_PACK_RADIUS: dict[str, float] = {
+    "banana": 0.055,
+    "lemon": 0.035,
+    "plum": 0.032,
+    # Slightly larger pack radius so fingers have clear space around spheres.
+    "apple": 0.048,
+    "orange": 0.045,
+}
+MIN_CLEARANCE = 0.020
+
+WHITE_BOWL_COLOR = (0.94, 0.94, 0.92, 1.0)
+BLUE_BOWL_COLOR = (0.08, 0.32, 0.88, 1.0)
+
+# Opening up: mesh rim is larger at local +z (euler 0). Do NOT use 180 — that flips.
+BOWL_EULER = (0.0, 0.0, 0.0)
+
+# Canonical default layout (scene build). Episode reset re-samples within zones.
 OBJECT_LAYOUT: dict[str, dict] = {
-    # -- fruits (front / mid table, spaced for parallel-jaw grasps) --
+    # -- fruits (default homes inside fruit zone) --
     "banana": {
         "ycb": FRUIT_YCB["banana"],
-        "pos": (0.30, 0.18, 0.0),
-        "euler": (0.0, 0.0, 35.0),
+        "pos": (0.28, 0.22, 0.0),
+        "euler": (0.0, 0.0, 0.0),
         "kind": "fruit",
     },
     "lemon": {
         "ycb": FRUIT_YCB["lemon"],
-        "pos": (0.33, 0.02, 0.0),
+        "pos": (0.32, 0.00, 0.0),
         "euler": (0.0, 0.0, 0.0),
-        "friction": 1.0,
+        "scale": 0.90,
+        "friction": 1.3,
         "kind": "fruit",
     },
     "plum": {
         "ycb": FRUIT_YCB["plum"],
-        "pos": (0.36, -0.14, 0.0),
+        "pos": (0.28, -0.20, 0.0),
         "euler": (0.0, 0.0, 0.0),
-        "friction": 1.0,
+        "scale": 0.95,
+        "friction": 1.3,
         "kind": "fruit",
     },
     "apple": {
         "ycb": FRUIT_YCB["apple"],
-        "pos": (0.40, 0.12, 0.0),
-        "euler": (0.0, 0.0, 10.0),
-        "friction": 1.0,
+        "pos": (0.38, 0.10, 0.0),
+        "euler": (0.0, 0.0, 0.0),
+        "scale": 0.85,
+        "friction": 1.6,
+        "rho": 260.0,
         "kind": "fruit",
     },
     "orange": {
         "ycb": FRUIT_YCB["orange"],
-        "pos": (0.41, -0.06, 0.0),
+        "pos": (0.38, -0.10, 0.0),
         "euler": (0.0, 0.0, 0.0),
-        "friction": 1.0,
+        "scale": 0.85,
+        "friction": 1.3,
+        "rho": 300.0,
         "kind": "fruit",
     },
-    # -- containers (far +x edge of the table) --
-    "left_bowl": {
+    # -- left pair defaults (y > 0): white outer, blue inner --
+    "white_left_bowl": {
         "ycb": BOWL_YCB,
-        "pos": (0.52, 0.24, 0.0),
-        "euler": (0.0, 0.0, 0.0),
+        "pos": (0.52, 0.34, 0.0),
+        "euler": BOWL_EULER,
         "kind": "container",
-        "color": NEUTRAL_BOWL_COLOR,
-    },
-    "right_bowl": {
-        "ycb": BOWL_YCB,
-        "pos": (0.52, -0.24, 0.0),
-        "euler": (0.0, 0.0, 0.0),
-        "kind": "container",
-        "color": NEUTRAL_BOWL_COLOR,
+        "color": WHITE_BOWL_COLOR,
+        "fixed": True,
     },
     "blue_left_bowl": {
         "ycb": BOWL_YCB,
-        "pos": (0.56, 0.10, 0.0),
-        "euler": (0.0, 0.0, 0.0),
+        "pos": (0.52, 0.12, 0.0),
+        "euler": BOWL_EULER,
         "kind": "container",
         "color": BLUE_BOWL_COLOR,
+        "fixed": True,
+    },
+    # -- right pair defaults (y < 0): white outer, blue inner --
+    "white_right_bowl": {
+        "ycb": BOWL_YCB,
+        "pos": (0.52, -0.34, 0.0),
+        "euler": BOWL_EULER,
+        "kind": "container",
+        "color": WHITE_BOWL_COLOR,
+        "fixed": True,
     },
     "blue_right_bowl": {
         "ycb": BOWL_YCB,
-        "pos": (0.56, -0.10, 0.0),
-        "euler": (0.0, 0.0, 0.0),
+        "pos": (0.52, -0.12, 0.0),
+        "euler": BOWL_EULER,
         "kind": "container",
         "color": BLUE_BOWL_COLOR,
+        "fixed": True,
     },
 }
 
-# HSV appearance priors for optional domain randomization (plausible colors only).
+# Entity groups for zone sampling.
+LEFT_BOWL_NAMES = ("white_left_bowl", "blue_left_bowl")
+RIGHT_BOWL_NAMES = ("white_right_bowl", "blue_right_bowl")
+FRUIT_NAMES = ("banana", "lemon", "plum", "apple", "orange")
+
 DR_APPEARANCE_PRIORS: dict[str, dict[str, tuple[float, float]]] = {
     "banana": {"hue": (48.0, 68.0), "sat": (0.55, 0.95), "val": (0.60, 0.90)},
     "lemon": {"hue": (48.0, 62.0), "sat": (0.60, 1.00), "val": (0.70, 0.95)},
     "plum": {"hue": (300.0, 345.0), "sat": (0.35, 0.80), "val": (0.25, 0.55)},
     "apple": {"hue": (0.0, 25.0), "sat": (0.55, 0.95), "val": (0.40, 0.85)},
     "orange": {"hue": (20.0, 40.0), "sat": (0.70, 1.00), "val": (0.55, 0.95)},
-    "left_bowl": {"hue": (20.0, 50.0), "sat": (0.00, 0.25), "val": (0.55, 0.90)},
-    "right_bowl": {"hue": (20.0, 50.0), "sat": (0.00, 0.25), "val": (0.55, 0.90)},
-    # Blue bowls stay in a blue band even under DR.
-    "blue_left_bowl": {"hue": (200.0, 240.0), "sat": (0.55, 0.95), "val": (0.40, 0.85)},
-    "blue_right_bowl": {"hue": (200.0, 240.0), "sat": (0.55, 0.95), "val": (0.40, 0.85)},
+    "white_left_bowl": {"hue": (0.0, 40.0), "sat": (0.00, 0.12), "val": (0.80, 0.98)},
+    "white_right_bowl": {"hue": (0.0, 40.0), "sat": (0.00, 0.12), "val": (0.80, 0.98)},
+    "blue_left_bowl": {"hue": (200.0, 240.0), "sat": (0.60, 0.95), "val": (0.40, 0.85)},
+    "blue_right_bowl": {"hue": (200.0, 240.0), "sat": (0.60, 0.95), "val": (0.40, 0.85)},
 }
 
-# Cameras: policy uses world + wrist at dataset resolution; video is cosmetic only.
 WORLD_CAM_RES = (320, 240)
 WORLD_CAM_POS = (
     TABLE_CENTER[0] + TABLE_TOP_SIZE[0] / 2,

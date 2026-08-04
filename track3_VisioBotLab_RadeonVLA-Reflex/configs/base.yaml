@@ -20,9 +20,9 @@ scene:
     - apple
     - orange
   containers:
-    - left_bowl
-    - right_bowl
+    - white_left_bowl
     - blue_left_bowl
+    - white_right_bowl
     - blue_right_bowl
   cameras:
     world:

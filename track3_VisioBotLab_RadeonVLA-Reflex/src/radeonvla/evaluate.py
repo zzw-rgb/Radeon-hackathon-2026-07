@@ -451,16 +451,21 @@ def main(argv: list[str] | None = None) -> int:
             interrupt_task = None
             if interrupt_at is not None:
                 # Prefer flipping a basic L1 side; fall back to a multi-step task.
-                if task_id.endswith("_left"):
-                    interrupt_task = task_id[:-5] + "_right"
-                elif task_id.endswith("_right"):
-                    interrupt_task = task_id[:-6] + "_left"
+                # Flip white/blue side when possible for interrupt demos.
+                if "white_left" in task_id:
+                    interrupt_task = task_id.replace("white_left", "blue_right")
+                elif "blue_left" in task_id:
+                    interrupt_task = task_id.replace("blue_left", "white_right")
+                elif "white_right" in task_id:
+                    interrupt_task = task_id.replace("white_right", "blue_left")
+                elif "blue_right" in task_id:
+                    interrupt_task = task_id.replace("blue_right", "white_left")
                 else:
-                    interrupt_task = "banana_right" if task_id != "banana_right" else "plum_left"
+                    interrupt_task = "banana_blue_right"
                 try:
                     get_task(interrupt_task)
                 except ValueError:
-                    interrupt_task = "banana_left"
+                    interrupt_task = "banana_white_left"
             result = run_episode(
                 bundle,
                 pb,
