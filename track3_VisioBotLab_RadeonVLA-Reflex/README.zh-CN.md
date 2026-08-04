@@ -21,8 +21,14 @@ Track 3 基准使用 Genesis、Franka Panda、LeRobot 和 SmolVLA，把 5 种水
 9. **结构化证据** — 自动输出 JSON、CSV、摘要、真实 checkpoint 哈希和带实时状态的视频；
 10. **中断安全采集** — 未完成数据只保留在 staging，不会覆盖上一份有效数据。
 
-> 发布状态：流水线与本地验证路径已完成；正式策略指标、训练权重、技术报告 PDF 与策略视频
-> 由远程 Radeon 发布流程生成。
+> 发布状态（2026-08-05）：严格物理的 20×50 Physical-1K 数据集和 20,000 步
+> SmolVLA checkpoint 已完成并公开。checkpoint 已通过 Hub 固定 revision 回下载与离线
+> 加载验证。正式闭环指标、报告 PDF 与最终视频仍在生成；当前不声称最终成功率。
+
+| 公开产物 | 不可变 revision |
+|---|---|
+| [Physical-1K 数据集](https://huggingface.co/datasets/a3124371940/radeonvla_reflex_physical_1k) — 1,000 episodes / 232,658 frames | `b0f72c60e9100739fd82bd498c8f3d9bed7b75af` |
+| [SmolVLA-1K 权重](https://huggingface.co/a3124371940/radeonvla_reflex_smolvla_1k) — 20,000 steps | `abcca9f2b313e378b554449016b520b8117016fe` |
 
 本目录为完整、自包含的项目单元。从仓库根目录进入
 `track3_VisioBotLab_RadeonVLA-Reflex/`，可按本文档复现系统。

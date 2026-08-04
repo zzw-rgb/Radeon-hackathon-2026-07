@@ -25,9 +25,15 @@ Design focus of this codebase:
 10. **Crash-safe collection** — incomplete runs remain in a staging directory and never replace the
     last validated dataset.
 
-> Release status: the pipeline and local validation path are complete. Formal policy metrics,
-> trained checkpoints, the report PDF, and the policy video are produced by the remote Radeon
-> release workflow.
+> Release status (2026-08-05): the strict 20×50 Physical-1K dataset and 20,000-step
+> SmolVLA checkpoint are complete and publicly available. The checkpoint passed an immutable
+> Hub re-download and offline load test. Formal closed-loop metrics, the report PDF, and the
+> final policy video are still being produced; no final success rate is claimed yet.
+
+| Public artifact | Immutable revision |
+|---|---|
+| [Physical-1K dataset](https://huggingface.co/datasets/a3124371940/radeonvla_reflex_physical_1k) — 1,000 episodes / 232,658 frames | `b0f72c60e9100739fd82bd498c8f3d9bed7b75af` |
+| [SmolVLA-1K checkpoint](https://huggingface.co/a3124371940/radeonvla_reflex_smolvla_1k) — 20,000 steps | `abcca9f2b313e378b554449016b520b8117016fe` |
 
 This directory is the self-contained project unit. From the repository root, open
 `track3_VisioBotLab_RadeonVLA-Reflex/` and follow this README to reproduce the system.
