@@ -39,7 +39,7 @@ Design focus of this codebase:
 | [Physical-2K dataset](https://huggingface.co/datasets/a3124371940/radeonvla_reflex_physical_2k) — 2,000 episodes / 468,889 frames | `2779b7c5566df9072bb9a7c43335d6203ea97887` |
 | [Cumulative 50K SmolVLA checkpoint](https://huggingface.co/a3124371940/radeonvla_reflex_smolvla_1k_50k) | `59f6f0ad720054505667a652fe07e03d65e82915` |
 | [Cumulative 200K SmolVLA checkpoint](https://huggingface.co/a3124371940/radeonvla_reflex_smolvla_2k_200k) | `1ea32da3d59ce0905d0f1331bc3c6643e42beb7e` |
-| [Evaluation videos and evidence](https://huggingface.co/datasets/a3124371940/radeonvla_reflex_evaluation_videos) | `7f39fb95e72b017c51cbaaf83b7c90c047f486be` |
+| [Evaluation videos and evidence](https://huggingface.co/datasets/a3124371940/radeonvla_reflex_evaluation_videos) | `6de24191322c76c53405d6686b9ae74989073414` |
 
 Live showcase: **https://zzw-rgb.github.io/Radeon-hackathon-2026-07/**  
 Interactive evidence console: **https://zzw-rgb.github.io/Radeon-hackathon-2026-07/console.html**
@@ -135,6 +135,7 @@ track3_VisioBotLab_RadeonVLA-Reflex/
 │   ├── validate_dataset.py   # dataset QA before train
 │   ├── train_policy.py       # SmolVLA / ACT training wrapper
 │   ├── evaluate.py           # closed-loop eval + interrupt + recovery
+│   ├── download_artifacts.py # pinned public dataset/model downloader
 │   ├── stress.py             # deterministic target/container perturbations
 │   ├── artifact_io.py        # hashes + JSON/CSV/Markdown evidence
 │   ├── vendor_vlm_assets.py  # offline SmolVLM config/tokenizer bundle
@@ -312,6 +313,60 @@ PY
 export HIP_VISIBLE_DEVICES=0
 bash scripts/check_remote_amd.sh
 ```
+
+## Download public datasets, checkpoints, and evidence
+
+Every release is public and pinned to the immutable revision listed at the top of this README;
+no Hugging Face login or private file share is required. The downloader writes a receipt to
+`downloads/public_artifacts.json` and lets `huggingface_hub` verify downloaded objects.
+
+```bash
+# Show every repository, revision, and destination without downloading.
+python -m radeonvla.download_artifacts --list
+
+# Recommended qualitative reproduction: Physical-1K + public 20K checkpoint + evidence.
+python -m radeonvla.download_artifacts \
+  --artifact physical-1k model-20k evaluation-videos
+
+# Final formal benchmark inputs: Physical-2K + cumulative 200K checkpoint.
+python -m radeonvla.download_artifacts \
+  --artifact physical-2k model-200k
+
+# Optional: both datasets, all three checkpoints, and the evidence repository.
+python -m radeonvla.download_artifacts --all
+```
+
+Equivalent Make targets are `make download-demo` and `make download-all`. Downloads use stable
+local paths:
+
+| Key | Local destination | Intended use |
+|---|---|---|
+| `physical-1k` | `datasets/radeonvla_reflex_physical_1k` | Reproduce the primary 20K showcase |
+| `physical-2k` | `datasets/radeonvla_reflex_physical_2k` | Validate/retrain the final dataset and formal suite |
+| `model-20k` | `checkpoints/radeonvla_reflex_smolvla_1k_20k` | Primary qualitative policy checkpoint |
+| `model-50k` | `checkpoints/radeonvla_reflex_smolvla_1k_50k` | Intermediate comparison checkpoint |
+| `model-200k` | `checkpoints/radeonvla_reflex_smolvla_2k_200k` | Formal Precision-Reflex benchmark checkpoint |
+| `evaluation-videos` | `downloads/radeonvla_reflex_evaluation_videos` | Videos, JSON/CSV evidence, and checksums |
+
+Validate the downloaded dataset and load the checkpoint before starting a long run:
+
+```bash
+python -m radeonvla.validate_dataset \
+  --repo-id a3124371940/radeonvla_reflex_physical_1k \
+  --dataset-root datasets/radeonvla_reflex_physical_1k \
+  --expected-episodes 1000 --episodes-per-task 50 --require-strict-physics
+
+python - <<'PY'
+from lerobot.policies.smolvla.modeling_smolvla import SmolVLAPolicy
+
+path = "checkpoints/radeonvla_reflex_smolvla_1k_20k"
+policy = SmolVLAPolicy.from_pretrained(path)
+print("loaded:", path, "parameters:", sum(p.numel() for p in policy.parameters()))
+PY
+```
+
+The model-loading check is platform-independent. Closed-loop simulation, ROCm performance, and
+the formal benchmark must be run on the validated AMD environment described above.
 
 ## End-to-end pipeline (implemented)
 
@@ -584,18 +639,47 @@ command version, retry count, scenario, and measured inference latency.
 
 ## Reproduction sequence
 
-1. clone the repository at the release commit;
-2. configure a matching ROCm/PyTorch environment;
-3. install project dependencies (`requirements.remote.txt` + `pip install -e .`);
-4. run `python -m radeonvla.setup_assets` (or provide assets as documented);
-5. run strict AMD environment validation;
-6. smoke-test the Genesis scene;
-7. record demos / download the public dataset revision;
-8. train or download the public SmolVLA checkpoint;
-9. run held-out evaluation and write JSON + videos;
-10. compare generated metadata with the technical report.
+Use this ladder so basic code failures are caught before an expensive evaluation:
 
-The final release revision requires no private account, unpublished file, or source edit.
+1. **CPU code gate:** install the local environment, then run `make check` and `make smoke`.
+2. **Public artifact gate:** run `make download-demo`, validate Physical-1K, and execute the
+   checkpoint-loading command in the download section above.
+3. **Single-task AMD replay:** run one fixed-seed episode with the released 20K checkpoint.
+4. **Formal AMD reproduction:** download Physical-2K and the 200K checkpoint, then run all
+   20 tasks × 5 seeds with the published Precision-Reflex settings.
+
+```bash
+# One released 20K policy task on AMD Radeon.
+python -m radeonvla.evaluate \
+  --policy-path checkpoints/radeonvla_reflex_smolvla_1k_20k \
+  --repo-id a3124371940/radeonvla_reflex_physical_1k \
+  --dataset-root datasets/radeonvla_reflex_physical_1k \
+  --backend amdgpu --tasks banana_white_left --episodes 1 \
+  --seed-start 53001 --instruction-source collected --max-retries 0 \
+  --save-video --output outputs/reproduction/20k_banana_white_left.json
+
+# Optional short continuation-training run using the public dataset and checkpoint.
+python -m radeonvla.train_policy smolvla \
+  --policy-path checkpoints/radeonvla_reflex_smolvla_1k_20k \
+  --repo-id a3124371940/radeonvla_reflex_physical_2k \
+  --dataset-root datasets/radeonvla_reflex_physical_2k \
+  --steps 1000 --batch-size 4 --device cuda \
+  --output-dir outputs/reproduction/train_20k_on_physical_2k
+
+# Formal 100-rollout result reproduction on AMD Radeon.
+python -m radeonvla.evaluate \
+  --policy-path checkpoints/radeonvla_reflex_smolvla_2k_200k \
+  --repo-id a3124371940/radeonvla_reflex_physical_2k \
+  --dataset-root datasets/radeonvla_reflex_physical_2k \
+  --backend amdgpu --suite basic --episodes-per-task 5 \
+  --seed-start 52000 --instruction-source collected --max-retries 0 \
+  --precision-recovery --save-video \
+  --output outputs/reproduction/formal100.json
+```
+
+Compare the resulting JSON with `artifacts/evaluation.json`; the schema is
+`artifacts/evaluation.schema.json`. The final release requires no private account, unpublished
+file, or source modification.
 
 ## Deliverables
 
@@ -607,12 +691,12 @@ The final release revision requires no private account, unpublished file, or sou
 | Technical report PDF | A4, 5 pages, final audit input | [Technical report PDF](reports/RadeonVLA-Reflex-Technical-Report.pdf) |
 | Public showcase | GitHub Pages deployment verified | [RadeonVLA-Reflex website](https://zzw-rgb.github.io/Radeon-hackathon-2026-07/) |
 | 3+ minute narrated demo | 200.0 s, 1080p30 H.264/AAC, natural English narration and burned English/Chinese captions | [Play public video](https://zzw-rgb.github.io/Radeon-hackathon-2026-07/videos/radeonvla-reflex-3min.mp4) |
-| Successful 20K policy replays | Banana and lemon, first try; world-camera view; commanded/measured gripper open; 2.0 s post-release dwell | [Hugging Face evidence](https://huggingface.co/datasets/a3124371940/radeonvla_reflex_evaluation_videos) |
-| 20-task collection success library | One certified world-camera success for every fruit × destination task, with exact episode, seed, certificate, and checksum provenance | [Hugging Face evidence](https://huggingface.co/datasets/a3124371940/radeonvla_reflex_evaluation_videos/tree/7f39fb95e72b017c51cbaaf83b7c90c047f486be/videos/task_success_world) |
+| Successful 20K policy replays | Banana and lemon, first try; commanded/measured gripper open; 2.0 s post-release dwell | [Hugging Face evidence](https://huggingface.co/datasets/a3124371940/radeonvla_reflex_evaluation_videos) |
+| 20-task collection success library | One certified success for every fruit × destination task, with exact episode, seed, certificate, and checksum provenance | [Hugging Face evidence](https://huggingface.co/datasets/a3124371940/radeonvla_reflex_evaluation_videos/tree/6de24191322c76c53405d6686b9ae74989073414/videos/task_success_world) |
 | Primary model checkpoint | Public 20K checkpoint, revision `abcca9f2…016fe` | [Hugging Face 20K model](https://huggingface.co/a3124371940/radeonvla_reflex_smolvla_1k) |
 | Additional model checkpoints | Public 50K and 200K revisions | [50K](https://huggingface.co/a3124371940/radeonvla_reflex_smolvla_1k_50k) · [200K](https://huggingface.co/a3124371940/radeonvla_reflex_smolvla_2k_200k) |
 | Datasets | Physical-1K and Physical-2K | [1K](https://huggingface.co/datasets/a3124371940/radeonvla_reflex_physical_1k) · [2K](https://huggingface.co/datasets/a3124371940/radeonvla_reflex_physical_2k) |
-| Evaluation video library | World-camera success replays, walkthrough, machine-readable evidence, and checksums | [Hugging Face evidence](https://huggingface.co/datasets/a3124371940/radeonvla_reflex_evaluation_videos) |
+| Evaluation video library | Successful replays, walkthrough, machine-readable evidence, and checksums | [Hugging Face evidence](https://huggingface.co/datasets/a3124371940/radeonvla_reflex_evaluation_videos) |
 | Interactive evidence console | Read-only benchmark explorer with a task-matched Physical-2K success example for all 20 tasks | [Launch console](https://zzw-rgb.github.io/Radeon-hackathon-2026-07/console.html) |
 | Raw evaluation results | 100/100 episodes retained | `artifacts/evaluation.json`, `.csv`, `summary.md` |
 | SHA256 checksums | Final release bundle | `artifacts/SHA256SUMS` |
@@ -647,9 +731,9 @@ the RadeonVLA-Reflex project code; dependency notices are listed in THIRD_PARTY_
 
 | Member | Role | Effort | Focus |
 |---|---|---:|---|
-| **Zhenwei Zhou** | Team captain / lead engineer | ~70% | System architecture, Genesis scene & expert, strict-physics collection, SmolVLA train/eval, website, and release engineering |
-| Ange Liu | Member | ~15% | Bilingual documentation polish, task-suite wording review, showcase copy support |
-| Haoran Wang | Member | ~15% | Dataset spot-checks, experiment logging, technical-report / evidence packaging support |
+| **Zhenwei Zhou** | Team captain / lead engineer | ~70% | Overall architecture; Genesis, expert, Reflex, and pipeline implementation; collection orchestration; SmolVLA training/evaluation; AMD deployment; website and release engineering |
+| Ange Liu | Language and frontend QA | ~15% | Task-language schema review, collected-instruction consistency checks, website i18n QA, and bilingual technical documentation |
+| Haoran Wang | Data and reproducibility QA | ~15% | Dataset-certificate spot-checks, evaluation-metric aggregation, reproducibility-command verification, and artifact checksum packaging |
 
 ## Submission
 

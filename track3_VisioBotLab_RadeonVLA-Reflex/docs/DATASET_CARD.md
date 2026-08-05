@@ -27,6 +27,18 @@ tags:
 - Dataset revision: `2779b7c5566df9072bb9a7c43335d6203ea97887`
 - Verified size: 2,000 episodes / 468,889 frames / 2,000 strict certificates
 
+## Download and validate
+
+From the project directory, download the immutable public revision and run the strict validator:
+
+```bash
+python -m radeonvla.download_artifacts --artifact physical-2k
+python -m radeonvla.validate_dataset \
+  --repo-id a3124371940/radeonvla_reflex_physical_2k \
+  --dataset-root datasets/radeonvla_reflex_physical_2k \
+  --expected-episodes 2000 --episodes-per-task 100 --require-strict-physics
+```
+
 ## Task coverage
 
 The primary L1 dataset has 20 variations: five fruits × four bowl positions.

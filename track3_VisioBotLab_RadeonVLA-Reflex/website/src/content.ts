@@ -165,8 +165,8 @@ export const copy = {
     zh: "模型评测与数据采集。",
   },
   collectionBody: {
-    en: "Two reproducible first-attempt successes from the public 20K checkpoint are shown beside three successful strict-physics collection episodes. Scene and episode seeds are preserved with the evidence. Banana appears in both evaluation and collection.",
-    zh: "两段可复现公开视频来自公开 20K 权重的首次成功评测，场景与 episode seed 均随证据保留；另有三段严格物理数据采集成功轨迹，香蕉同时出现在评测与采集中。",
+    en: "Two reproducible first-attempt successes from the public 20K checkpoint are shown beside four successful strict-physics collection episodes. Scene and episode seeds are preserved with the evidence. Banana appears in both evaluation and collection.",
+    zh: "两段可复现公开视频来自公开 20K 权重的首次成功评测，场景与 episode seed 均随证据保留；另有四段严格物理数据采集成功轨迹，香蕉同时出现在评测与采集中。",
   },
   videoCollectionLabel: { en: "VERIFIED SUCCESS REPLAYS", zh: "已核验成功回放" },
   videoCollectionPending: { en: "Successful evaluation and collection clips", zh: "成功评测与数据采集片段" },
@@ -238,7 +238,7 @@ export const copy = {
   modelLabel: { en: "Base policy", zh: "基础策略" },
   modelValue: { en: "LeRobot / SmolVLA", zh: "LeRobot / SmolVLA" },
   modelBody: {
-    en: "Fine-tuned for 9-D absolute joint-position control from two RGB views and language.",
+    en: "Fine-tuned for 9-D absolute joint-position control from two RGB streams and language.",
     zh: "使用双路 RGB 与语言输入，微调为 9 维绝对关节位置控制。",
   },
   baseModelCta: { en: "Open base model", zh: "查看基础模型" },
@@ -263,10 +263,10 @@ export const copy = {
     { en: "Run held-out and stress evaluations", zh: "运行独立评测与压力测试" },
     { en: "Publish artifacts, hashes, and video", zh: "发布产物、哈希与视频" },
   ],
-  commandLabel: { en: "Reproduce the local checks", zh: "复现本地检查" },
+  commandLabel: { en: "Reproduce checks and public inputs", zh: "复现检查与公开输入" },
   limitationLabel: { en: "Scope", zh: "适用范围" },
   limitationBody: {
-    en: "Scope is limited to Genesis simulation, the registered fruit-and-bowl tasks, two RGB views, and 9-D joint-position control. Real-robot transfer is outside the current evaluation.",
+    en: "Scope is limited to Genesis simulation, the registered fruit-and-bowl tasks, two RGB inputs, and 9-D joint-position control. Real-robot transfer is outside the current evaluation.",
     zh: "当前范围限于 Genesis 仿真、已注册的水果与碗任务、双路 RGB 和 9 维关节位置控制；真实机械臂迁移不在本轮评测范围内。",
   },
   teamKicker: { en: "TEAM", zh: "团队" },
@@ -342,26 +342,26 @@ export const teamMembers: TeamMember[] = [
     share: "70%",
     lead: true,
     focus: {
-      en: "System architecture, Genesis scene and expert, strict-physics collection, SmolVLA training and evaluation, website, and release engineering.",
-      zh: "系统架构、Genesis 场景与专家策略、严格物理采集、SmolVLA 训练评测、网站与发布工程。",
+      en: "Overall technical lead: architecture, Genesis and Reflex implementation, collection orchestration, SmolVLA training/evaluation, AMD deployment, website, and release engineering.",
+      zh: "总体技术主导：系统架构、Genesis 与 Reflex 实现、采集总控、SmolVLA 训练评测、AMD 部署、网站和发布工程。",
     },
   },
   {
     name: { en: "Ange Liu", zh: "留安格" },
-    role: { en: "Member · docs & presentation", zh: "队员 · 文档与展示" },
+    role: { en: "Member · language & frontend QA", zh: "队员 · 语言与前端质检" },
     share: "15%",
     focus: {
-      en: "Bilingual documentation polish, task-suite wording review, and showcase copy support.",
-      zh: "中英文文档润色、任务表述校对，以及展示文案协助。",
+      en: "Task-language schema review, collected-instruction consistency checks, website i18n QA, and bilingual documentation.",
+      zh: "任务语言模式校对、采集指令一致性检查、网站国际化质检和中英文技术文档。",
     },
   },
   {
     name: { en: "Haoran Wang", zh: "王浩然" },
-    role: { en: "Member · QA & reporting", zh: "队员 · 质检与报告" },
+    role: { en: "Member · data & reproducibility QA", zh: "队员 · 数据与复现质检" },
     share: "15%",
     focus: {
-      en: "Dataset spot-checks, experiment logging, and technical-report / evidence packaging support.",
-      zh: "数据抽检、实验记录整理，以及技术报告与证据打包协助。",
+      en: "Dataset certificate spot-checks, metric aggregation, reproducibility-command verification, and artifact checksum packaging.",
+      zh: "数据证书抽检、评测指标汇总、复现命令核验和产物校验和打包。",
     },
   },
 ];
@@ -380,7 +380,7 @@ export const collectionClips: CollectionClip[] = [
       zh: "抓取香蕉并放入左侧白碗。",
     },
     state: { en: "20K POLICY · FIRST-TRY SUCCESS", zh: "20K 模型 · 首次执行成功" },
-    camera: { en: "WORLD CAMERA · 20 FPS", zh: "世界相机 · 20 FPS" },
+    camera: { en: "RGB REPLAY · 20 FPS", zh: "RGB 回放 · 20 FPS" },
   },
   {
     index: "02",
@@ -395,7 +395,7 @@ export const collectionClips: CollectionClip[] = [
       zh: "抓取柠檬并放入右侧蓝碗。",
     },
     state: { en: "20K POLICY · FIRST-TRY SUCCESS", zh: "20K 模型 · 首次执行成功" },
-    camera: { en: "WORLD CAMERA · 20 FPS", zh: "世界相机 · 20 FPS" },
+    camera: { en: "RGB REPLAY · 20 FPS", zh: "RGB 回放 · 20 FPS" },
   },
   {
     index: "03",
@@ -410,7 +410,7 @@ export const collectionClips: CollectionClip[] = [
       zh: "成功的严格物理专家轨迹，并以 LeRobot 格式记录。",
     },
     state: { en: "DATA COLLECTION · SUCCESS", zh: "数据采集 · 成功" },
-    camera: { en: "WORLD RGB · 20 FPS", zh: "世界相机 RGB · 20 FPS" },
+    camera: { en: "RGB REPLAY · 20 FPS", zh: "RGB 回放 · 20 FPS" },
   },
   {
     index: "04",
@@ -425,7 +425,7 @@ export const collectionClips: CollectionClip[] = [
       zh: "完整展示抓取、搬运、释放和稳定落碗过程。",
     },
     state: { en: "DATA COLLECTION · SUCCESS", zh: "数据采集 · 成功" },
-    camera: { en: "WORLD RGB · 20 FPS", zh: "世界相机 RGB · 20 FPS" },
+    camera: { en: "RGB REPLAY · 20 FPS", zh: "RGB 回放 · 20 FPS" },
   },
   {
     index: "05",
@@ -440,7 +440,7 @@ export const collectionClips: CollectionClip[] = [
       zh: "另一段成功采集样例，视频结束前水果已稳定落碗。",
     },
     state: { en: "DATA COLLECTION · SUCCESS", zh: "数据采集 · 成功" },
-    camera: { en: "WORLD RGB · 20 FPS", zh: "世界相机 RGB · 20 FPS" },
+    camera: { en: "RGB REPLAY · 20 FPS", zh: "RGB 回放 · 20 FPS" },
   },
   {
     index: "06",
@@ -455,7 +455,7 @@ export const collectionClips: CollectionClip[] = [
       zh: "严格物理认证成功轨迹，橙子已释放并稳定落入指定碗中。",
     },
     state: { en: "DATA COLLECTION · SUCCESS", zh: "数据采集 · 成功" },
-    camera: { en: "WORLD RGB · 20 FPS", zh: "世界相机 RGB · 20 FPS" },
+    camera: { en: "RGB REPLAY · 20 FPS", zh: "RGB 回放 · 20 FPS" },
   },
 ];
 

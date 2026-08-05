@@ -27,6 +27,22 @@ tags:
 - Dataset: https://huggingface.co/datasets/a3124371940/radeonvla_reflex_physical_2k
 - Dataset revision: `2779b7c5566df9072bb9a7c43335d6203ea97887`
 
+## Download and load
+
+```bash
+python -m radeonvla.download_artifacts --artifact physical-2k model-200k
+python - <<'PY'
+from lerobot.policies.smolvla.modeling_smolvla import SmolVLAPolicy
+
+path = "checkpoints/radeonvla_reflex_smolvla_2k_200k"
+policy = SmolVLAPolicy.from_pretrained(path)
+print("loaded:", path, "parameters:", sum(p.numel() for p in policy.parameters()))
+PY
+```
+
+The full 20-task × 5-seed command is documented in `README.md` under
+“Reproduction sequence.”
+
 ## Intended use
 
 Language-conditioned Franka fruit sorting in the project Genesis scene.

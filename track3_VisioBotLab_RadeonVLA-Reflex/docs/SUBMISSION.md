@@ -11,7 +11,7 @@ and evaluation path on one AMD Radeon GPU with ROCm.
 3. Review the [five-page technical report](https://github.com/zzw-rgb/Radeon-hackathon-2026-07/blob/submission/track3-visiobotlab-radeonvla-reflex/track3_VisioBotLab_RadeonVLA-Reflex/reports/RadeonVLA-Reflex-Technical-Report.pdf).
 4. Inspect the public [Physical-2K dataset](https://huggingface.co/datasets/a3124371940/radeonvla_reflex_physical_2k)
    and [200K checkpoint](https://huggingface.co/a3124371940/radeonvla_reflex_smolvla_2k_200k).
-5. Reproduce the repository checks and evaluation using the [English README](https://github.com/zzw-rgb/Radeon-hackathon-2026-07/blob/submission/track3-visiobotlab-radeonvla-reflex/track3_VisioBotLab_RadeonVLA-Reflex/README.md).
+5. Use the pinned downloader and exact check/evaluation commands in the [English README](https://github.com/zzw-rgb/Radeon-hackathon-2026-07/blob/submission/track3-visiobotlab-radeonvla-reflex/track3_VisioBotLab_RadeonVLA-Reflex/README.md); no private artifact is required.
 
 ## Final measured results
 

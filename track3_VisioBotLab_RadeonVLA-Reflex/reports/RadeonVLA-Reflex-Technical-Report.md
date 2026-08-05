@@ -235,20 +235,22 @@ Learned control (SmolVLA) is separate from deterministic safety/recovery logic.
 
 Reproduction follows `README.md` inside `track3_VisioBotLab_RadeonVLA-Reflex/`:
 
-1. create the ROCm Python environment and install `requirements.remote.txt`;
-2. `python -m radeonvla.setup_assets`;
-3. `python -m radeonvla.check_env --require-amd --init-genesis`;
-4. record or download the dataset, then train or load the checkpoint;
-5. run `python -m radeonvla.evaluate` and compare JSON against this report.
+1. create the ROCm environment and install `requirements.remote.txt`;
+2. run `setup_assets` and the strict AMD environment check;
+3. use `download_artifacts` to retrieve pinned public dataset/model revisions;
+4. validate the dataset and load the checkpoint;
+5. run the README's single-task or formal evaluation command and compare its JSON with this report.
 
 ## 17. Team Member and Contribution
 
 **VisioBot Lab** (Nanjing University of Science and Technology):
 
-- **Zhenwei Zhou (captain, ~70%):** system design, implementation, data generation, model training,
-  evaluation, website, documentation, and release engineering
-- **Ange Liu (~15%):** bilingual documentation polish, task-suite wording review, showcase copy
-- **Haoran Wang (~15%):** dataset spot-checks, experiment logging, technical-report packaging
+- **Zhenwei Zhou (captain/technical lead, ~70%):** architecture and core implementation;
+  collection, training/evaluation, AMD deployment, website, and release engineering
+- **Ange Liu (language/frontend QA, ~15%):** language schema and instruction-consistency checks,
+  website i18n QA, and bilingual technical documentation
+- **Haoran Wang (data/reproducibility QA, ~15%):** certificate spot-checks, metric aggregation,
+  reproduction-command verification, and checksum packaging
 
 ## 18. Limitations and Future Work
 

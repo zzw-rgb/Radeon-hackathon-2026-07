@@ -457,7 +457,7 @@ function render(): void {
             <span class="terminal-dots" aria-hidden="true"><i></i><i></i><i></i></span>
             <small>${t(copy.commandLabel, locale)}</small>
           </div>
-          <code><span>$</span> python -m pytest -q<br /><span>$</span> python -m ruff check src tests<br /><span>$</span> python -m radeonvla.submission_audit</code>
+          <code><span>$</span> python -m pytest -q<br /><span>$</span> python -m ruff check src tests<br /><span>$</span> python -m radeonvla.download_artifacts --artifact physical-1k model-20k<br /><span>$</span> python -m radeonvla.submission_audit</code>
         </div>
         <aside class="limitation reveal">
           <strong>${t(copy.limitationLabel, locale)}</strong>

@@ -15,6 +15,17 @@ is loaded automatically when present (see `.env.example`).
 | `check_local.sh` | Env + audit + pytest + ruff |
 | `check_remote_amd.sh` | Strict ROCm gate + scene/benchmark |
 
+Public inputs are downloaded by the package entry point rather than an unpinned shell URL:
+
+```bash
+python -m radeonvla.download_artifacts --list
+python -m radeonvla.download_artifacts --artifact physical-1k model-20k evaluation-videos
+python -m radeonvla.download_artifacts --all
+```
+
+Each registry entry fixes the Hugging Face repository, 40-character revision, and local
+destination. Successful downloads write `downloads/public_artifacts.json`.
+
 ## Common environment variables
 
 | Variable | Default | Used by |

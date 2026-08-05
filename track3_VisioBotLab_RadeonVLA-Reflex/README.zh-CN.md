@@ -34,7 +34,7 @@ Track 3 基准使用 Genesis、Franka Panda、LeRobot 和 SmolVLA，把 5 种水
 | [Physical-2K 数据集](https://huggingface.co/datasets/a3124371940/radeonvla_reflex_physical_2k) — 2,000 episodes / 468,889 frames | `2779b7c5566df9072bb9a7c43335d6203ea97887` |
 | [SmolVLA 累计 50K 权重](https://huggingface.co/a3124371940/radeonvla_reflex_smolvla_1k_50k) | `59f6f0ad720054505667a652fe07e03d65e82915` |
 | [SmolVLA 累计 200K 权重](https://huggingface.co/a3124371940/radeonvla_reflex_smolvla_2k_200k) | `1ea32da3d59ce0905d0f1331bc3c6643e42beb7e` |
-| [评测视频与证据](https://huggingface.co/datasets/a3124371940/radeonvla_reflex_evaluation_videos) | `7f39fb95e72b017c51cbaaf83b7c90c047f486be` |
+| [评测视频与证据](https://huggingface.co/datasets/a3124371940/radeonvla_reflex_evaluation_videos) | `6de24191322c76c53405d6686b9ae74989073414` |
 
 公开项目网站：**https://zzw-rgb.github.io/Radeon-hackathon-2026-07/**  
 交互式证据控制台：**https://zzw-rgb.github.io/Radeon-hackathon-2026-07/console.html**
@@ -124,6 +124,7 @@ track3_VisioBotLab_RadeonVLA-Reflex/
 │   ├── validate_dataset.py   # 训练前数据集检查
 │   ├── train_policy.py       # SmolVLA / ACT 训练封装
 │   ├── evaluate.py           # 闭环评测 + 中断 + 恢复
+│   ├── download_artifacts.py # 固定 revision 的公开产物下载器
 │   ├── safety.py             # 指令会话、安全与失败处理
 │   ├── pipeline.py           # 阶段编排 / all-smoke
 │   ├── benchmark.py          # 吞吐 / 延迟
@@ -289,6 +290,59 @@ PY
 export HIP_VISIBLE_DEVICES=0
 bash scripts/check_remote_amd.sh
 ```
+
+## 下载公开数据集、权重与评测证据
+
+所有发布仓库均为公开仓库，并固定到本文开头列出的不可变 revision；下载不需要
+Hugging Face 登录或任何私有文件。下载器会生成 `downloads/public_artifacts.json`
+回执，并由 `huggingface_hub` 校验下载对象。
+
+```bash
+# 只列出全部仓库、revision 与本地目录，不进行网络下载。
+python -m radeonvla.download_artifacts --list
+
+# 推荐展示复现组合：Physical-1K + 公开 20K 权重 + 评测证据。
+python -m radeonvla.download_artifacts \
+  --artifact physical-1k model-20k evaluation-videos
+
+# 正式基准输入：Physical-2K + 累计 200K 权重。
+python -m radeonvla.download_artifacts \
+  --artifact physical-2k model-200k
+
+# 可选：下载两个数据集、三个权重版本和完整评测证据。
+python -m radeonvla.download_artifacts --all
+```
+
+等价 Make 目标为 `make download-demo` 和 `make download-all`。固定本地路径如下：
+
+| 名称 | 本地目录 | 用途 |
+|---|---|---|
+| `physical-1k` | `datasets/radeonvla_reflex_physical_1k` | 复现主要 20K 展示 |
+| `physical-2k` | `datasets/radeonvla_reflex_physical_2k` | 最终数据校验、续训与正式评测 |
+| `model-20k` | `checkpoints/radeonvla_reflex_smolvla_1k_20k` | 主要定性策略权重 |
+| `model-50k` | `checkpoints/radeonvla_reflex_smolvla_1k_50k` | 中间对比权重 |
+| `model-200k` | `checkpoints/radeonvla_reflex_smolvla_2k_200k` | 正式 Precision-Reflex 评测权重 |
+| `evaluation-videos` | `downloads/radeonvla_reflex_evaluation_videos` | 视频、JSON/CSV 证据与校验和 |
+
+长时间运行前，先校验数据集并实际加载权重：
+
+```bash
+python -m radeonvla.validate_dataset \
+  --repo-id a3124371940/radeonvla_reflex_physical_1k \
+  --dataset-root datasets/radeonvla_reflex_physical_1k \
+  --expected-episodes 1000 --episodes-per-task 50 --require-strict-physics
+
+python - <<'PY'
+from lerobot.policies.smolvla.modeling_smolvla import SmolVLAPolicy
+
+path = "checkpoints/radeonvla_reflex_smolvla_1k_20k"
+policy = SmolVLAPolicy.from_pretrained(path)
+print("loaded:", path, "parameters:", sum(p.numel() for p in policy.parameters()))
+PY
+```
+
+权重加载检查与平台无关；闭环仿真、ROCm 性能和正式评测必须在上文校验通过的
+AMD 环境中运行。
 
 ## 端到端流水线（已实现）
 
@@ -543,20 +597,46 @@ task                       # 自然语言指令
 `artifacts/evaluation.json`、`evaluation.csv` 和 `summary.md`，模式为
 `artifacts/evaluation.schema.json`。视频会显示当前指令、Reflex 状态、版本、重试和延迟。
 
-## 复现步骤
+## 复现已发布系统
 
-1. 在发布 commit 克隆仓库；
-2. 配置匹配的 ROCm/PyTorch 环境；
-3. 安装项目依赖（`requirements.remote.txt` + `pip install -e .`）；
-4. 运行 `python -m radeonvla.setup_assets`（或按文档提供资产）；
-5. 运行严格 AMD 环境校验；
-6. 对 Genesis 场景做冒烟测试；
-7. 采集演示数据或下载公开数据集修订；
-8. 训练或下载公开 SmolVLA 权重；
-9. 运行 held-out 评测并写出 JSON 与视频；
-10. 将生成元数据与技术报告对照。
+按以下层级执行，可在昂贵评测前先排除基本代码问题：
 
-最终发布修订不依赖私有账号、未公开文件或额外源码修改。
+1. **CPU 代码门禁：**安装本地环境，运行 `make check` 和 `make smoke`；
+2. **公开产物门禁：**运行 `make download-demo`，校验 Physical-1K，并执行上文的权重加载命令；
+3. **AMD 单任务回放：**用公开 20K 权重运行一个固定 seed episode；
+4. **AMD 正式复现：**下载 Physical-2K 和 200K 权重，以发布参数运行 20 任务 × 5 seed。
+
+```bash
+# 在 AMD Radeon 上复现一项已发布的 20K 策略任务。
+python -m radeonvla.evaluate \
+  --policy-path checkpoints/radeonvla_reflex_smolvla_1k_20k \
+  --repo-id a3124371940/radeonvla_reflex_physical_1k \
+  --dataset-root datasets/radeonvla_reflex_physical_1k \
+  --backend amdgpu --tasks banana_white_left --episodes 1 \
+  --seed-start 53001 --instruction-source collected --max-retries 0 \
+  --save-video --output outputs/reproduction/20k_banana_white_left.json
+
+# 可选：使用公开数据集和权重进行短程续训。
+python -m radeonvla.train_policy smolvla \
+  --policy-path checkpoints/radeonvla_reflex_smolvla_1k_20k \
+  --repo-id a3124371940/radeonvla_reflex_physical_2k \
+  --dataset-root datasets/radeonvla_reflex_physical_2k \
+  --steps 1000 --batch-size 4 --device cuda \
+  --output-dir outputs/reproduction/train_20k_on_physical_2k
+
+# 在 AMD Radeon 上复现正式 100 次评测。
+python -m radeonvla.evaluate \
+  --policy-path checkpoints/radeonvla_reflex_smolvla_2k_200k \
+  --repo-id a3124371940/radeonvla_reflex_physical_2k \
+  --dataset-root datasets/radeonvla_reflex_physical_2k \
+  --backend amdgpu --suite basic --episodes-per-task 5 \
+  --seed-start 52000 --instruction-source collected --max-retries 0 \
+  --precision-recovery --save-video \
+  --output outputs/reproduction/formal100.json
+```
+
+将输出 JSON 与 `artifacts/evaluation.json` 对照；schema 位于
+`artifacts/evaluation.schema.json`。最终发布不依赖私有账号、未公开文件或源码修改。
 
 ## 交付物
 
@@ -568,12 +648,12 @@ task                       # 自然语言指令
 | 技术报告 PDF | A4、5 页、最终审计输入 | [技术报告 PDF](reports/RadeonVLA-Reflex-Technical-Report.pdf) |
 | 公开项目网站 | GitHub Pages 部署已核验 | [RadeonVLA-Reflex 网站](https://zzw-rgb.github.io/Radeon-hackathon-2026-07/) |
 | 3 分钟以上解说成片 | 200.0 秒、1080p30 H.264/AAC、自然英文旁白与内嵌中英双语字幕 | [播放公开视频](https://zzw-rgb.github.io/Radeon-hackathon-2026-07/videos/radeonvla-reflex-3min.mp4) |
-| 20K 模型成功回放 | 香蕉与柠檬均首次执行成功；世界相机视角；命令/实测夹爪已张开；释放后继续仿真 2.0 秒 | [Hugging Face 证据](https://huggingface.co/datasets/a3124371940/radeonvla_reflex_evaluation_videos) |
-| 20 任务采集成功库 | 每个“水果 × 目标碗”任务各一条世界相机成功轨迹，附 episode、seed、证书和校验和来源 | [Hugging Face 证据](https://huggingface.co/datasets/a3124371940/radeonvla_reflex_evaluation_videos/tree/7f39fb95e72b017c51cbaaf83b7c90c047f486be/videos/task_success_world) |
+| 20K 模型成功回放 | 香蕉与柠檬均首次执行成功；命令/实测夹爪已张开；释放后继续仿真 2.0 秒 | [Hugging Face 证据](https://huggingface.co/datasets/a3124371940/radeonvla_reflex_evaluation_videos) |
+| 20 任务采集成功库 | 每个“水果 × 目标碗”任务各一条认证成功轨迹，附 episode、seed、证书和校验和来源 | [Hugging Face 证据](https://huggingface.co/datasets/a3124371940/radeonvla_reflex_evaluation_videos/tree/6de24191322c76c53405d6686b9ae74989073414/videos/task_success_world) |
 | 主要模型权重 | 公开 20K 权重，revision `abcca9f2…016fe` | [Hugging Face 20K 模型](https://huggingface.co/a3124371940/radeonvla_reflex_smolvla_1k) |
 | 其他模型权重 | 公开 50K 与 200K revision | [50K](https://huggingface.co/a3124371940/radeonvla_reflex_smolvla_1k_50k) · [200K](https://huggingface.co/a3124371940/radeonvla_reflex_smolvla_2k_200k) |
 | 数据集 | Physical-1K 与 Physical-2K | [1K](https://huggingface.co/datasets/a3124371940/radeonvla_reflex_physical_1k) · [2K](https://huggingface.co/datasets/a3124371940/radeonvla_reflex_physical_2k) |
-| 评测视频库 | 世界相机成功回放、三分钟成片、机器可读证据与校验和 | [Hugging Face 证据](https://huggingface.co/datasets/a3124371940/radeonvla_reflex_evaluation_videos) |
+| 评测视频库 | 成功回放、三分钟成片、机器可读证据与校验和 | [Hugging Face 证据](https://huggingface.co/datasets/a3124371940/radeonvla_reflex_evaluation_videos) |
 | 交互式证据控制台 | 只读基准浏览器，20 个任务均匹配一条 Physical-2K 成功样例 | [进入控制台](https://zzw-rgb.github.io/Radeon-hackathon-2026-07/console.html) |
 | 原始评测结果 | 100/100 episode 全部保留 | `artifacts/evaluation.json`、`.csv`、`summary.md` |
 | SHA256 校验和 | 最终发布包 | `artifacts/SHA256SUMS` |
@@ -608,9 +688,9 @@ python -m radeonvla.submission_audit --final
 
 | 成员 | 角色 | 工作量 | 主要工作 |
 |---|---|---:|---|
-| **周振威** | 队长 / 主程 | 约 70% | 系统架构、Genesis 场景与专家策略、严格物理采集、SmolVLA 训练评测、网站与发布工程 |
-| 留安格 | 队员 | 约 15% | 中英文文档润色、任务表述校对、展示文案协助 |
-| 王浩然 | 队员 | 约 15% | 数据抽检、实验记录整理、技术报告与证据打包协助 |
+| **周振威** | 队长 / 主程 | 约 70% | 总体架构；Genesis、专家策略、Reflex 与流水线实现；采集总控；SmolVLA 训练评测；AMD 部署；网站和发布工程 |
+| 留安格 | 语言与前端质检 | 约 15% | 任务语言模式校对、采集指令一致性检查、网站国际化质检和中英文技术文档 |
+| 王浩然 | 数据与复现质检 | 约 15% | 数据证书抽检、评测指标汇总、复现命令核验和产物校验和打包 |
 
 ## 提交
 

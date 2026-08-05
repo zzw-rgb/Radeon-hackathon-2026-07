@@ -10,8 +10,14 @@ readme = "README.md"
 requires-python = ">=3.12,<3.13"
 authors = [
   { name = "Zhenwei Zhou" },
+  { name = "Ange Liu" },
+  { name = "Haoran Wang" },
+]
+maintainers = [
+  { name = "Zhenwei Zhou" },
 ]
 dependencies = [
+  "huggingface-hub>=0.34",
   "numpy>=1.26.4,<2.3",
   "pyyaml>=6.0",
   "jsonschema>=4.23",
@@ -34,6 +40,7 @@ radeonvla-train = "radeonvla.train_policy:main"
 radeonvla-evaluate = "radeonvla.evaluate:main"
 radeonvla-benchmark = "radeonvla.benchmark:main"
 radeonvla-validate-dataset = "radeonvla.validate_dataset:main"
+radeonvla-download = "radeonvla.download_artifacts:main"
 radeonvla-pipeline = "radeonvla.pipeline:main"
 
 [tool.setuptools.packages.find]

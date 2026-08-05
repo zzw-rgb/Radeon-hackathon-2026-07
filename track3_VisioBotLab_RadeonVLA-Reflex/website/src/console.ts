@@ -112,7 +112,7 @@ const labels = {
     kicker: "INTERACTIVE EVIDENCE CONSOLE",
     title: "Inspect the result behind the headline.",
     intro:
-      "Explore the released 100-rollout benchmark by exact task. All twenty fruit-and-destination selections include a certified Physical-2K world-camera success example.",
+      "Explore the released 100-rollout benchmark by exact task. All twenty fruit-and-destination selections include a certified Physical-2K success example.",
     fruit: "Select fruit",
     destination: "Destination",
     run: "Load evidence",
@@ -124,7 +124,7 @@ const labels = {
     outOf: "out of five fixed-seed rollouts for this exact task",
     trace: "Execution trace",
     traceItems: ["task slice selected", "five fixed seeds loaded", "first attempts counted", "final results verified"],
-    video: "Certified world-camera success",
+    video: "Certified strict-physics success",
     release: "Release endpoints",
     scope:
       "Benchmark numbers come from formal evaluation. The attached examples are certified Physical-2K collection trajectories, not substitutes for benchmark rollouts.",
@@ -133,7 +133,7 @@ const labels = {
     back: "返回项目首页",
     kicker: "交互式证据控制台",
     title: "查看总分背后的真实结果。",
-    intro: "按精确任务浏览已发布的 100 次评测。20 个“水果 × 目标碗”选择均附一段经认证的 Physical-2K 世界相机成功样例。",
+    intro: "按精确任务浏览已发布的 100 次评测。20 个“水果 × 目标碗”选择均附一段经认证的 Physical-2K 成功样例。",
     fruit: "选择水果",
     destination: "目标盘位",
     run: "载入证据",
@@ -145,7 +145,7 @@ const labels = {
     outOf: "该精确任务共 5 次固定 seed 评测",
     trace: "执行轨迹",
     traceItems: ["选择任务切片", "载入五个固定 seed", "统计首次执行", "核验最终结果"],
-    video: "严格物理世界相机成功示例",
+    video: "严格物理成功示例",
     release: "公开发布地址",
     scope: "数值来自正式评测；附带视频是经认证的 Physical-2K 数据采集轨迹，不替代正式评测回合。",
   },
@@ -171,8 +171,8 @@ function render(): void {
   const exampleSeed = selected.exampleSeedBase + offset;
   const exampleLabel =
     locale === "zh"
-      ? `Physical-2K 严格物理采集成功 · ${exampleTaskId} · episode ${String(exampleEpisode).padStart(4, "0")} · seed ${exampleSeed} · 世界相机`
-      : `Physical-2K strict-physics collection success · ${exampleTaskId} · episode ${String(exampleEpisode).padStart(4, "0")} · seed ${exampleSeed} · world camera`;
+      ? `Physical-2K 严格物理采集成功 · ${exampleTaskId} · episode ${String(exampleEpisode).padStart(4, "0")} · seed ${exampleSeed}`
+      : `Physical-2K strict-physics collection success · ${exampleTaskId} · episode ${String(exampleEpisode).padStart(4, "0")} · seed ${exampleSeed}`;
   document.documentElement.lang = locale === "zh" ? "zh-CN" : "en";
 
   app!.innerHTML = `

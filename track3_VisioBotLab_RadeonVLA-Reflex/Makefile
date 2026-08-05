@@ -1,7 +1,7 @@
 # Convenience targets for RadeonVLA-Reflex
 # Usage: make help
 
-.PHONY: help install-local check smoke record-local record-basic expert-demo reflex-demo remote-check remote-full audit docker-build docker-check
+.PHONY: help install-local check download-demo download-all smoke record-local record-basic expert-demo reflex-demo remote-check remote-full audit docker-build docker-check
 
 ROOT := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
 
@@ -10,6 +10,8 @@ help:
 	@echo ""
 	@echo "  make install-local   # pip install -e . + local requirements (torch separate)"
 	@echo "  make check           # env + audit + pytest + ruff"
+	@echo "  make download-demo   # pinned Physical-1K + 20K model + evidence"
+	@echo "  make download-all    # all public datasets, models, and evidence"
 	@echo "  make smoke           # 1-episode end-to-end smoke"
 	@echo "  make record-local    # record a few local episodes (SUITE/EPISODES overridable)"
 	@echo "  make record-basic    # all 20 fruit/bowl combinations + validation"
@@ -33,6 +35,12 @@ install-local:
 
 check:
 	bash scripts/check_local.sh
+
+download-demo:
+	python -m radeonvla.download_artifacts --artifact physical-1k model-20k evaluation-videos
+
+download-all:
+	python -m radeonvla.download_artifacts --all
 
 smoke:
 	bash scripts/run_pipeline_smoke.sh
