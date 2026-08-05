@@ -27,6 +27,13 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--model-repo", default=None, help="Hub model repo, for example user/name.")
     parser.add_argument("--policy-path", type=Path, default=None)
     parser.add_argument("--model-card", type=Path, default=PROJECT_ROOT / "docs" / "MODEL_CARD.md")
+    parser.add_argument(
+        "--model-evidence",
+        type=Path,
+        action="append",
+        default=[],
+        help="Validated evidence file to publish below evaluation/ in the model repository; repeatable.",
+    )
     visibility = parser.add_mutually_exclusive_group()
     visibility.add_argument("--private", dest="private", action="store_true", default=True)
     visibility.add_argument("--public", dest="private", action="store_false")
@@ -97,6 +104,20 @@ def _assert_repo_namespaces(identity: dict, repo_ids: list[str]) -> None:
                 f"Hub repo namespace {namespace!r} is not the authenticated user or one of its organizations: "
                 f"{sorted(name for name in allowed if name)}"
             )
+
+
+def _model_evidence_uploads(paths: list[Path]) -> list[tuple[Path, str]]:
+    uploads: list[tuple[Path, str]] = []
+    destinations: set[str] = set()
+    for path in paths:
+        if not path.is_file():
+            raise FileNotFoundError(f"Model evidence file not found: {path}")
+        destination = f"evaluation/{path.name}"
+        if destination in destinations:
+            raise ValueError(f"Duplicate model evidence filename: {path.name}")
+        destinations.add(destination)
+        uploads.append((path, destination))
+    return uploads
 
 
 def _validate_local_dataset(
@@ -171,7 +192,7 @@ def _publish_dataset(args: argparse.Namespace, api, *, private: bool) -> dict:
         repo_type="dataset",
         path_or_fileobj=merged_card.encode("utf-8"),
         path_in_repo="README.md",
-        commit_message="Publish validated Physical-1K dataset card",
+        commit_message="Publish validated dataset card",
     )
     if validation is not None and validation.is_file():
         api.upload_file(
@@ -216,6 +237,7 @@ def _publish_model(args: argparse.Namespace, api, *, private: bool) -> dict:
     policy_path = _resolve(args.policy_path)
     card = _resolve(args.model_card)
     assert policy_path is not None and card is not None and args.model_repo
+    evidence_uploads = _model_evidence_uploads(args.model_evidence)
     if not policy_path.is_dir():
         raise FileNotFoundError(f"Policy path not found: {policy_path}")
     _read_release_card(card, allow_draft=False)
@@ -245,6 +267,16 @@ def _publish_model(args: argparse.Namespace, api, *, private: bool) -> dict:
         path_in_repo="README.md",
         commit_message="Publish validated model card",
     )
+    evidence_names: list[str] = []
+    for evidence, destination in evidence_uploads:
+        api.upload_file(
+            repo_id=args.model_repo,
+            repo_type="model",
+            path_or_fileobj=str(evidence),
+            path_in_repo=destination,
+            commit_message=f"Add validated model evidence: {evidence.name}",
+        )
+        evidence_names.append(destination)
     revision = api.model_info(args.model_repo).sha
     if not args.skip_reload_check:
         with tempfile.TemporaryDirectory(prefix="radeonvla-hf-model-") as temporary:
@@ -264,6 +296,7 @@ def _publish_model(args: argparse.Namespace, api, *, private: bool) -> dict:
         "revision": revision,
         "local_sha256": local_hash,
         "reload_verified": not args.skip_reload_check,
+        "evidence": evidence_names,
     }
 
 
@@ -274,6 +307,8 @@ def main(argv: list[str] | None = None) -> int:
     args.policy_path = _resolve(args.policy_path)
     args.dataset_card = _resolve(args.dataset_card)
     args.model_card = _resolve(args.model_card)
+    args.model_evidence = [_resolve(path) for path in args.model_evidence]
+    assert all(path is not None for path in args.model_evidence)
     args.dataset_validation = _resolve(args.dataset_validation)
     args.receipt = _resolve(args.receipt)
 
