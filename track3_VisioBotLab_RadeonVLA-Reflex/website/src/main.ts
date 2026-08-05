@@ -1,4 +1,5 @@
-import architectureFramework from "../../docs/figures/architecture-framework-en.svg";
+import architectureEn from "./assets/architecture-en.jpg";
+import architectureZh from "./assets/architecture-zh.jpg";
 import heroImage from "./assets/radeonvla-reflex-hero-v2.png";
 import {
   collectionClips,
@@ -195,7 +196,7 @@ function render(): void {
           </div>
           <figure class="architecture-diagram reveal">
             <img
-              src="${architectureFramework}"
+              src="${locale === "zh" ? architectureZh : architectureEn}"
               alt="${t(copy.architectureDiagramAlt, locale)}"
               loading="lazy"
               decoding="async"

@@ -202,6 +202,23 @@ def _architecture_diagram(width: float) -> Drawing:
     line = colors.HexColor("#cbd1c0")
     paper = colors.HexColor("#fbfcf8")
 
+    def assert_fits(text: str, size: float, maximum: float, *, bold: bool = False) -> None:
+        font = "RadeonSans-Bold" if bold else "RadeonSans"
+        measured = pdfmetrics.stringWidth(text, font, size)
+        if measured > maximum:
+            raise ValueError(f"Architecture label exceeds its box: {text!r} ({measured:.1f} > {maximum:.1f})")
+
+    for text in ("Language command", "World RGB", "Wrist RGB", "Proprioception"):
+        assert_fits(text, 10, 138, bold=True)
+    assert_fits("SmolVLA", 16, 104, bold=True)
+    assert_fits("VISION · LANGUAGE · ACTION", 6.1, 104, bold=True)
+    assert_fits("SafetyMonitor", 14, 131, bold=True)
+    assert_fits("VALIDATE · INTERRUPT · RECOVER", 6.7, 131, bold=True)
+    assert_fits("Genesis", 13, 67, bold=True)
+    assert_fits("SIMULATION", 6.8, 67, bold=True)
+    assert_fits("CommandSession (version)", 9.5, 165, bold=True)
+    assert_fits("FailureDetector + RecoveryPolicy", 8.6, 165, bold=True)
+
     group.add(Rect(0, 0, nominal_width, nominal_height, rx=12, ry=12, fillColor=paper, strokeColor=None))
 
     def label(x: float, y: float, text: str, size: float, *, color=ink, bold=False, anchor="start") -> None:
@@ -241,7 +258,7 @@ def _architecture_diagram(width: float) -> Drawing:
 
     group.add(Rect(235, 84, 118, 67, rx=9, ry=9, fillColor=deep, strokeColor=None))
     label(294, 120, "SmolVLA", 16, color=colors.white, bold=True, anchor="middle")
-    label(294, 101, "VISION · LANGUAGE · ACTION", 6.8, color=colors.HexColor("#dcebb0"), bold=True, anchor="middle")
+    label(294, 101, "VISION · LANGUAGE · ACTION", 6.1, color=colors.HexColor("#dcebb0"), bold=True, anchor="middle")
 
     arrow(353, 117.5, 400)
     label(376, 128, "action", 8, color=muted, bold=True, anchor="middle")

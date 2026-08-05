@@ -23,10 +23,10 @@
   <text x="602" y="58" font-family="Inter, Arial, sans-serif" font-size="19" font-weight="700" letter-spacing="3" fill="#68705e">LEARNED POLICY</text>
   <text x="1015" y="58" font-family="Inter, Arial, sans-serif" font-size="19" font-weight="700" letter-spacing="3" fill="#68705e">EXECUTION BOUNDARY</text>
 
-  <g font-family="Inter, Arial, sans-serif" font-size="30" font-weight="600" fill="#20251a">
+  <g font-family="Inter, Arial, sans-serif" font-size="25" font-weight="600" fill="#20251a">
     <rect x="64" y="91" width="335" height="58" rx="14" fill="#ffffff" stroke="#cbd1c0"/>
     <circle cx="92" cy="120" r="7" fill="#b7db28"/>
-    <text x="116" y="131">Language command</text>
+    <text x="116" y="131" font-size="23">Language command</text>
 
     <rect x="64" y="163" width="335" height="58" rx="14" fill="#ffffff" stroke="#cbd1c0"/>
     <circle cx="92" cy="192" r="7" fill="#6f9d20"/>
@@ -41,12 +41,13 @@
     <text x="116" y="347">Proprioception</text>
   </g>
 
-  <path d="M399 120 H456 M399 192 H456 M399 264 H456 M399 336 H456 M456 120 V336 M456 228 H548" fill="none" stroke="#20251a" stroke-width="4" marker-end="url(#arrow)"/>
+  <path d="M399 120 H456 M399 192 H456 M399 264 H456 M399 336 H456 M456 120 V336" fill="none" stroke="#20251a" stroke-width="4"/>
+  <path d="M456 228 H548" fill="none" stroke="#20251a" stroke-width="4" marker-end="url(#arrow)"/>
 
   <g filter="url(#shadow)">
     <rect x="566" y="151" width="270" height="154" rx="24" fill="url(#policy)"/>
     <text x="701" y="219" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="42" font-weight="800" fill="#ffffff">SmolVLA</text>
-    <text x="701" y="258" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="20" font-weight="600" letter-spacing="1.5" fill="#dcebb0">VISION · LANGUAGE · ACTION</text>
+    <text x="701" y="258" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="13" font-weight="600" letter-spacing="0.2" fill="#dcebb0">VISION · LANGUAGE · ACTION</text>
   </g>
 
   <path d="M836 228 H952" fill="none" stroke="#20251a" stroke-width="4" marker-end="url(#arrow)"/>
@@ -55,23 +56,20 @@
   <g filter="url(#shadow)">
     <rect x="970" y="151" width="310" height="154" rx="24" fill="#ffffff" stroke="#91ad35" stroke-width="3"/>
     <text x="1125" y="218" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="36" font-weight="800" fill="#263300">SafetyMonitor</text>
-    <text x="1125" y="258" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="20" font-weight="600" letter-spacing="1.3" fill="#68705e">VALIDATE · INTERRUPT · RECOVER</text>
+    <text x="1125" y="258" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="13" font-weight="600" letter-spacing="0.2" fill="#68705e">VALIDATE · INTERRUPT · RECOVER</text>
   </g>
 
   <path d="M1280 228 H1390" fill="none" stroke="#20251a" stroke-width="4" marker-end="url(#arrow)"/>
   <g filter="url(#shadow)">
     <rect x="1408" y="151" width="146" height="154" rx="24" fill="#151811"/>
-    <text x="1481" y="219" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="34" font-weight="800" fill="#ffffff">Genesis</text>
-    <text x="1481" y="256" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="18" font-weight="600" letter-spacing="1.4" fill="#c9d995">SIMULATION</text>
+    <text x="1481" y="219" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="31" font-weight="800" fill="#ffffff">Genesis</text>
+    <text x="1481" y="256" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="14" font-weight="600" letter-spacing="0.7" fill="#c9d995">SIMULATION</text>
   </g>
 
   <path d="M1125 305 V344" fill="none" stroke="#91ad35" stroke-width="4"/>
   <g>
     <rect x="882" y="344" width="486" height="96" rx="20" fill="#f7f9f2" stroke="#91ad35" stroke-width="2"/>
-    <line x1="1125" y1="344" x2="1125" y2="440" stroke="#d3d9c8" stroke-width="2"/>
-    <text x="1004" y="382" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="23" font-weight="800" fill="#263300">CommandSession</text>
-    <text x="1004" y="413" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="19" font-weight="600" fill="#68705e">version control</text>
-    <text x="1246" y="382" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="23" font-weight="800" fill="#263300">FailureDetector</text>
-    <text x="1246" y="413" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="19" font-weight="600" fill="#68705e">+ RecoveryPolicy</text>
+    <text x="1125" y="382" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="22" font-weight="800" fill="#263300">CommandSession (version)</text>
+    <text x="1125" y="414" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="19" font-weight="700" fill="#68705e">FailureDetector + RecoveryPolicy</text>
   </g>
 </svg>

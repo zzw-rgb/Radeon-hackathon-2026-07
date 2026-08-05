@@ -202,8 +202,8 @@ export const copy = {
     zh: "动作分块可以提升吞吐，但旧动作块可能比生成它的指令活得更久。Reflex 是学习控制与 Genesis 之间的确定性边界。",
   },
   architectureDiagramAlt: {
-    en: "RadeonVLA-Reflex architecture: language command, world RGB, wrist RGB, and proprioception feed SmolVLA; actions cross SafetyMonitor before Genesis, supervised by CommandSession and FailureDetector plus RecoveryPolicy",
-    zh: "RadeonVLA-Reflex 架构：语言指令、World RGB、Wrist RGB 与本体状态输入 SmolVLA；动作在 CommandSession 和 FailureDetector 加 RecoveryPolicy 监督下经 SafetyMonitor 进入 Genesis",
+    en: "Detailed English RadeonVLA-Reflex architecture showing world RGB, wrist RGB, robot and gripper state, SmolVLA policy, action module, execution safety monitor, Genesis simulation, telemetry, retry, and next-observation feedback",
+    zh: "RadeonVLA-Reflex 中文详细架构图，包含世界 RGB、腕部 RGB、机器人与夹爪状态、SmolVLA 策略、动作块、执行安全监视器、Genesis 仿真、遥测、重试与下一帧观测反馈",
   },
   architectureDiagramCaption: {
     en: "Closed loop — perception → SmolVLA → Reflex safety monitor → Genesis dual-bowl sim → next observation.",
