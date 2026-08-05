@@ -8,10 +8,11 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 def test_current_release_structure_passes_pre_release_audit() -> None:
     result = audit_project(PROJECT_ROOT)
     assert result.errors == []
-    assert result.warnings
+    assert result.warnings == []
 
 
-def test_current_release_structure_is_not_final() -> None:
+def test_current_release_structure_passes_final_audit() -> None:
     result = audit_project(PROJECT_ROOT, final=True)
-    assert not result.ok
-    assert any("pre-release marker" in error for error in result.errors)
+    assert result.ok
+    assert result.errors == []
+    assert result.warnings == []

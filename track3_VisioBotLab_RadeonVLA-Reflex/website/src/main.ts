@@ -75,6 +75,7 @@ function render(): void {
                 ${t(copy.sourceCta, locale)} ${iconArrow()}
               </a>
               <a class="button button-quiet" href="#demo">${t(copy.demoCta, locale)} <span aria-hidden="true">↓</span></a>
+              <a class="button button-console" href="${publicAsset("console.html")}">${t(copy.consoleCta, locale)} <span aria-hidden="true">→</span></a>
             </div>
           </div>
           <div class="hero-stage reveal">
@@ -192,7 +193,7 @@ function render(): void {
             preload="metadata"
             aria-label="${t(copy.interruptTitle, locale)}"
           >
-            <source src="${publicAsset("videos/interrupt-command-change.mp4")}" type="video/mp4" />
+            <source src="${publicAsset("videos/interrupt-recovery-apple.mp4")}" type="video/mp4" />
             ${t(copy.clipFallback, locale)}
           </video>
           <figcaption>
@@ -351,6 +352,14 @@ function render(): void {
               <p>${t(copy.modelBody, locale)}</p>
               <a href="${projectLinks.finalModel}" target="_blank" rel="noreferrer">
                 ${t(copy.trainedModelCta, locale)} ${iconArrow()}
+              </a>
+            </article>
+            <article class="release-card release-videos reveal">
+              <p class="eyebrow">${t(copy.evaluationVideosLabel, locale)}</p>
+              <h3>${t(copy.evaluationVideosValue, locale)}</h3>
+              <p>${t(copy.evaluationVideosBody, locale)}</p>
+              <a href="${projectLinks.evaluationVideos}" target="_blank" rel="noreferrer">
+                ${t(copy.evaluationVideosCta, locale)} ${iconArrow()}
               </a>
             </article>
           </div>

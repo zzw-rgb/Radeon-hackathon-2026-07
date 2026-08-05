@@ -30,11 +30,13 @@ Track 3 基准使用 Genesis、Franka Panda、LeRobot 和 SmolVLA，把 5 种水
 |---|---|
 | [Physical-2K 数据集](https://huggingface.co/datasets/a3124371940/radeonvla_reflex_physical_2k) — 2,000 episodes / 468,889 frames | `2779b7c5566df9072bb9a7c43335d6203ea97887` |
 | [SmolVLA 累计 200K 权重](https://huggingface.co/a3124371940/radeonvla_reflex_smolvla_2k_200k) | `1ea32da3d59ce0905d0f1331bc3c6643e42beb7e` |
+| [评测视频与证据](https://huggingface.co/datasets/a3124371940/radeonvla_reflex_evaluation_videos) | `3f311d3c50fc9634f810d2a3dac57767817a9182` |
 | [SmolVLA 累计 50K 权重](https://huggingface.co/a3124371940/radeonvla_reflex_smolvla_1k_50k) | `59f6f0ad720054505667a652fe07e03d65e82915` |
 | [Physical-1K 数据集](https://huggingface.co/datasets/a3124371940/radeonvla_reflex_physical_1k) — 1,000 episodes / 232,658 frames | `b0f72c60e9100739fd82bd498c8f3d9bed7b75af` |
 | [SmolVLA-1K 权重](https://huggingface.co/a3124371940/radeonvla_reflex_smolvla_1k) — 20,000 steps | `abcca9f2b313e378b554449016b520b8117016fe` |
 
-公开项目网站：**https://zzw-rgb.github.io/Radeon-hackathon-2026-07/**
+公开项目网站：**https://zzw-rgb.github.io/Radeon-hackathon-2026-07/**  
+交互式证据控制台：**https://zzw-rgb.github.io/Radeon-hackathon-2026-07/console.html**
 
 本目录为完整、自包含的项目单元。从仓库根目录进入
 `track3_VisioBotLab_RadeonVLA-Reflex/`，可按本文档复现系统。
@@ -564,11 +566,13 @@ task                       # 自然语言指令
 | 技术报告（MD） | 持续维护的源文档 | reports/RadeonVLA-Reflex-Technical-Report.md |
 | 技术报告 PDF | A4、5 页、最终审计输入 | [技术报告 PDF](reports/RadeonVLA-Reflex-Technical-Report.pdf) |
 | 公开项目网站 | GitHub Pages 部署已核验 | [RadeonVLA-Reflex 网站](https://zzw-rgb.github.io/Radeon-hackathon-2026-07/) |
-| 3 分钟以上解说成片 | 200.0 秒、1080p30 H.264/AAC、自然英文旁白与内嵌英文字幕 | [播放公开视频](https://zzw-rgb.github.io/Radeon-hackathon-2026-07/videos/radeonvla-reflex-3min.mp4) |
+| 3 分钟以上解说成片 | 200.0 秒、1080p30 H.264/AAC、自然英文旁白与内嵌中英双语字幕 | [播放公开视频](https://zzw-rgb.github.io/Radeon-hackathon-2026-07/videos/radeonvla-reflex-3min.mp4) |
 | 恢复同条件对照 | 15.0 秒、相同任务与 seed | `website/public/videos/normal-vs-reflex-15s.mp4` |
-| 途中改令证据 | 安全中断 1/1、旧指令未保护动作 0 步 | `artifacts/interrupt_evaluation.json` |
+| 苹果途中改令与恢复证据 | 安全中断 1/1、旧指令未保护动作 0 步、最终成功 1/1 | `artifacts/interrupt_recovery_evaluation_apple.json` |
 | 模型权重 | 公开 200K 权重，revision `1ea32da3…beb7e` | [Hugging Face 模型](https://huggingface.co/a3124371940/radeonvla_reflex_smolvla_2k_200k) |
 | 数据集 | Physical-2K，revision `2779b7c5…97887` | [Hugging Face 数据集](https://huggingface.co/datasets/a3124371940/radeonvla_reflex_physical_2k) |
+| 评测视频库 | 公开视频、JSON/CSV 与校验和，revision `3f311d3c…9182` | [Hugging Face 证据](https://huggingface.co/datasets/a3124371940/radeonvla_reflex_evaluation_videos) |
+| 交互式证据控制台 | 已发布基准的只读任务浏览器 | [进入控制台](https://zzw-rgb.github.io/Radeon-hackathon-2026-07/console.html) |
 | 原始评测结果 | 100/100 episode 全部保留 | `artifacts/evaluation.json`、`.csv`、`summary.md` |
 | SHA256 校验和 | 最终发布包 | `artifacts/SHA256SUMS` |
 | Docker 镜像定义 | 自包含运行定义 | docker/Dockerfile |
