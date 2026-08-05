@@ -149,6 +149,24 @@ export const copy = {
     en: "A narrated walkthrough of the Physical-2K data, Radeon training path, 200K checkpoint, real failed learned attempt, and strict-physics Precision Reflex recovery. Chinese narration includes bilingual subtitles.",
     zh: "完整讲解 Physical-2K 数据、Radeon 训练链路、200K 权重、学习策略真实失败和严格物理 Precision Reflex 恢复；中文旁白配中英双语字幕。",
   },
+  comparisonLabel: { en: "15 SEC PAIRED EVIDENCE", zh: "15 秒同条件对照" },
+  comparisonTitle: {
+    en: "Learned miss → strict-physics recovery",
+    zh: "学习策略空抓 → 严格物理恢复",
+  },
+  comparisonBody: {
+    en: "Two fixed-seed apple rollouts from the 200K checkpoint: the learned attempt on the left and the explicitly labeled Precision Reflex path on the right. No object teleport or grasp glue is permitted.",
+    zh: "两条使用 200K 权重和相同固定 seed 的苹果闭环：左侧为学习策略尝试，右侧为显式标记的 Precision Reflex 路径；全程禁止物体瞬移和抓取粘附。",
+  },
+  interruptLabel: { en: "7.9 SEC INTERRUPT PROBE", zh: "7.9 秒途中改令证据" },
+  interruptTitle: {
+    en: "White-left invalidated → blue-right completed",
+    zh: "左白指令作废 → 右蓝任务完成",
+  },
+  interruptBody: {
+    en: "At control step 40, seed 60000 changes the command from banana→white-left to banana→blue-right. The stale chunk is invalidated immediately: safe interrupt 1/1, response 0 extra steps, unprotected old-command actions 0, final success 1/1.",
+    zh: "固定 seed 60000 在第 40 个控制步把指令从香蕉→左白改为香蕉→右蓝，旧动作块立即失效：安全中断 1/1、额外响应 0 步、旧指令未保护动作 0 步，最终成功 1/1。",
+  },
   // Supporting appendix for local data-collection smoke clips.
   collectionKicker: { en: "DATA PIPELINE APPENDIX", zh: "数据链路附录" },
   collectionTitle: {

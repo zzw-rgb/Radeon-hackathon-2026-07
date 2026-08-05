@@ -145,6 +145,12 @@ The evaluation pipeline records safe-interrupt rate, command-to-invalidation ste
 of unprotected post-interrupt action steps. Demo videos overlay command version, runtime
 state, retry count, scenario, and live inference latency.
 
+An independent release probe uses seed 60000 and changes the command at control step 40 from
+`banana→white-left` to `banana→blue-right`. The stale chunk is invalidated immediately:
+safe-interrupt rate 1/1, response 0 additional control steps, unprotected old-command actions 0,
+and final new-target success 1/1. This single interrupt capability probe is published in
+`artifacts/interrupt_evaluation.json` and is not included in the 100-rollout success denominator.
+
 ## 9. Failure Detection and Recovery
 
 `FailureDetector` watches empty-grasp heuristics (closed gripper while the target fruit
@@ -188,7 +194,7 @@ rate has an interval of 27.3–45.8%. Precision recovery was attempted 63 times 
 55 times (87.3%), contributing 55 percentage points. Final fruit-level success is apple
 20/20, banana 19/20, lemon 19/20, orange 17/20, and plum 16/20. P95 latency was measured
 while five disjoint partitions shared one GPU and includes that contention. Raw per-task
-records are in `evaluation.physical_2k_200k_precision_reflex_basic100.json`.
+records are in `artifacts/evaluation.json` and the public model repository's `evaluation/` folder.
 
 ## 13. Failure Analysis
 
@@ -220,8 +226,9 @@ Learned control (SmolVLA) is separate from deterministic safety/recovery logic.
 | Source repository | Project repository branch | Bound by release commit |
 | Model | `a3124371940/radeonvla_reflex_smolvla_2k_200k` | Bound by checkpoint digest |
 | Dataset/documentation | `docs/DATASET_CARD.md` | Bound by dataset revision |
-| Raw evaluation | `artifacts/evaluation.physical_2k_200k_precision_reflex_basic100.*` | Seeds 52000–52099 |
-| Demo video | `website/public/videos/radeonvla-reflex-3min.mp4` (216.858 s) | SHA256 `a3e637c8…a4cd` |
+| Raw evaluation | `artifacts/evaluation.json`, `.csv`, `summary.md` | Seeds 52000–52099 |
+| Interrupt evidence | `artifacts/interrupt_evaluation.*` + website clip | Seed 60000 |
+| Demo video | `website/public/videos/radeonvla-reflex-3min.mp4` (216.858 s) | SHA256 `c2bcb1ad…be57a` |
 | Technical report | This document; PDF accompanies the release | Bound by release commit |
 
 ## 16. Reproducibility

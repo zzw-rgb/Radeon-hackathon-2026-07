@@ -289,6 +289,13 @@ class EpisodeResult:
     precision_recovery_success: bool = False
 
 
+def _counts_as_first_attempt(*, success: bool, retry_count: int, precision_recovery_attempted: bool) -> bool:
+    """Keep deterministic recovery outcomes out of learned first-attempt metrics."""
+    # A failed precision pass can still leave a fruit settling into the bowl.
+    # That is a final system success, but deterministic recovery already took control.
+    return bool(success and retry_count == 0 and not precision_recovery_attempted)
+
+
 def run_episode(
     bundle,
     pb: PolicyBundle,
@@ -561,7 +568,11 @@ def run_episode(
         video_uri = str(video_path)
 
     success = bool(final_report["success"])
-    if success and retry_count == 0 and not precision_recovery_success:
+    if _counts_as_first_attempt(
+        success=success,
+        retry_count=retry_count,
+        precision_recovery_attempted=precision_recovery_attempted,
+    ):
         first_attempt_success = True
 
     failure_reason = None

@@ -1,0 +1,283 @@
+"""Render the release technical report Markdown as a self-contained PDF."""
+
+from __future__ import annotations
+
+import argparse
+import html
+import re
+from pathlib import Path
+
+from reportlab.lib import colors
+from reportlab.lib.enums import TA_CENTER
+from reportlab.lib.pagesizes import A4
+from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
+from reportlab.lib.units import mm
+from reportlab.pdfbase import pdfmetrics
+from reportlab.pdfbase.ttfonts import TTFont
+from reportlab.platypus import (
+    LongTable,
+    Paragraph,
+    Preformatted,
+    SimpleDocTemplate,
+    Spacer,
+    TableStyle,
+)
+
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+DEFAULT_SOURCE = PROJECT_ROOT / "reports" / "RadeonVLA-Reflex-Technical-Report.md"
+DEFAULT_OUTPUT = PROJECT_ROOT / "reports" / "RadeonVLA-Reflex-Technical-Report.pdf"
+FONT_ROOT = Path("/usr/share/fonts/truetype/dejavu")
+
+
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--source", type=Path, default=DEFAULT_SOURCE)
+    parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT)
+    return parser.parse_args()
+
+
+def _register_fonts() -> None:
+    required = {
+        "RadeonSans": FONT_ROOT / "DejaVuSans.ttf",
+        "RadeonSans-Bold": FONT_ROOT / "DejaVuSans-Bold.ttf",
+        "RadeonMono": FONT_ROOT / "DejaVuSansMono.ttf",
+    }
+    missing = [str(path) for path in required.values() if not path.is_file()]
+    if missing:
+        raise FileNotFoundError(f"Required PDF fonts are missing: {missing}")
+    for name, path in required.items():
+        pdfmetrics.registerFont(TTFont(name, str(path)))
+
+
+def _inline(text: str) -> str:
+    text = re.sub(r"\[([^]]+)]\(([^)]+)\)", r"\1 (\2)", text)
+    text = text.replace("**", "").replace("`", "")
+    return html.escape(text, quote=False)
+
+
+def _styles() -> dict[str, ParagraphStyle]:
+    base = getSampleStyleSheet()
+    return {
+        "title": ParagraphStyle(
+            "ReleaseTitle",
+            parent=base["Title"],
+            fontName="RadeonSans-Bold",
+            fontSize=22,
+            leading=27,
+            textColor=colors.HexColor("#171914"),
+            spaceAfter=8 * mm,
+            alignment=TA_CENTER,
+        ),
+        "subtitle": ParagraphStyle(
+            "ReleaseSubtitle",
+            parent=base["Heading2"],
+            fontName="RadeonSans",
+            fontSize=13,
+            leading=17,
+            textColor=colors.HexColor("#4f5844"),
+            spaceAfter=7 * mm,
+            alignment=TA_CENTER,
+        ),
+        "h2": ParagraphStyle(
+            "ReleaseH2",
+            parent=base["Heading2"],
+            fontName="RadeonSans-Bold",
+            fontSize=14,
+            leading=18,
+            textColor=colors.HexColor("#263300"),
+            spaceBefore=4.5 * mm,
+            spaceAfter=2 * mm,
+            keepWithNext=True,
+        ),
+        "body": ParagraphStyle(
+            "ReleaseBody",
+            parent=base["BodyText"],
+            fontName="RadeonSans",
+            fontSize=9,
+            leading=12.8,
+            textColor=colors.HexColor("#20231d"),
+            spaceAfter=2 * mm,
+        ),
+        "bullet": ParagraphStyle(
+            "ReleaseBullet",
+            parent=base["BodyText"],
+            fontName="RadeonSans",
+            fontSize=8.7,
+            leading=12,
+            leftIndent=5 * mm,
+            firstLineIndent=-3.5 * mm,
+            spaceAfter=1 * mm,
+        ),
+        "quote": ParagraphStyle(
+            "ReleaseQuote",
+            parent=base["BodyText"],
+            fontName="RadeonSans",
+            fontSize=9,
+            leading=13,
+            leftIndent=6 * mm,
+            rightIndent=5 * mm,
+            borderColor=colors.HexColor("#9bbb27"),
+            borderWidth=1.5,
+            borderPadding=4,
+            textColor=colors.HexColor("#3e4931"),
+            spaceAfter=3 * mm,
+        ),
+        "table": ParagraphStyle(
+            "ReleaseTable",
+            parent=base["BodyText"],
+            fontName="RadeonSans",
+            fontSize=7.1,
+            leading=9.1,
+        ),
+        "table_header": ParagraphStyle(
+            "ReleaseTableHeader",
+            parent=base["BodyText"],
+            fontName="RadeonSans-Bold",
+            fontSize=7.1,
+            leading=9.1,
+            textColor=colors.white,
+        ),
+        "code": ParagraphStyle(
+            "ReleaseCode",
+            parent=base["Code"],
+            fontName="RadeonMono",
+            fontSize=7.2,
+            leading=9.5,
+            leftIndent=3 * mm,
+            rightIndent=3 * mm,
+            borderColor=colors.HexColor("#d4d8cc"),
+            borderWidth=0.5,
+            borderPadding=5,
+            backColor=colors.HexColor("#f4f6f1"),
+            spaceAfter=3 * mm,
+        ),
+    }
+
+
+def _table(lines: list[str], styles: dict[str, ParagraphStyle], width: float) -> LongTable:
+    rows = [[cell.strip() for cell in line.strip().strip("|").split("|")] for line in lines]
+    if len(rows) > 1 and all(re.fullmatch(r":?-{3,}:?", cell) for cell in rows[1]):
+        rows.pop(1)
+    columns = max(len(row) for row in rows)
+    normalized = [row + [""] * (columns - len(row)) for row in rows]
+    rendered = []
+    for row_index, row in enumerate(normalized):
+        style = styles["table_header"] if row_index == 0 else styles["table"]
+        rendered.append([Paragraph(_inline(cell), style) for cell in row])
+    table = LongTable(rendered, colWidths=[width / columns] * columns, repeatRows=1, hAlign="LEFT")
+    table.setStyle(
+        TableStyle(
+            [
+                ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#263300")),
+                ("GRID", (0, 0), (-1, -1), 0.35, colors.HexColor("#b9bfb0")),
+                ("VALIGN", (0, 0), (-1, -1), "TOP"),
+                ("LEFTPADDING", (0, 0), (-1, -1), 4),
+                ("RIGHTPADDING", (0, 0), (-1, -1), 4),
+                ("TOPPADDING", (0, 0), (-1, -1), 4),
+                ("BOTTOMPADDING", (0, 0), (-1, -1), 4),
+                ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.white, colors.HexColor("#f5f7f2")]),
+            ]
+        )
+    )
+    return table
+
+
+def _story(markdown: str, styles: dict[str, ParagraphStyle], width: float) -> list[object]:
+    lines = markdown.splitlines()
+    story: list[object] = []
+    paragraph: list[str] = []
+
+    def flush() -> None:
+        if paragraph:
+            story.append(Paragraph(_inline(" ".join(part.strip() for part in paragraph)), styles["body"]))
+            paragraph.clear()
+
+    index = 0
+    while index < len(lines):
+        line = lines[index]
+        stripped = line.strip()
+        if stripped.startswith("```"):
+            flush()
+            code: list[str] = []
+            index += 1
+            while index < len(lines) and not lines[index].strip().startswith("```"):
+                code.append(lines[index])
+                index += 1
+            story.append(Preformatted("\n".join(code), styles["code"], maxLineLength=110))
+        elif stripped.startswith("|"):
+            flush()
+            rows: list[str] = []
+            while index < len(lines) and lines[index].strip().startswith("|"):
+                rows.append(lines[index])
+                index += 1
+            story.append(_table(rows, styles, width))
+            story.append(Spacer(1, 2.5 * mm))
+            continue
+        elif stripped.startswith("# "):
+            flush()
+            story.append(Paragraph(_inline(stripped[2:]), styles["title"]))
+        elif stripped.startswith("## Technical Report"):
+            flush()
+            story.append(Paragraph(_inline(stripped[3:]), styles["subtitle"]))
+        elif stripped.startswith("## "):
+            flush()
+            story.append(Paragraph(_inline(stripped[3:]), styles["h2"]))
+        elif stripped.startswith("> "):
+            flush()
+            quote = [stripped[2:]]
+            while index + 1 < len(lines) and lines[index + 1].strip().startswith("> "):
+                index += 1
+                quote.append(lines[index].strip()[2:])
+            story.append(Paragraph(_inline(" ".join(quote)), styles["quote"]))
+        elif re.match(r"^[-*] ", stripped):
+            flush()
+            story.append(Paragraph(f"• {_inline(stripped[2:])}", styles["bullet"]))
+        elif re.match(r"^\d+\. ", stripped):
+            flush()
+            story.append(Paragraph(_inline(stripped), styles["bullet"]))
+        elif not stripped:
+            flush()
+        else:
+            paragraph.append(stripped)
+        index += 1
+    flush()
+    return story
+
+
+def _footer(canvas, document) -> None:
+    canvas.saveState()
+    canvas.setFont("RadeonSans", 7.5)
+    canvas.setFillColor(colors.HexColor("#68705e"))
+    canvas.drawString(document.leftMargin, 10 * mm, "RadeonVLA-Reflex · VisioBot Lab · Track 3")
+    canvas.drawRightString(A4[0] - document.rightMargin, 10 * mm, f"Page {document.page}")
+    canvas.restoreState()
+
+
+def main() -> int:
+    args = parse_args()
+    source = args.source.resolve()
+    output = args.output.resolve()
+    if not source.is_file():
+        raise FileNotFoundError(source)
+    _register_fonts()
+    styles = _styles()
+    output.parent.mkdir(parents=True, exist_ok=True)
+    document = SimpleDocTemplate(
+        str(output),
+        pagesize=A4,
+        rightMargin=15 * mm,
+        leftMargin=15 * mm,
+        topMargin=15 * mm,
+        bottomMargin=18 * mm,
+        title="RadeonVLA-Reflex Technical Report",
+        author="VisioBot Lab",
+        subject="AMD AI DevMaster Track 3 Physical AI Challenge",
+    )
+    width = A4[0] - document.leftMargin - document.rightMargin
+    document.build(_story(source.read_text(encoding="utf-8"), styles, width), onFirstPage=_footer, onLaterPages=_footer)
+    print(f"report_pdf={output} bytes={output.stat().st_size}")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

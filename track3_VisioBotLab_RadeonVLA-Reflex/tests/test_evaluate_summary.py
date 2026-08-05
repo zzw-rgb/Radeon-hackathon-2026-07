@@ -6,6 +6,7 @@ import torch
 from radeonvla.artifact_io import validate_evaluation_payload
 from radeonvla.evaluate import (
     EpisodeResult,
+    _counts_as_first_attempt,
     _device_display_name,
     parse_args,
     select_instruction,
@@ -135,6 +136,12 @@ def test_precision_recovery_does_not_count_as_first_attempt() -> None:
     summary = summarize([recovered])
     assert summary["first_attempt_success"] == 0.0
     assert summary["final_success"] == 1.0
+
+
+def test_failed_precision_attempt_cannot_be_reclassified_as_learned_success() -> None:
+    assert _counts_as_first_attempt(success=True, retry_count=0, precision_recovery_attempted=False)
+    assert not _counts_as_first_attempt(success=True, retry_count=0, precision_recovery_attempted=True)
+    assert not _counts_as_first_attempt(success=True, retry_count=1, precision_recovery_attempted=False)
 
 
 def test_cpu_device_name_does_not_query_cuda(monkeypatch) -> None:

@@ -166,6 +166,41 @@ function render(): void {
             <p>${t(copy.videoBody, locale)}</p>
           </figcaption>
         </figure>
+        <figure class="policy-video policy-video-compact reveal">
+          <video
+            controls
+            muted
+            playsinline
+            preload="metadata"
+            poster="${publicAsset("videos/precision-recovery-apple.webp")}"
+            aria-label="${t(copy.comparisonTitle, locale)}"
+          >
+            <source src="${publicAsset("videos/normal-vs-reflex-15s.mp4")}" type="video/mp4" />
+            ${t(copy.clipFallback, locale)}
+          </video>
+          <figcaption>
+            <small>${t(copy.comparisonLabel, locale)}</small>
+            <strong>${t(copy.comparisonTitle, locale)}</strong>
+            <p>${t(copy.comparisonBody, locale)}</p>
+          </figcaption>
+        </figure>
+        <figure class="policy-video policy-video-compact reveal">
+          <video
+            controls
+            muted
+            playsinline
+            preload="metadata"
+            aria-label="${t(copy.interruptTitle, locale)}"
+          >
+            <source src="${publicAsset("videos/interrupt-command-change.mp4")}" type="video/mp4" />
+            ${t(copy.clipFallback, locale)}
+          </video>
+          <figcaption>
+            <small>${t(copy.interruptLabel, locale)}</small>
+            <strong>${t(copy.interruptTitle, locale)}</strong>
+            <p>${t(copy.interruptBody, locale)}</p>
+          </figcaption>
+        </figure>
         <div class="demo-grid">
           ${demos
             .map(

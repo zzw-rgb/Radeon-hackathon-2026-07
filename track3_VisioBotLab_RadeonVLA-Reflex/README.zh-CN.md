@@ -34,6 +34,8 @@ Track 3 基准使用 Genesis、Franka Panda、LeRobot 和 SmolVLA，把 5 种水
 | [Physical-1K 数据集](https://huggingface.co/datasets/a3124371940/radeonvla_reflex_physical_1k) — 1,000 episodes / 232,658 frames | `b0f72c60e9100739fd82bd498c8f3d9bed7b75af` |
 | [SmolVLA-1K 权重](https://huggingface.co/a3124371940/radeonvla_reflex_smolvla_1k) — 20,000 steps | `abcca9f2b313e378b554449016b520b8117016fe` |
 
+公开项目网站：**https://zzw-rgb.github.io/Radeon-hackathon-2026-07/**
+
 本目录为完整、自包含的项目单元。从仓库根目录进入
 `track3_VisioBotLab_RadeonVLA-Reflex/`，可按本文档复现系统。
 
@@ -557,16 +559,18 @@ task                       # 自然语言指令
 
 | 交付物 | 状态 | 链接 |
 |---|---|---|
-| 源代码 | 流水线已实现 | 本自包含目录 |
+| 源代码 | 公开发布分支 | [GitHub 源码](https://github.com/zzw-rgb/Radeon-hackathon-2026-07/tree/submission/track3-visiobotlab-radeonvla-reflex/track3_VisioBotLab_RadeonVLA-Reflex) |
 | 可复现 README | 本文件 / 英文版 | README.md |
 | 技术报告（MD） | 持续维护的源文档 | reports/RadeonVLA-Reflex-Technical-Report.md |
-| 技术报告 PDF | 由发布流程生成 | `reports/RadeonVLA-Reflex-Technical-Report.pdf` |
-| 3 分钟以上解说成片 | 216.858 秒、H.264/AAC、中英双语字幕 | `website/public/videos/radeonvla-reflex-3min.mp4` |
-| 原始恢复片段 | 由策略评测套件生成 | `outputs/eval_videos/` |
-| 模型权重 | 绑定最新且验证通过的数字 checkpoint | `outputs/train/*/checkpoints/*/pretrained_model` |
-| 数据集或数据文档 | 已实现 | docs/DATASET_CARD.md |
-| 原始评测结果 | 由独立评测生成 | `artifacts/evaluation.json` |
-| SHA256 校验和 | 由发布流程生成 | `artifacts/SHA256SUMS` |
+| 技术报告 PDF | A4、5 页、最终审计输入 | [技术报告 PDF](reports/RadeonVLA-Reflex-Technical-Report.pdf) |
+| 公开项目网站 | GitHub Pages 部署已核验 | [RadeonVLA-Reflex 网站](https://zzw-rgb.github.io/Radeon-hackathon-2026-07/) |
+| 3 分钟以上解说成片 | 216.858 秒、H.264/AAC、中英双语字幕 | [播放公开视频](https://zzw-rgb.github.io/Radeon-hackathon-2026-07/videos/radeonvla-reflex-3min.mp4) |
+| 恢复同条件对照 | 15.0 秒、相同任务与 seed | `website/public/videos/normal-vs-reflex-15s.mp4` |
+| 途中改令证据 | 安全中断 1/1、旧指令未保护动作 0 步 | `artifacts/interrupt_evaluation.json` |
+| 模型权重 | 公开 200K 权重，revision `1ea32da3…beb7e` | [Hugging Face 模型](https://huggingface.co/a3124371940/radeonvla_reflex_smolvla_2k_200k) |
+| 数据集 | Physical-2K，revision `2779b7c5…97887` | [Hugging Face 数据集](https://huggingface.co/datasets/a3124371940/radeonvla_reflex_physical_2k) |
+| 原始评测结果 | 100/100 episode 全部保留 | `artifacts/evaluation.json`、`.csv`、`summary.md` |
+| SHA256 校验和 | 最终发布包 | `artifacts/SHA256SUMS` |
 | Docker 镜像定义 | 自包含运行定义 | docker/Dockerfile |
 
 发布文档：
@@ -577,7 +581,7 @@ task                       # 自然语言指令
 
 ```bash
 python -m radeonvla.submission_audit
-python -m radeonvla.submission_audit --final   # PDF 与 checksum 齐备前会失败
+python -m radeonvla.submission_audit --final
 ```
 
 ## 参考与致谢
@@ -611,3 +615,4 @@ Track 3, VisioBot Lab, RadeonVLA-Reflex
 ```
 
 所有提交材料、项目说明与 Pull Request 正文使用英文。
+评审快速入口与英文提交摘要见 [`docs/SUBMISSION.md`](docs/SUBMISSION.md)。

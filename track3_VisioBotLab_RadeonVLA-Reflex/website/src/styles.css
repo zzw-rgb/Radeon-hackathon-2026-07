@@ -614,6 +614,11 @@ a:focus-visible,
   line-height: 1.6;
 }
 
+.policy-video-compact {
+  margin-top: 1rem;
+  grid-template-columns: minmax(0, 1.35fr) minmax(15rem, 0.65fr);
+}
+
 .collection-appendix {
   border-top: 1px solid var(--line);
   opacity: 0.98;

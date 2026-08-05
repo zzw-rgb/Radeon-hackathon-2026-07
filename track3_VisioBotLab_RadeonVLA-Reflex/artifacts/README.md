@@ -10,15 +10,24 @@ training.json
 evaluation.json
 evaluation.csv
 interrupt_evaluation.json
-baseline_interrupt_evaluation.json
-perturbation_evaluation.json
-benchmark.json
+interrupt_evaluation.csv
+interrupt_evaluation.summary.md
 summary.md
 SHA256SUMS
 ~~~
 
-Large videos, datasets, and checkpoints must be hosted outside the Git repository.
+The canonical release files are populated in this repository:
+
+- `dataset_manifest.json` / `dataset_validation.json`: Physical-2K coverage and strict-physics validation;
+- `training.json`: final Physical-2K continuation and public checkpoint identity;
+- `evaluation.json` / `evaluation.csv` / `summary.md`: all 100 disjoint-seed episodes, including failures;
+- `environment.remote.json`: exact Radeon/ROCm evaluation environment;
+- `SHA256SUMS`: hashes for the compact evidence, report, cards, and published website video.
+
+Large dataset shards and checkpoints remain on Hugging Face. The 216.858-second release video is
+tracked below `website/public/videos/` so GitHub Pages can serve it directly.
 
 The final `evaluation.json` validates against `evaluation.schema.json`. `evaluate.py`
 automatically writes JSON, flattened CSV, and a Markdown summary while hashing the actual
-checkpoint tree. Technical-report tables are generated from these immutable results.
+checkpoint tree. Technical-report tables use these immutable results. The public model repository
+also carries the same evidence at revision `1ea32da3d59ce0905d0f1331bc3c6643e42beb7e`.

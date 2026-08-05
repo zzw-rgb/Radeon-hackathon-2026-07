@@ -39,6 +39,8 @@ Design focus of this codebase:
 | [Physical-1K dataset](https://huggingface.co/datasets/a3124371940/radeonvla_reflex_physical_1k) — 1,000 episodes / 232,658 frames | `b0f72c60e9100739fd82bd498c8f3d9bed7b75af` |
 | [SmolVLA-1K checkpoint](https://huggingface.co/a3124371940/radeonvla_reflex_smolvla_1k) — 20,000 steps | `abcca9f2b313e378b554449016b520b8117016fe` |
 
+Live showcase: **https://zzw-rgb.github.io/Radeon-hackathon-2026-07/**
+
 This directory is the self-contained project unit. From the repository root, open
 `track3_VisioBotLab_RadeonVLA-Reflex/` and follow this README to reproduce the system.
 
@@ -596,16 +598,18 @@ The final release revision requires no private account, unpublished file, or sou
 
 | Deliverable | Status | Link |
 |---|---|---|
-| Source code | Pipeline implemented | This self-contained directory |
+| Source code | Public release branch | [GitHub source](https://github.com/zzw-rgb/Radeon-hackathon-2026-07/tree/submission/track3-visiobotlab-radeonvla-reflex/track3_VisioBotLab_RadeonVLA-Reflex) |
 | Reproducibility README | This file | README.md |
 | Technical report (MD) | Maintained source | reports/RadeonVLA-Reflex-Technical-Report.md |
-| Technical report PDF | Produced by the release workflow | `reports/RadeonVLA-Reflex-Technical-Report.pdf` |
-| 3+ minute narrated demo | 216.858 s, H.264/AAC, bilingual subtitles | `website/public/videos/radeonvla-reflex-3min.mp4` |
-| Raw recovery clips | Produced by the policy evaluation suite | `outputs/eval_videos/` |
-| Model checkpoint | Bound to the latest validated numeric checkpoint | `outputs/train/*/checkpoints/*/pretrained_model` |
-| Dataset or dataset documentation | Implemented | `docs/DATASET_CARD.md` |
-| Raw evaluation results | Produced by held-out evaluation | `artifacts/evaluation.json` |
-| SHA256 checksums | Produced by the release workflow | `artifacts/SHA256SUMS` |
+| Technical report PDF | A4, 5 pages, final audit input | [Technical report PDF](reports/RadeonVLA-Reflex-Technical-Report.pdf) |
+| Public showcase | GitHub Pages deployment verified | [RadeonVLA-Reflex website](https://zzw-rgb.github.io/Radeon-hackathon-2026-07/) |
+| 3+ minute narrated demo | 216.858 s, H.264/AAC, bilingual subtitles | [Play public video](https://zzw-rgb.github.io/Radeon-hackathon-2026-07/videos/radeonvla-reflex-3min.mp4) |
+| Paired recovery evidence | 15.0 s, same task and seed | `website/public/videos/normal-vs-reflex-15s.mp4` |
+| Mid-command change evidence | Safe interrupt 1/1; 0 unprotected stale steps | `artifacts/interrupt_evaluation.json` |
+| Model checkpoint | Public 200K checkpoint, revision `1ea32da3…beb7e` | [Hugging Face model](https://huggingface.co/a3124371940/radeonvla_reflex_smolvla_2k_200k) |
+| Dataset | Physical-2K, revision `2779b7c5…97887` | [Hugging Face dataset](https://huggingface.co/datasets/a3124371940/radeonvla_reflex_physical_2k) |
+| Raw evaluation results | 100/100 episodes retained | `artifacts/evaluation.json`, `.csv`, `summary.md` |
+| SHA256 checksums | Final release bundle | `artifacts/SHA256SUMS` |
 | Docker image definition | Self-contained runtime definition | docker/Dockerfile |
 
 Release documentation:
@@ -616,7 +620,7 @@ Release documentation:
 
 ```bash
 python -m radeonvla.submission_audit
-python -m radeonvla.submission_audit --final   # fails until PDF + checksums exist
+python -m radeonvla.submission_audit --final
 ```
 
 ## References and attribution
@@ -650,3 +654,4 @@ Track 3, VisioBot Lab, RadeonVLA-Reflex
 ```
 
 Submission materials, project descriptions, and Pull Request text use English.
+The concise evaluator-facing submission brief is [`docs/SUBMISSION.md`](docs/SUBMISSION.md).
