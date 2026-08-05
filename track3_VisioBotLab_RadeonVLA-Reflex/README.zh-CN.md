@@ -25,15 +25,16 @@ Track 3 基准使用 Genesis、Franka Panda、LeRobot 和 SmolVLA，把 5 种水
 > SmolVLA 推理权重均已完成。固定 20 任务 × 5 seed 正式基准中，学习策略首次成功
 > **36/100**，显式启用严格物理 Precision-Reflex 后最终成功 **91/100**（Wilson 95%
 > 区间 **83.8–95.2%**）。全部 100 条 episode（包括 9 条失败）均保留在不可变结果文件中。
+> 公开展示视频以原始 **20K** 权重作为定性模型样例；50K 与 200K 权重保留为独立下载项。
 
 | 公开产物 | 不可变 revision |
 |---|---|
-| [Physical-2K 数据集](https://huggingface.co/datasets/a3124371940/radeonvla_reflex_physical_2k) — 2,000 episodes / 468,889 frames | `2779b7c5566df9072bb9a7c43335d6203ea97887` |
-| [SmolVLA 累计 200K 权重](https://huggingface.co/a3124371940/radeonvla_reflex_smolvla_2k_200k) | `1ea32da3d59ce0905d0f1331bc3c6643e42beb7e` |
-| [评测视频与证据](https://huggingface.co/datasets/a3124371940/radeonvla_reflex_evaluation_videos) | `3f311d3c50fc9634f810d2a3dac57767817a9182` |
-| [SmolVLA 累计 50K 权重](https://huggingface.co/a3124371940/radeonvla_reflex_smolvla_1k_50k) | `59f6f0ad720054505667a652fe07e03d65e82915` |
+| [SmolVLA-1K 权重](https://huggingface.co/a3124371940/radeonvla_reflex_smolvla_1k) — 主要 20K 展示权重 | `abcca9f2b313e378b554449016b520b8117016fe` |
 | [Physical-1K 数据集](https://huggingface.co/datasets/a3124371940/radeonvla_reflex_physical_1k) — 1,000 episodes / 232,658 frames | `b0f72c60e9100739fd82bd498c8f3d9bed7b75af` |
-| [SmolVLA-1K 权重](https://huggingface.co/a3124371940/radeonvla_reflex_smolvla_1k) — 20,000 steps | `abcca9f2b313e378b554449016b520b8117016fe` |
+| [Physical-2K 数据集](https://huggingface.co/datasets/a3124371940/radeonvla_reflex_physical_2k) — 2,000 episodes / 468,889 frames | `2779b7c5566df9072bb9a7c43335d6203ea97887` |
+| [SmolVLA 累计 50K 权重](https://huggingface.co/a3124371940/radeonvla_reflex_smolvla_1k_50k) | `59f6f0ad720054505667a652fe07e03d65e82915` |
+| [SmolVLA 累计 200K 权重](https://huggingface.co/a3124371940/radeonvla_reflex_smolvla_2k_200k) | `1ea32da3d59ce0905d0f1331bc3c6643e42beb7e` |
+| [评测视频与证据](https://huggingface.co/datasets/a3124371940/radeonvla_reflex_evaluation_videos) | `4bad005772064daafb52ab3ee2e279d465f18656` |
 
 公开项目网站：**https://zzw-rgb.github.io/Radeon-hackathon-2026-07/**  
 交互式证据控制台：**https://zzw-rgb.github.io/Radeon-hackathon-2026-07/console.html**
@@ -567,11 +568,12 @@ task                       # 自然语言指令
 | 技术报告 PDF | A4、5 页、最终审计输入 | [技术报告 PDF](reports/RadeonVLA-Reflex-Technical-Report.pdf) |
 | 公开项目网站 | GitHub Pages 部署已核验 | [RadeonVLA-Reflex 网站](https://zzw-rgb.github.io/Radeon-hackathon-2026-07/) |
 | 3 分钟以上解说成片 | 200.0 秒、1080p30 H.264/AAC、自然英文旁白与内嵌中英双语字幕 | [播放公开视频](https://zzw-rgb.github.io/Radeon-hackathon-2026-07/videos/radeonvla-reflex-3min.mp4) |
-| 恢复同条件对照 | 15.0 秒、相同任务与 seed | `website/public/videos/normal-vs-reflex-15s.mp4` |
-| 苹果途中改令与恢复证据 | 安全中断 1/1、旧指令未保护动作 0 步、最终成功 1/1 | `artifacts/interrupt_recovery_evaluation_apple.json` |
-| 模型权重 | 公开 200K 权重，revision `1ea32da3…beb7e` | [Hugging Face 模型](https://huggingface.co/a3124371940/radeonvla_reflex_smolvla_2k_200k) |
-| 数据集 | Physical-2K，revision `2779b7c5…97887` | [Hugging Face 数据集](https://huggingface.co/datasets/a3124371940/radeonvla_reflex_physical_2k) |
-| 评测视频库 | 公开视频、JSON/CSV 与校验和，revision `3f311d3c…9182` | [Hugging Face 证据](https://huggingface.co/datasets/a3124371940/radeonvla_reflex_evaluation_videos) |
+| 20K 模型成功回放 | 香蕉与柠檬均首次执行成功；命令/实测夹爪已张开；释放后继续仿真 2.0 秒 | [Hugging Face 证据](https://huggingface.co/datasets/a3124371940/radeonvla_reflex_evaluation_videos) |
+| 数据采集成功回放 | 苹果、香蕉、李子的完整抓取、释放与稳定落碗过程 | [Hugging Face 证据](https://huggingface.co/datasets/a3124371940/radeonvla_reflex_evaluation_videos) |
+| 主要模型权重 | 公开 20K 权重，revision `abcca9f2…016fe` | [Hugging Face 20K 模型](https://huggingface.co/a3124371940/radeonvla_reflex_smolvla_1k) |
+| 其他模型权重 | 公开 50K 与 200K revision | [50K](https://huggingface.co/a3124371940/radeonvla_reflex_smolvla_1k_50k) · [200K](https://huggingface.co/a3124371940/radeonvla_reflex_smolvla_2k_200k) |
+| 数据集 | Physical-1K 与 Physical-2K | [1K](https://huggingface.co/datasets/a3124371940/radeonvla_reflex_physical_1k) · [2K](https://huggingface.co/datasets/a3124371940/radeonvla_reflex_physical_2k) |
+| 评测视频库 | 成功回放、三分钟成片、机器可读证据与校验和 | [Hugging Face 证据](https://huggingface.co/datasets/a3124371940/radeonvla_reflex_evaluation_videos) |
 | 交互式证据控制台 | 已发布基准的只读任务浏览器 | [进入控制台](https://zzw-rgb.github.io/Radeon-hackathon-2026-07/console.html) |
 | 原始评测结果 | 100/100 episode 全部保留 | `artifacts/evaluation.json`、`.csv`、`summary.md` |
 | SHA256 校验和 | 最终发布包 | `artifacts/SHA256SUMS` |

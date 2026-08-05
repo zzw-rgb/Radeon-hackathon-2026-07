@@ -31,7 +31,11 @@ from radeonvla.stress import PERTURBATIONS, inject_perturbation
 from radeonvla.tasks import SUITES, TaskSpec, get_task, list_task_ids
 
 STATE_KEY = "observation.state"
-POST_SUCCESS_SECONDS = 0.6
+# Keep the simulator running after the success predicate first becomes true.
+# Besides making the evidence easier to inspect, the final report is evaluated
+# again after this dwell, so a fruit that falls out of the bowl is not counted
+# as a successful rollout.
+POST_SUCCESS_SECONDS = 2.0
 INSTRUCTION_SOURCES = ("collected", "heldout")
 
 
@@ -296,6 +300,18 @@ def _counts_as_first_attempt(*, success: bool, retry_count: int, precision_recov
     return bool(success and retry_count == 0 and not precision_recovery_attempted)
 
 
+def _release_is_verified(action: np.ndarray, measured_qpos: np.ndarray) -> bool:
+    """Require both requested and measured gripper opening before accepting a video success."""
+    action = np.asarray(action, dtype=np.float64).reshape(-1)
+    measured_qpos = np.asarray(measured_qpos, dtype=np.float64).reshape(-1)
+    return bool(
+        action.size >= 9
+        and measured_qpos.size >= 2
+        and float(np.mean(action[7:9])) >= 0.025
+        and float(np.mean(measured_qpos[-2:])) >= 0.02
+    )
+
+
 def run_episode(
     bundle,
     pb: PolicyBundle,
@@ -445,9 +461,20 @@ def run_episode(
 
         fail = detector.observe_step(bundle, step=attempt_step, action=action, unsafe=not decision.accepted)
         report_now = check_resolved_success(bundle, resolved)
-        if report_now["success"]:
+        measured_qpos = _to_np(bundle.franka.get_qpos()).reshape(-1)
+        release_verified = _release_is_verified(action, measured_qpos)
+        if report_now["success"] and release_verified:
             if retry_count == 0:
                 first_attempt_success = True
+            events.append(
+                {
+                    "type": "release_verified",
+                    "step": policy_step,
+                    "commanded_gripper": float(np.mean(action[7:9])),
+                    "measured_gripper": float(np.mean(measured_qpos[-2:])),
+                    "post_success_seconds": POST_SUCCESS_SECONDS,
+                }
+            )
             hold_steps = int(POST_SUCCESS_SECONDS * pb.fps)
             for _ in range(hold_steps):
                 apply_action(bundle, last_action, n_sim)

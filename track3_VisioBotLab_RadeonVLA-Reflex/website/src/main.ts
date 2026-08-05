@@ -154,7 +154,7 @@ function render(): void {
             controls
             playsinline
             preload="metadata"
-            poster="${publicAsset("videos/precision-recovery-apple.webp")}"
+            poster="${publicAsset("videos/dataset-banana-white-right.webp")}"
             aria-label="${t(copy.videoPending, locale)}"
           >
             <source src="${publicAsset("videos/radeonvla-reflex-3min.mp4")}" type="video/mp4" />
@@ -165,41 +165,6 @@ function render(): void {
             <small>${t(copy.videoLabel, locale)}</small>
             <strong>${t(copy.videoPending, locale)}</strong>
             <p>${t(copy.videoBody, locale)}</p>
-          </figcaption>
-        </figure>
-        <figure class="policy-video policy-video-compact reveal">
-          <video
-            controls
-            muted
-            playsinline
-            preload="metadata"
-            poster="${publicAsset("videos/precision-recovery-apple.webp")}"
-            aria-label="${t(copy.comparisonTitle, locale)}"
-          >
-            <source src="${publicAsset("videos/normal-vs-reflex-15s.mp4")}" type="video/mp4" />
-            ${t(copy.clipFallback, locale)}
-          </video>
-          <figcaption>
-            <small>${t(copy.comparisonLabel, locale)}</small>
-            <strong>${t(copy.comparisonTitle, locale)}</strong>
-            <p>${t(copy.comparisonBody, locale)}</p>
-          </figcaption>
-        </figure>
-        <figure class="policy-video policy-video-compact reveal">
-          <video
-            controls
-            muted
-            playsinline
-            preload="metadata"
-            aria-label="${t(copy.interruptTitle, locale)}"
-          >
-            <source src="${publicAsset("videos/interrupt-recovery-apple.mp4")}" type="video/mp4" />
-            ${t(copy.clipFallback, locale)}
-          </video>
-          <figcaption>
-            <small>${t(copy.interruptLabel, locale)}</small>
-            <strong>${t(copy.interruptTitle, locale)}</strong>
-            <p>${t(copy.interruptBody, locale)}</p>
           </figcaption>
         </figure>
         <div class="demo-grid">
@@ -346,13 +311,31 @@ function render(): void {
                 ${t(copy.datasetCta, locale)} ${iconArrow()}
               </a>
             </article>
+            <article class="release-card release-target reveal">
+              <p class="eyebrow">${locale === "zh" ? "已发布训练数据集" : "Released training dataset"}</p>
+              <h3>Physical-1K</h3>
+              <p>${locale === "zh" ? "20 项任务 × 50 条，共 1,000 条严格物理演示。" : "Twenty tasks × fifty episodes: 1,000 strict-physics demonstrations."}</p>
+              <a href="${projectLinks.dataset1k}" target="_blank" rel="noreferrer">${locale === "zh" ? "下载 Physical-1K" : "Download Physical-1K"} ${iconArrow()}</a>
+            </article>
             <article class="release-card release-model reveal">
-              <p class="eyebrow">${t(copy.modelLabel, locale)}</p>
-              <h3>${t(copy.modelValue, locale)}</h3>
-              <p>${t(copy.modelBody, locale)}</p>
-              <a href="${projectLinks.finalModel}" target="_blank" rel="noreferrer">
+              <p class="eyebrow">${locale === "zh" ? "主要展示权重" : "Primary showcase checkpoint"}</p>
+              <h3>SmolVLA · 20K</h3>
+              <p>${locale === "zh" ? "成功香蕉和柠檬回放使用的公开 Physical-1K 权重。" : "Public Physical-1K checkpoint used by the successful banana and lemon replays."}</p>
+              <a href="${projectLinks.model20k}" target="_blank" rel="noreferrer">
                 ${t(copy.trainedModelCta, locale)} ${iconArrow()}
               </a>
+            </article>
+            <article class="release-card release-videos reveal">
+              <p class="eyebrow">${locale === "zh" ? "中间权重" : "Intermediate checkpoint"}</p>
+              <h3>SmolVLA · 50K</h3>
+              <p>${locale === "zh" ? "Physical-1K 续训中间版本，保留用于复现与对比。" : "Physical-1K continuation checkpoint retained for reproducibility and comparison."}</p>
+              <a href="${projectLinks.model50k}" target="_blank" rel="noreferrer">${locale === "zh" ? "下载 50K 权重" : "Download 50K weights"} ${iconArrow()}</a>
+            </article>
+            <article class="release-card release-videos reveal">
+              <p class="eyebrow">${locale === "zh" ? "完整续训权重" : "Full continuation checkpoint"}</p>
+              <h3>SmolVLA · 200K</h3>
+              <p>${locale === "zh" ? "Physical-2K 累计约 200K 步权重，作为独立版本保留。" : "Physical-2K cumulative 200K-step checkpoint, retained as a separate release."}</p>
+              <a href="${projectLinks.finalModel}" target="_blank" rel="noreferrer">${locale === "zh" ? "下载 200K 权重" : "Download 200K weights"} ${iconArrow()}</a>
             </article>
             <article class="release-card release-videos reveal">
               <p class="eyebrow">${t(copy.evaluationVideosLabel, locale)}</p>
@@ -361,6 +344,18 @@ function render(): void {
               <a href="${projectLinks.evaluationVideos}" target="_blank" rel="noreferrer">
                 ${t(copy.evaluationVideosCta, locale)} ${iconArrow()}
               </a>
+            </article>
+            <article class="release-card release-target reveal">
+              <p class="eyebrow">${locale === "zh" ? "项目源码" : "Project source"}</p>
+              <h3>GitHub</h3>
+              <p>${locale === "zh" ? "完整训练、评测、网站和复现脚本。" : "Training, evaluation, website, and reproducibility scripts."}</p>
+              <a href="${projectLinks.source}" target="_blank" rel="noreferrer">${locale === "zh" ? "打开源码" : "Open source"} ${iconArrow()}</a>
+            </article>
+            <article class="release-card release-target reveal">
+              <p class="eyebrow">${locale === "zh" ? "项目解说" : "Project walkthrough"}</p>
+              <h3>1080p · 200 s</h3>
+              <p>${locale === "zh" ? "英文演讲、中英双语字幕、仅成功执行与采集画面。" : "English narration, bilingual captions, and successful execution/collection footage only."}</p>
+              <a href="${publicAsset("videos/radeonvla-reflex-3min.mp4")}" target="_blank" rel="noreferrer">${locale === "zh" ? "下载视频" : "Download video"} ${iconArrow()}</a>
             </article>
           </div>
         </div>
@@ -412,13 +407,13 @@ function render(): void {
                         <source src="${publicAsset(clip.video)}" type="video/mp4" />
                         ${t(copy.clipFallback, locale)}
                       </video>
-                      <span class="camera-pill">${t(copy.clipCamera, locale)}</span>
+                      <span class="camera-pill">${t(clip.camera, locale)}</span>
                       <span class="duration-pill">${clip.duration}</span>
                     </div>
                     <div class="collection-video-copy">
                       <div class="collection-video-state">
                         <span>${clip.index}</span>
-                        <strong>${t(copy.clipState, locale)}</strong>
+                        <strong>${t(clip.state, locale)}</strong>
                       </div>
                       <h3 id="collection-title-${clip.episode}">${t(clip.title, locale)}</h3>
                       <p>${t(clip.instruction, locale)}</p>

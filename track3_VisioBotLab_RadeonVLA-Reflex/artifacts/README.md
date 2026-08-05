@@ -9,6 +9,10 @@ dataset_validation.json
 training.json
 evaluation.json
 evaluation.csv
+evaluation_20k_banana_success.json
+evaluation_20k_banana_success.csv
+evaluation_20k_banana_success.summary.md
+probe_20k_lemon_success.json
 interrupt_evaluation.json
 interrupt_evaluation.csv
 interrupt_evaluation.summary.md
@@ -21,6 +25,8 @@ The canonical release files are populated in this repository:
 - `dataset_manifest.json` / `dataset_validation.json`: Physical-2K coverage and strict-physics validation;
 - `training.json`: final Physical-2K continuation and public checkpoint identity;
 - `evaluation.json` / `evaluation.csv` / `summary.md`: all 100 disjoint-seed episodes, including failures;
+- `evaluation_20k_banana_success.*`: standard fixed-seed 20K banana replay evidence with release verification;
+- `probe_20k_lemon_success.json`: 20K lemon replay evidence with scene and episode seeds recorded separately;
 - `environment.remote.json`: exact Radeon/ROCm evaluation environment;
 - `SHA256SUMS`: hashes for the compact evidence, report, cards, and published website video.
 

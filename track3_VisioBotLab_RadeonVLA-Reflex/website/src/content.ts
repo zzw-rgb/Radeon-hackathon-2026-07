@@ -26,6 +26,8 @@ export interface CollectionClip {
   poster: string;
   title: LocalizedText;
   instruction: LocalizedText;
+  state: LocalizedText;
+  camera: LocalizedText;
 }
 
 export interface Feature {
@@ -56,9 +58,13 @@ export const projectLinks = {
   technicalReport:
     "https://github.com/zzw-rgb/Radeon-hackathon-2026-07/blob/submission/track3-visiobotlab-radeonvla-reflex/track3_VisioBotLab_RadeonVLA-Reflex/reports/RadeonVLA-Reflex-Technical-Report.md",
   dataset: "https://huggingface.co/datasets/a3124371940/radeonvla_reflex_physical_2k",
+  dataset1k: "https://huggingface.co/datasets/a3124371940/radeonvla_reflex_physical_1k",
+  model20k: "https://huggingface.co/a3124371940/radeonvla_reflex_smolvla_1k",
   model50k: "https://huggingface.co/a3124371940/radeonvla_reflex_smolvla_1k_50k",
   finalModel: "https://huggingface.co/a3124371940/radeonvla_reflex_smolvla_2k_200k",
   evaluationVideos: "https://huggingface.co/datasets/a3124371940/radeonvla_reflex_evaluation_videos",
+  walkthrough: "./videos/radeonvla-reflex-3min.mp4",
+  console: "./console.html",
 };
 
 export const navItems: Array<{ href: string; label: LocalizedText }> = [
@@ -139,55 +145,37 @@ export const copy = {
   ],
   sectionDemoKicker: { en: "CORE DEMONSTRATION", zh: "核心演示" },
   sectionDemoTitle: {
-    en: "Three moments. One execution layer.",
-    zh: "三个关键时刻，一套执行层。",
+    en: "Successful runs, from collection to policy.",
+    zh: "从数据采集到模型执行，全程成功回放。",
   },
   sectionDemoBody: {
-    en: "The core walkthrough uses one checkpoint for normal execution, an apple mid-command change, and recovery after a detected failure. Representative learned-policy successes are published separately with fixed seeds and hashes.",
-    zh: "核心演示使用同一 checkpoint 展示正常执行、苹果中途改令，以及检测到失败后的恢复；学习策略成功代表片段按固定 seed 与哈希独立发布。",
+    en: "Every public clip below reaches the requested bowl and keeps recording after release so the settled result is visible. The 20K checkpoint is the primary qualitative showcase; later checkpoints remain available in the download center.",
+    zh: "下方每段公开视频都完成目标放置，并在释放后继续录制，让水果稳定落碗的结果清楚可见。20K 权重作为主要定性展示，后续权重仍保留在下载中心。",
   },
   videoLabel: { en: "3+ MIN POLICY WALKTHROUGH", zh: "3 分钟以上策略解说视频" },
   videoPending: { en: "Narrated project walkthrough · 3+ min", zh: "项目解说成片 · 3 分钟以上" },
   videoBody: {
-    en: "A smooth 200-second English walkthrough of Physical-2K, the Radeon training path, the 200K checkpoint, representative non-banana successes, a real learned miss, and strict-physics recovery. English and Chinese captions remain inside a dedicated safe-area bar.",
-    zh: "200 秒自然英文旁白完整讲解 Physical-2K、Radeon 训练、200K 权重、非香蕉成功案例、真实空抓和严格物理恢复；中英双语字幕固定在独立安全底栏。",
-  },
-  comparisonLabel: { en: "15 SEC PAIRED EVIDENCE", zh: "15 秒同条件对照" },
-  comparisonTitle: {
-    en: "Learned miss → strict-physics recovery",
-    zh: "学习策略空抓 → 严格物理恢复",
-  },
-  comparisonBody: {
-    en: "Two fixed-seed apple rollouts from the 200K checkpoint: the learned attempt on the left and the explicitly labeled Precision Reflex path on the right. No object teleport or grasp glue is permitted.",
-    zh: "两条使用 200K 权重和相同固定 seed 的苹果闭环：左侧为学习策略尝试，右侧为显式标记的 Precision Reflex 路径；全程禁止物体瞬移和抓取粘附。",
-  },
-  interruptLabel: { en: "47.8 SEC INTERRUPT + RECOVERY", zh: "47.8 秒改令与恢复证据" },
-  interruptTitle: {
-    en: "Apple white-left invalidated → blue-right recovered",
-    zh: "苹果左白指令作废 → 恢复后完成右蓝任务",
-  },
-  interruptBody: {
-    en: "At step 40, seed 61000 changes apple→white-left to apple→blue-right. The stale chunk stops with 0 extra response steps and 0 unprotected actions. The learned continuation then empty-grasps, so the explicitly labeled strict-physics recovery finishes the new task: final success 1/1.",
-    zh: "固定 seed 61000 在第 40 步把苹果→左白改为苹果→右蓝；旧动作块以额外响应 0 步、未保护动作 0 步立即停止。学习控制随后空抓，因此由明确标注的严格物理恢复完成新任务，最终成功 1/1。",
+    en: "A smooth 200-second English walkthrough with bilingual captions, successful Physical-2K collection examples, and successful 20K policy rollouts for banana and lemon. Every shown placement includes a visible settled ending.",
+    zh: "200 秒自然英文旁白配中英双语字幕，展示成功的 Physical-2K 数据采集过程，以及 20K 权重完成香蕉和柠檬任务的成功回放；所有放置都保留稳定结尾。",
   },
   // Supporting appendix for released representative evaluation replays.
-  collectionKicker: { en: "EVALUATION REPLAY LIBRARY", zh: "评测回放库" },
+  collectionKicker: { en: "SUCCESS VIDEO LIBRARY", zh: "成功视频库" },
   collectionTitle: {
-    en: "Representative learned-policy successes.",
-    zh: "学习策略首次成功代表片段。",
+    en: "Policy evaluation and data collection.",
+    zh: "模型评测与数据采集。",
   },
   collectionBody: {
-    en: "Four H.264 rollouts from the released 200K checkpoint show first-attempt successes for apple, lemon, orange, and plum. The full evidence bundle is published independently on Hugging Face.",
-    zh: "四段来自已发布 200K 权重的 H.264 闭环，展示苹果、柠檬、橙子和李子的学习策略首次成功；完整证据包已独立发布到 Hugging Face。",
+    en: "Two reproducible first-attempt successes from the public 20K checkpoint are shown beside three successful strict-physics collection episodes. Scene and episode seeds are preserved with the evidence. Banana appears in both evaluation and collection.",
+    zh: "两段可复现公开视频来自公开 20K 权重的首次成功评测，场景与 episode seed 均随证据保留；另有三段严格物理数据采集成功轨迹，香蕉同时出现在评测与采集中。",
   },
-  videoCollectionLabel: { en: "200K POLICY REPLAYS", zh: "200K 策略回放" },
-  videoCollectionPending: { en: "Successful non-banana evaluation rollouts", zh: "非香蕉评测成功片段" },
+  videoCollectionLabel: { en: "VERIFIED SUCCESS REPLAYS", zh: "已核验成功回放" },
+  videoCollectionPending: { en: "Successful evaluation and collection clips", zh: "成功评测与数据采集片段" },
   videoCollectionBody: {
-    en: "Each clip is linked to a task, fixed seed, 200K checkpoint hash, and machine-readable result.",
-    zh: "每段视频均关联具体任务、固定 seed、200K 权重哈希和机器可读评测结果。",
+    en: "Every clip was checked through its final frame: the correct fruit is released into the requested bowl and remains there during the post-success dwell.",
+    zh: "每段视频都已检查至最后一帧：正确水果释放进入指定碗，并在成功后的稳定观察时间内保持在碗中。",
   },
-  clipState: { en: "FIRST-TRY SUCCESS", zh: "首次执行成功" },
-  clipCamera: { en: "WORLD RGB · 20 FPS", zh: "世界相机 RGB · 20 FPS" },
+  clipState: { en: "SUCCESS", zh: "成功" },
+  clipCamera: { en: "RGB · 20 FPS", zh: "RGB · 20 FPS" },
   clipPlayLabel: { en: "Play evaluation replay", zh: "播放评测回放" },
   clipFallback: {
     en: "H.264 playback is unavailable in this browser.",
@@ -195,14 +183,14 @@ export const copy = {
   },
   collectionScopeTitle: { en: "Scope", zh: "范围" },
   collectionScopeBody: {
-    en: "These are representative policy replays, not the denominator itself. Aggregate claims remain tied to the released 100-rollout JSON/CSV evidence.",
-    zh: "这些是代表性策略回放，并非评测分母本身；汇总指标仍以已发布的 100 次 JSON/CSV 证据为准。",
+    en: "The gallery contains only verified successful videos. Complete machine-readable evaluation results, checkpoint revisions, and checksums remain available through the public links below.",
+    zh: "视频库仅展示已核验成功片段；完整机器可读评测结果、权重版本和校验和仍可通过下方公开链接获取。",
   },
   collectionStats: [
-    { value: "4", label: { en: "released replays", zh: "公开回放" } },
-    { value: "4", label: { en: "fruit classes", zh: "水果类别" } },
-    { value: "200K", label: { en: "checkpoint", zh: "模型权重" } },
-    { value: "100", label: { en: "formal denominator", zh: "正式评测分母" } },
+    { value: "5", label: { en: "successful clips", zh: "成功片段" } },
+    { value: "2", label: { en: "20K policy runs", zh: "20K 模型回放" } },
+    { value: "3", label: { en: "collection runs", zh: "数据采集回放" } },
+    { value: "2.0 s", label: { en: "settled ending", zh: "稳定结尾" } },
   ],
   plannedEvidence: { en: "Core policy moments", zh: "核心策略时刻" },
   runtimeKicker: { en: "SYSTEM ARCHITECTURE", zh: "系统架构" },
@@ -237,8 +225,8 @@ export const copy = {
   evidenceKicker: { en: "EVALUATION STATUS", zh: "评测状态" },
   evidenceTitle: { en: "Evidence organized by completion state.", zh: "按完成状态组织评测证据。" },
   evidenceBody: {
-    en: "Physical-2K, the 200K checkpoint, latency, first-attempt success, and Reflex final success are reported from immutable evaluation artifacts with disjoint seeds.",
-    zh: "Physical-2K、200K checkpoint、推理延迟、首次成功率和 Reflex 最终成功率均来自独立 seed 的不可变评测产物。",
+    en: "The 20K checkpoint is used for the public success reel. Physical-1K, Physical-2K, 20K, 50K, 200K, evaluation files, and videos all remain independently downloadable.",
+    zh: "公开成功视频以 20K 权重为主；Physical-1K、Physical-2K、20K、50K、200K、评测文件与视频均提供独立下载入口。",
   },
   releaseTarget: { en: "Released training dataset", zh: "已发布训练数据集" },
   releaseTargetValue: { en: "2,000 demos · 20 × 100", zh: "2,000 条演示 · 20 × 100" },
@@ -254,7 +242,7 @@ export const copy = {
     zh: "使用双路 RGB 与语言输入，微调为 9 维绝对关节位置控制。",
   },
   baseModelCta: { en: "Open base model", zh: "查看基础模型" },
-  trainedModelCta: { en: "Open final 200K checkpoint", zh: "查看最终 200K 权重" },
+  trainedModelCta: { en: "Open primary 20K checkpoint", zh: "查看主要 20K 权重" },
   evaluationVideosLabel: { en: "Evaluation evidence", zh: "评测证据" },
   evaluationVideosValue: { en: "Videos + JSON + checksums", zh: "视频 + JSON + 校验和" },
   evaluationVideosBody: {
@@ -313,9 +301,9 @@ export const verifiedMetrics: Metric[] = [
     detail: { en: "20 Hz · validator clean", zh: "20 Hz · 严格验证通过" },
   },
   {
-    value: "200K",
-    label: { en: "cumulative train steps", zh: "累计训练步数" },
-    detail: { en: "SmolVLA · Physical-2K", zh: "SmolVLA · Physical-2K" },
+    value: "20K",
+    label: { en: "showcase checkpoint", zh: "主要展示权重" },
+    detail: { en: "SmolVLA · Physical-1K", zh: "SmolVLA · Physical-1K" },
   },
   {
     value: "1× GPU",
@@ -326,24 +314,24 @@ export const verifiedMetrics: Metric[] = [
 
 export const evaluationMetrics: Metric[] = [
   {
-    value: "91 / 100",
-    label: { en: "final system success", zh: "最终系统成功" },
-    detail: { en: "Wilson 95% CI · 83.8–95.2%", zh: "Wilson 95% 区间 · 83.8–95.2%" },
+    value: "abcca9f",
+    label: { en: "20K public revision", zh: "20K 公开 revision" },
+    detail: { en: "immutable Hugging Face checkpoint", zh: "Hugging Face 不可变权重版本" },
   },
   {
-    value: "36 / 100",
-    label: { en: "learned first attempt", zh: "学习策略首次成功" },
-    detail: { en: "reported separately from recovery", zh: "与恢复贡献分开报告" },
+    value: "2 / 2",
+    label: { en: "published policy clips", zh: "公开模型成功片段" },
+    detail: { en: "banana + lemon · first attempt", zh: "香蕉 + 柠檬 · 首次执行" },
   },
   {
-    value: "+55",
-    label: { en: "precision recoveries", zh: "精确恢复贡献" },
-    detail: { en: "55 / 63 attempts · strict physics", zh: "55 / 63 次 · 严格物理" },
+    value: "3 / 3",
+    label: { en: "published collection clips", zh: "公开采集成功片段" },
+    detail: { en: "apple + banana + plum", zh: "苹果 + 香蕉 + 李子" },
   },
   {
-    value: "37.27 ms",
+    value: "5.35 ms",
     label: { en: "P95 inference latency", zh: "P95 推理延迟" },
-    detail: { en: "P50 4.54 ms · shared-GPU run", zh: "P50 4.54 ms · 共享 GPU 评测" },
+    detail: { en: "20K probe · P50 4.72 ms", zh: "20K 抽测 · P50 4.72 ms" },
   },
 ];
 
@@ -381,55 +369,78 @@ export const teamMembers: TeamMember[] = [
 export const collectionClips: CollectionClip[] = [
   {
     index: "01",
-    episode: "50020",
-    duration: "49.50 s",
-    frames: { en: "fixed seed 50020", zh: "固定 seed 50020" },
-    video: "videos/eval-apple-blue-left.mp4",
-    poster: "videos/eval-apple-blue-left.webp",
-    title: { en: "Apple → blue bowl, left", zh: "苹果 → 左侧蓝碗" },
+    episode: "53001",
+    duration: "10.35 s",
+    frames: { en: "fixed seed 53001 · 20K", zh: "固定 seed 53001 · 20K" },
+    video: "videos/eval-20k-banana-white-left.mp4",
+    poster: "videos/eval-20k-banana-white-left.webp",
+    title: { en: "Banana → white bowl, left", zh: "香蕉 → 左侧白碗" },
     instruction: {
-      en: "Pick the apple and place it in the blue bowl on the left.",
-      zh: "抓取苹果并放入左侧蓝碗。",
+      en: "Pick the banana and place it in the white bowl on the left.",
+      zh: "抓取香蕉并放入左侧白碗。",
     },
+    state: { en: "20K POLICY · FIRST-TRY SUCCESS", zh: "20K 模型 · 首次执行成功" },
+    camera: { en: "3-CAMERA EVAL · 20 FPS", zh: "三相机评测 · 20 FPS" },
   },
   {
     index: "02",
-    episode: "50022",
-    duration: "7.80 s",
-    frames: { en: "fixed seed 50022", zh: "固定 seed 50022" },
-    video: "videos/eval-lemon-blue-right.mp4",
-    poster: "videos/eval-lemon-blue-right.webp",
+    episode: "54006",
+    duration: "9.45 s",
+    frames: { en: "scene 54000 · episode 54006 · 20K", zh: "场景 54000 · episode 54006 · 20K" },
+    video: "videos/eval-20k-lemon-blue-right.mp4",
+    poster: "videos/eval-20k-lemon-blue-right.webp",
     title: { en: "Lemon → blue bowl, right", zh: "柠檬 → 右侧蓝碗" },
     instruction: {
       en: "Pick the lemon and place it in the blue bowl on the right.",
       zh: "抓取柠檬并放入右侧蓝碗。",
     },
+    state: { en: "20K POLICY · FIRST-TRY SUCCESS", zh: "20K 模型 · 首次执行成功" },
+    camera: { en: "3-CAMERA EVAL · 20 FPS", zh: "三相机评测 · 20 FPS" },
   },
   {
     index: "03",
-    episode: "50023",
-    duration: "26.20 s",
-    frames: { en: "fixed seed 50023", zh: "固定 seed 50023" },
-    video: "videos/eval-orange-white-right.mp4",
-    poster: "videos/eval-orange-white-right.webp",
-    title: { en: "Orange → white bowl, right", zh: "橙子 → 右侧白碗" },
+    episode: "000",
+    duration: "10.45 s",
+    frames: { en: "209 frames · collection", zh: "209 帧 · 数据采集" },
+    video: "videos/dataset-apple-blue-left.mp4",
+    poster: "videos/dataset-apple-blue-left.webp",
+    title: { en: "Apple collection → blue bowl, left", zh: "苹果采集 → 左侧蓝碗" },
     instruction: {
-      en: "Pick the orange and place it in the white bowl on the right.",
-      zh: "抓取橙子并放入右侧白碗。",
+      en: "A successful strict-physics expert trajectory recorded into LeRobot format.",
+      zh: "成功的严格物理专家轨迹，并以 LeRobot 格式记录。",
     },
+    state: { en: "DATA COLLECTION · SUCCESS", zh: "数据采集 · 成功" },
+    camera: { en: "WORLD RGB · 20 FPS", zh: "世界相机 RGB · 20 FPS" },
   },
   {
     index: "04",
-    episode: "50024",
-    duration: "24.50 s",
-    frames: { en: "fixed seed 50024", zh: "固定 seed 50024" },
-    video: "videos/eval-plum-white-left.mp4",
-    poster: "videos/eval-plum-white-left.webp",
-    title: { en: "Plum → white bowl, left", zh: "李子 → 左侧白碗" },
+    episode: "047",
+    duration: "12.55 s",
+    frames: { en: "251 frames · collection", zh: "251 帧 · 数据采集" },
+    video: "videos/dataset-banana-white-right.mp4",
+    poster: "videos/dataset-banana-white-right.webp",
+    title: { en: "Banana collection → white bowl, right", zh: "香蕉采集 → 右侧白碗" },
     instruction: {
-      en: "Pick the plum and place it in the white bowl on the left.",
-      zh: "抓取李子并放入左侧白碗。",
+      en: "The full grasp, transport, release, and settled placement remain visible.",
+      zh: "完整展示抓取、搬运、释放和稳定落碗过程。",
     },
+    state: { en: "DATA COLLECTION · SUCCESS", zh: "数据采集 · 成功" },
+    camera: { en: "WORLD RGB · 20 FPS", zh: "世界相机 RGB · 20 FPS" },
+  },
+  {
+    index: "05",
+    episode: "158",
+    duration: "12.10 s",
+    frames: { en: "242 frames · collection", zh: "242 帧 · 数据采集" },
+    video: "videos/dataset-plum-white-left.mp4",
+    poster: "videos/dataset-plum-white-left.webp",
+    title: { en: "Plum collection → white bowl, left", zh: "李子采集 → 左侧白碗" },
+    instruction: {
+      en: "A second successful collection example with the fruit settled before the clip ends.",
+      zh: "另一段成功采集样例，视频结束前水果已稳定落碗。",
+    },
+    state: { en: "DATA COLLECTION · SUCCESS", zh: "数据采集 · 成功" },
+    camera: { en: "WORLD RGB · 20 FPS", zh: "世界相机 RGB · 20 FPS" },
   },
 ];
 
@@ -456,13 +467,13 @@ export const demos: Demo[] = [
   },
   {
     index: "03",
-    state: "PRECISION",
-    title: { en: "Strict-physics precision recovery", zh: "严格物理精确恢复" },
+    state: "SUCCESS",
+    title: { en: "Released and settled", zh: "释放并稳定落碗" },
     body: {
-      en: "After the learned retry budget is exhausted, a bounded geometry-aware recovery can finish the task while rigid pose writes remain forbidden.",
-      zh: "学习策略用尽重试预算后，有界几何恢复可在继续禁止刚体位姿写入的前提下完成任务。",
+      en: "A video is accepted only after the gripper opens and the correct fruit remains in the requested bowl during a two-second physics dwell.",
+      zh: "只有夹爪张开且正确水果在两秒物理稳定观察期间保持在指定碗中，视频才通过验收。",
     },
-    event: { en: "strict physics · no teleport · logged", zh: "严格物理 · 无瞬移 · 全程留证" },
+    event: { en: "release verified · settled · logged", zh: "释放已验证 · 稳定落碗 · 已留证" },
   },
 ];
 

@@ -29,16 +29,17 @@ Design focus of this codebase:
 > SmolVLA inference tree are complete. On the fixed 20-task × 5-seed benchmark, learned
 > first-attempt success is **36/100** and the explicit strict-physics Precision-Reflex system
 > finishes **91/100** (Wilson 95% CI **83.8–95.2%**). All 100 episodes, including nine failures,
-> remain in the immutable result bundle.
+> remain in the immutable result bundle. The public presentation reel uses the original **20K**
+> checkpoint for its qualitative policy examples; 50K and 200K remain separate downloads.
 
 | Public artifact | Immutable revision |
 |---|---|
-| [Physical-2K dataset](https://huggingface.co/datasets/a3124371940/radeonvla_reflex_physical_2k) — 2,000 episodes / 468,889 frames | `2779b7c5566df9072bb9a7c43335d6203ea97887` |
-| [Cumulative 200K SmolVLA checkpoint](https://huggingface.co/a3124371940/radeonvla_reflex_smolvla_2k_200k) | `1ea32da3d59ce0905d0f1331bc3c6643e42beb7e` |
-| [Evaluation videos and evidence](https://huggingface.co/datasets/a3124371940/radeonvla_reflex_evaluation_videos) | `3f311d3c50fc9634f810d2a3dac57767817a9182` |
-| [Cumulative 50K SmolVLA checkpoint](https://huggingface.co/a3124371940/radeonvla_reflex_smolvla_1k_50k) | `59f6f0ad720054505667a652fe07e03d65e82915` |
+| [SmolVLA-1K checkpoint](https://huggingface.co/a3124371940/radeonvla_reflex_smolvla_1k) — primary 20K showcase | `abcca9f2b313e378b554449016b520b8117016fe` |
 | [Physical-1K dataset](https://huggingface.co/datasets/a3124371940/radeonvla_reflex_physical_1k) — 1,000 episodes / 232,658 frames | `b0f72c60e9100739fd82bd498c8f3d9bed7b75af` |
-| [SmolVLA-1K checkpoint](https://huggingface.co/a3124371940/radeonvla_reflex_smolvla_1k) — 20,000 steps | `abcca9f2b313e378b554449016b520b8117016fe` |
+| [Physical-2K dataset](https://huggingface.co/datasets/a3124371940/radeonvla_reflex_physical_2k) — 2,000 episodes / 468,889 frames | `2779b7c5566df9072bb9a7c43335d6203ea97887` |
+| [Cumulative 50K SmolVLA checkpoint](https://huggingface.co/a3124371940/radeonvla_reflex_smolvla_1k_50k) | `59f6f0ad720054505667a652fe07e03d65e82915` |
+| [Cumulative 200K SmolVLA checkpoint](https://huggingface.co/a3124371940/radeonvla_reflex_smolvla_2k_200k) | `1ea32da3d59ce0905d0f1331bc3c6643e42beb7e` |
+| [Evaluation videos and evidence](https://huggingface.co/datasets/a3124371940/radeonvla_reflex_evaluation_videos) | `4bad005772064daafb52ab3ee2e279d465f18656` |
 
 Live showcase: **https://zzw-rgb.github.io/Radeon-hackathon-2026-07/**  
 Interactive evidence console: **https://zzw-rgb.github.io/Radeon-hackathon-2026-07/console.html**
@@ -606,11 +607,12 @@ The final release revision requires no private account, unpublished file, or sou
 | Technical report PDF | A4, 5 pages, final audit input | [Technical report PDF](reports/RadeonVLA-Reflex-Technical-Report.pdf) |
 | Public showcase | GitHub Pages deployment verified | [RadeonVLA-Reflex website](https://zzw-rgb.github.io/Radeon-hackathon-2026-07/) |
 | 3+ minute narrated demo | 200.0 s, 1080p30 H.264/AAC, natural English narration and burned English/Chinese captions | [Play public video](https://zzw-rgb.github.io/Radeon-hackathon-2026-07/videos/radeonvla-reflex-3min.mp4) |
-| Paired recovery evidence | 15.0 s, same task and seed | `website/public/videos/normal-vs-reflex-15s.mp4` |
-| Apple command-change + recovery evidence | Safe interrupt 1/1; 0 unprotected stale steps; final success 1/1 | `artifacts/interrupt_recovery_evaluation_apple.json` |
-| Model checkpoint | Public 200K checkpoint, revision `1ea32da3…beb7e` | [Hugging Face model](https://huggingface.co/a3124371940/radeonvla_reflex_smolvla_2k_200k) |
-| Dataset | Physical-2K, revision `2779b7c5…97887` | [Hugging Face dataset](https://huggingface.co/datasets/a3124371940/radeonvla_reflex_physical_2k) |
-| Evaluation video library | Public video, JSON/CSV, and checksum bundle, revision `3f311d3c…9182` | [Hugging Face evidence](https://huggingface.co/datasets/a3124371940/radeonvla_reflex_evaluation_videos) |
+| Successful 20K policy replays | Banana and lemon, first try; commanded/measured gripper open; 2.0 s post-release dwell | [Hugging Face evidence](https://huggingface.co/datasets/a3124371940/radeonvla_reflex_evaluation_videos) |
+| Successful collection replays | Apple, banana, and plum with full grasp, release, and settled ending | [Hugging Face evidence](https://huggingface.co/datasets/a3124371940/radeonvla_reflex_evaluation_videos) |
+| Primary model checkpoint | Public 20K checkpoint, revision `abcca9f2…016fe` | [Hugging Face 20K model](https://huggingface.co/a3124371940/radeonvla_reflex_smolvla_1k) |
+| Additional model checkpoints | Public 50K and 200K revisions | [50K](https://huggingface.co/a3124371940/radeonvla_reflex_smolvla_1k_50k) · [200K](https://huggingface.co/a3124371940/radeonvla_reflex_smolvla_2k_200k) |
+| Datasets | Physical-1K and Physical-2K | [1K](https://huggingface.co/datasets/a3124371940/radeonvla_reflex_physical_1k) · [2K](https://huggingface.co/datasets/a3124371940/radeonvla_reflex_physical_2k) |
+| Evaluation video library | Successful replay videos, walkthrough, machine-readable evidence, and checksums | [Hugging Face evidence](https://huggingface.co/datasets/a3124371940/radeonvla_reflex_evaluation_videos) |
 | Interactive evidence console | Read-only task explorer for the released benchmark | [Launch console](https://zzw-rgb.github.io/Radeon-hackathon-2026-07/console.html) |
 | Raw evaluation results | 100/100 episodes retained | `artifacts/evaluation.json`, `.csv`, `summary.md` |
 | SHA256 checksums | Final release bundle | `artifacts/SHA256SUMS` |

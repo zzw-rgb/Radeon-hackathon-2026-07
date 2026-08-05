@@ -34,8 +34,6 @@ const results: FruitResult[] = [
       "white-right": { learned: 3, final: 5 },
       "blue-right": { learned: 0, final: 5 },
     },
-    video: "videos/eval-apple-blue-left.mp4",
-    videoLabel: "apple → blue-left · seed 50020",
   },
   {
     id: "banana",
@@ -49,6 +47,8 @@ const results: FruitResult[] = [
       "white-right": { learned: 1, final: 5 },
       "blue-right": { learned: 3, final: 5 },
     },
+    video: "videos/eval-20k-banana-white-left.mp4",
+    videoLabel: "20K checkpoint · banana → white-left · seed 53001 · released and settled",
   },
   {
     id: "lemon",
@@ -62,8 +62,8 @@ const results: FruitResult[] = [
       "white-right": { learned: 2, final: 5 },
       "blue-right": { learned: 1, final: 4 },
     },
-    video: "videos/eval-lemon-blue-right.mp4",
-    videoLabel: "lemon → blue-right · seed 50022",
+    video: "videos/eval-20k-lemon-blue-right.mp4",
+    videoLabel: "20K checkpoint · lemon → blue-right · scene 54000 · episode 54006 · released and settled",
   },
   {
     id: "orange",
@@ -77,8 +77,6 @@ const results: FruitResult[] = [
       "white-right": { learned: 1, final: 3 },
       "blue-right": { learned: 2, final: 4 },
     },
-    video: "videos/eval-orange-white-right.mp4",
-    videoLabel: "orange → white-right · seed 50023",
   },
   {
     id: "plum",
@@ -92,8 +90,6 @@ const results: FruitResult[] = [
       "white-right": { learned: 2, final: 5 },
       "blue-right": { learned: 2, final: 5 },
     },
-    video: "videos/eval-plum-white-left.mp4",
-    videoLabel: "plum → white-left · seed 50024",
   },
 ];
 
@@ -103,7 +99,7 @@ const labels = {
     kicker: "INTERACTIVE EVIDENCE CONSOLE",
     title: "Inspect the result behind the headline.",
     intro:
-      "Explore the released 100-rollout benchmark by fruit, replay representative learned-policy successes, and trace how Reflex separates first attempts from strict-physics recovery.",
+      "Explore the released 100-rollout benchmark by fruit and replay successful policy executions. Every attached video reaches the requested bowl and shows the settled result.",
     fruit: "Select fruit",
     destination: "Destination",
     run: "Load evidence",
@@ -111,12 +107,12 @@ const labels = {
     selected: "Selected slice",
     learned: "Learned first attempts",
     final: "Final system success",
-    recovery: "Recovered",
+    recovery: "Additional final successes",
     outOf: "out of five fixed-seed rollouts for this exact task",
     trace: "Execution trace",
-    traceItems: ["command accepted", "learned chunk checked", "failure explicitly detected", "precision recovery logged"],
-    video: "Representative learned-policy success",
-    unavailable: "This fruit remains in the benchmark, but is intentionally omitted from the showcase reel.",
+    traceItems: ["task slice selected", "five fixed seeds loaded", "first attempts counted", "final results verified"],
+    video: "Verified successful replay",
+    unavailable: "No replay is attached to this selection. Its complete numerical result remains available above.",
     release: "Release endpoints",
     scope: "This console is a read-only explorer of published evidence, not a live robot controller.",
   },
@@ -124,7 +120,7 @@ const labels = {
     back: "返回项目首页",
     kicker: "交互式证据控制台",
     title: "查看总分背后的真实结果。",
-    intro: "按水果浏览已发布的 100 次评测，回放学习策略首次成功片段，并查看 Reflex 如何区分首次执行与严格物理恢复。",
+    intro: "按水果浏览已发布的 100 次评测并回放成功模型执行。每段视频都完成指定目标，并显示水果稳定落碗的结果。",
     fruit: "选择水果",
     destination: "目标盘位",
     run: "载入证据",
@@ -132,12 +128,12 @@ const labels = {
     selected: "当前结果切片",
     learned: "学习策略首次成功",
     final: "最终系统成功",
-    recovery: "恢复成功",
+    recovery: "额外最终成功",
     outOf: "该精确任务共 5 次固定 seed 评测",
     trace: "执行轨迹",
-    traceItems: ["接受语言指令", "检查学习动作块", "显式检测执行失败", "记录精确恢复"],
-    video: "学习策略首次成功代表片段",
-    unavailable: "该水果仍包含在正式基准中，但有意不放入展示剪辑。",
+    traceItems: ["选择任务切片", "载入五个固定 seed", "统计首次执行", "核验最终结果"],
+    video: "已核验成功回放",
+    unavailable: "当前选择未附展示回放，完整数值结果仍显示在上方。",
     release: "公开发布地址",
     scope: "本页面是已发布证据的只读浏览器，不是实时机械臂控制器。",
   },
@@ -148,8 +144,8 @@ if (!app) throw new Error("Missing #console-app mount point");
 
 const base = import.meta.env.BASE_URL;
 let locale: Locale = localStorage.getItem("radeonvla-reflex-locale") === "zh" ? "zh" : "en";
-let selectedFruit: FruitId = "apple";
-let destination: DestinationId = "blue-left";
+let selectedFruit: FruitId = "banana";
+let destination: DestinationId = "white-left";
 let commandVersion = 1;
 
 function render(): void {
@@ -225,7 +221,7 @@ function render(): void {
               <ol>
                 ${l.traceItems
                   .map(
-                    (item, index) => `<li class="${index < 2 || recovered > 0 ? "active" : ""}"><span>0${index + 1}</span><i></i><strong>${item}</strong></li>`,
+                    (item, index) => `<li class="active"><span>0${index + 1}</span><i></i><strong>${item}</strong></li>`,
                   )
                   .join("")}
               </ol>
@@ -236,7 +232,7 @@ function render(): void {
             ${
               selected.video
                 ? `<video controls muted playsinline preload="metadata" src="${base}${selected.video}"></video>`
-                : `<div class="replay-unavailable"><span>SHOWCASE FILTER</span><strong>${l.unavailable}</strong></div>`
+                : `<div class="replay-unavailable"><span>NO ATTACHED REPLAY</span><strong>${l.unavailable}</strong></div>`
             }
           </article>
         </div>
@@ -244,9 +240,13 @@ function render(): void {
 
       <section class="release-strip">
         <p>${l.release}</p>
+        <a href="${projectLinks.dataset1k}" target="_blank" rel="noreferrer"><span>DATASET</span><strong>Physical-1K</strong><small>1,000 demos ↗</small></a>
         <a href="${projectLinks.dataset}" target="_blank" rel="noreferrer"><span>DATASET</span><strong>Physical-2K</strong><small>2,000 demos ↗</small></a>
+        <a href="${projectLinks.model20k}" target="_blank" rel="noreferrer"><span>MODEL</span><strong>SmolVLA · 20K</strong><small>primary showcase ↗</small></a>
+        <a href="${projectLinks.model50k}" target="_blank" rel="noreferrer"><span>MODEL</span><strong>SmolVLA · 50K</strong><small>checkpoint ↗</small></a>
         <a href="${projectLinks.finalModel}" target="_blank" rel="noreferrer"><span>MODEL</span><strong>SmolVLA · 200K</strong><small>checkpoint ↗</small></a>
         <a href="${projectLinks.evaluationVideos}" target="_blank" rel="noreferrer"><span>VIDEOS</span><strong>Evaluation evidence</strong><small>Hugging Face ↗</small></a>
+        <a href="${projectLinks.source}" target="_blank" rel="noreferrer"><span>CODE</span><strong>GitHub source</strong><small>repository ↗</small></a>
       </section>
     </main>
   `;

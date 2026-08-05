@@ -1285,23 +1285,34 @@ a:focus-visible,
 
 .release-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 16px;
   margin-top: 56px;
 }
 
 .release-card {
   position: relative;
-  min-height: 275px;
-  padding: 34px;
+  min-height: 245px;
+  padding: 28px;
   border: 1px solid rgba(17, 18, 15, 0.3);
 }
 
+.release-card a {
+  display: inline-flex;
+  gap: 12px;
+  margin-top: 10px;
+  color: #273008;
+  font-size: 0.76rem;
+  font-weight: 700;
+  text-decoration: none;
+  text-transform: uppercase;
+}
+
 .release-card h3 {
-  margin: 42px 0 16px;
-  font-size: clamp(1.65rem, 2.5vw, 2.8rem);
-  line-height: 1;
-  letter-spacing: -0.055em;
+  margin: 34px 0 14px;
+  font-size: clamp(1.45rem, 1.9vw, 2.1rem);
+  line-height: 1.05;
+  letter-spacing: -0.045em;
 }
 
 .release-card > p:not(.eyebrow) {
@@ -1320,25 +1331,14 @@ a:focus-visible,
   background: var(--ink);
 }
 
-.release-model a,
-.release-videos a {
-  display: inline-flex;
-  gap: 12px;
-  margin-top: 10px;
+.release-model a {
   color: var(--acid);
-  font-size: 0.76rem;
-  font-weight: 700;
-  text-decoration: none;
-  text-transform: uppercase;
 }
 
 .release-videos {
   background: rgba(239, 237, 229, 0.38);
 }
 
-.release-videos a {
-  color: #273008;
-}
 
 .reproduce-grid {
   display: grid;
@@ -1652,6 +1652,10 @@ a:focus-visible,
 
   .pending-results {
     grid-template-columns: 1fr 1fr;
+  }
+
+  .release-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .pending-result:nth-child(3) {

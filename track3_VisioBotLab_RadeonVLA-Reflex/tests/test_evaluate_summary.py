@@ -8,6 +8,7 @@ from radeonvla.evaluate import (
     EpisodeResult,
     _counts_as_first_attempt,
     _device_display_name,
+    _release_is_verified,
     parse_args,
     select_instruction,
     summarize,
@@ -142,6 +143,18 @@ def test_failed_precision_attempt_cannot_be_reclassified_as_learned_success() ->
     assert _counts_as_first_attempt(success=True, retry_count=0, precision_recovery_attempted=False)
     assert not _counts_as_first_attempt(success=True, retry_count=0, precision_recovery_attempted=True)
     assert not _counts_as_first_attempt(success=True, retry_count=1, precision_recovery_attempted=False)
+
+
+def test_video_success_requires_commanded_and_measured_release() -> None:
+    opened_action = [0.0] * 7 + [0.04, 0.04]
+    closed_action = [0.0] * 7 + [0.01, 0.01]
+    opened_qpos = [0.0] * 7 + [0.03, 0.03]
+    closed_qpos = [0.0] * 7 + [0.01, 0.01]
+
+    assert _release_is_verified(opened_action, opened_qpos)
+    assert not _release_is_verified(closed_action, opened_qpos)
+    assert not _release_is_verified(opened_action, closed_qpos)
+    assert not _release_is_verified(opened_action, [0.03])
 
 
 def test_cpu_device_name_does_not_query_cuda(monkeypatch) -> None:
