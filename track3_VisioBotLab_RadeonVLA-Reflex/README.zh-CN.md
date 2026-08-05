@@ -34,7 +34,7 @@ Track 3 基准使用 Genesis、Franka Panda、LeRobot 和 SmolVLA，把 5 种水
 | [Physical-2K 数据集](https://huggingface.co/datasets/a3124371940/radeonvla_reflex_physical_2k) — 2,000 episodes / 468,889 frames | `2779b7c5566df9072bb9a7c43335d6203ea97887` |
 | [SmolVLA 累计 50K 权重](https://huggingface.co/a3124371940/radeonvla_reflex_smolvla_1k_50k) | `59f6f0ad720054505667a652fe07e03d65e82915` |
 | [SmolVLA 累计 200K 权重](https://huggingface.co/a3124371940/radeonvla_reflex_smolvla_2k_200k) | `1ea32da3d59ce0905d0f1331bc3c6643e42beb7e` |
-| [评测视频与证据](https://huggingface.co/datasets/a3124371940/radeonvla_reflex_evaluation_videos) | `4bad005772064daafb52ab3ee2e279d465f18656` |
+| [评测视频与证据](https://huggingface.co/datasets/a3124371940/radeonvla_reflex_evaluation_videos) | `7f39fb95e72b017c51cbaaf83b7c90c047f486be` |
 
 公开项目网站：**https://zzw-rgb.github.io/Radeon-hackathon-2026-07/**  
 交互式证据控制台：**https://zzw-rgb.github.io/Radeon-hackathon-2026-07/console.html**
@@ -568,13 +568,13 @@ task                       # 自然语言指令
 | 技术报告 PDF | A4、5 页、最终审计输入 | [技术报告 PDF](reports/RadeonVLA-Reflex-Technical-Report.pdf) |
 | 公开项目网站 | GitHub Pages 部署已核验 | [RadeonVLA-Reflex 网站](https://zzw-rgb.github.io/Radeon-hackathon-2026-07/) |
 | 3 分钟以上解说成片 | 200.0 秒、1080p30 H.264/AAC、自然英文旁白与内嵌中英双语字幕 | [播放公开视频](https://zzw-rgb.github.io/Radeon-hackathon-2026-07/videos/radeonvla-reflex-3min.mp4) |
-| 20K 模型成功回放 | 香蕉与柠檬均首次执行成功；命令/实测夹爪已张开；释放后继续仿真 2.0 秒 | [Hugging Face 证据](https://huggingface.co/datasets/a3124371940/radeonvla_reflex_evaluation_videos) |
-| 数据采集成功回放 | 苹果、香蕉、李子的完整抓取、释放与稳定落碗过程 | [Hugging Face 证据](https://huggingface.co/datasets/a3124371940/radeonvla_reflex_evaluation_videos) |
+| 20K 模型成功回放 | 香蕉与柠檬均首次执行成功；世界相机视角；命令/实测夹爪已张开；释放后继续仿真 2.0 秒 | [Hugging Face 证据](https://huggingface.co/datasets/a3124371940/radeonvla_reflex_evaluation_videos) |
+| 20 任务采集成功库 | 每个“水果 × 目标碗”任务各一条世界相机成功轨迹，附 episode、seed、证书和校验和来源 | [Hugging Face 证据](https://huggingface.co/datasets/a3124371940/radeonvla_reflex_evaluation_videos/tree/7f39fb95e72b017c51cbaaf83b7c90c047f486be/videos/task_success_world) |
 | 主要模型权重 | 公开 20K 权重，revision `abcca9f2…016fe` | [Hugging Face 20K 模型](https://huggingface.co/a3124371940/radeonvla_reflex_smolvla_1k) |
 | 其他模型权重 | 公开 50K 与 200K revision | [50K](https://huggingface.co/a3124371940/radeonvla_reflex_smolvla_1k_50k) · [200K](https://huggingface.co/a3124371940/radeonvla_reflex_smolvla_2k_200k) |
 | 数据集 | Physical-1K 与 Physical-2K | [1K](https://huggingface.co/datasets/a3124371940/radeonvla_reflex_physical_1k) · [2K](https://huggingface.co/datasets/a3124371940/radeonvla_reflex_physical_2k) |
-| 评测视频库 | 成功回放、三分钟成片、机器可读证据与校验和 | [Hugging Face 证据](https://huggingface.co/datasets/a3124371940/radeonvla_reflex_evaluation_videos) |
-| 交互式证据控制台 | 已发布基准的只读任务浏览器 | [进入控制台](https://zzw-rgb.github.io/Radeon-hackathon-2026-07/console.html) |
+| 评测视频库 | 世界相机成功回放、三分钟成片、机器可读证据与校验和 | [Hugging Face 证据](https://huggingface.co/datasets/a3124371940/radeonvla_reflex_evaluation_videos) |
+| 交互式证据控制台 | 只读基准浏览器，20 个任务均匹配一条 Physical-2K 成功样例 | [进入控制台](https://zzw-rgb.github.io/Radeon-hackathon-2026-07/console.html) |
 | 原始评测结果 | 100/100 episode 全部保留 | `artifacts/evaluation.json`、`.csv`、`summary.md` |
 | SHA256 校验和 | 最终发布包 | `artifacts/SHA256SUMS` |
 | Docker 镜像定义 | 自包含运行定义 | docker/Dockerfile |

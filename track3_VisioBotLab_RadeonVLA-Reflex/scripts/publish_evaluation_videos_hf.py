@@ -11,6 +11,11 @@ from huggingface_hub import CommitOperationAdd, CommitOperationDelete, HfApi
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 REPO_ID = "a3124371940/radeonvla_reflex_evaluation_videos"
+FRUITS = ("apple", "banana", "lemon", "orange", "plum")
+DESTINATIONS = ("blue_left", "blue_right", "white_left", "white_right")
+TASK_IDS = tuple(
+    f"{fruit}_{destination}" for fruit in FRUITS for destination in DESTINATIONS
+)
 
 FILES = {
     "README.md": PROJECT_ROOT / "artifacts" / "EVALUATION_VIDEO_DATASET_CARD.md",
@@ -18,6 +23,10 @@ FILES = {
     / "website/public/videos/eval-20k-banana-white-left.mp4",
     "videos/policy_success_20k/lemon_blue_right_seed54006.mp4": PROJECT_ROOT
     / "website/public/videos/eval-20k-lemon-blue-right.mp4",
+    "videos/policy_success_20k_world/banana_white_left_seed53001.mp4": PROJECT_ROOT
+    / "website/public/videos/eval-20k-banana-white-left-world.mp4",
+    "videos/policy_success_20k_world/lemon_blue_right_seed54006.mp4": PROJECT_ROOT
+    / "website/public/videos/eval-20k-lemon-blue-right-world.mp4",
     "videos/data_collection/apple_blue_left_episode000.mp4": PROJECT_ROOT
     / "website/public/videos/dataset-apple-blue-left.mp4",
     "videos/data_collection/banana_white_right_episode047.mp4": PROJECT_ROOT
@@ -39,7 +48,18 @@ FILES = {
     / "artifacts/evaluation_20k_banana_success.summary.md",
     "evidence/policy_success_20k/lemon/replay_probe.json": PROJECT_ROOT
     / "artifacts/probe_20k_lemon_success.json",
+    "evidence/world_success_examples.json": PROJECT_ROOT
+    / "artifacts/world_success_examples.json",
 }
+
+FILES.update(
+    {
+        f"videos/task_success_world/{task_id}.mp4": PROJECT_ROOT
+        / "website/public/videos/task-success-world"
+        / f"{task_id}.mp4"
+        for task_id in TASK_IDS
+    }
+)
 
 DELETE_PATHS = [
     "videos/learned_success/apple_blue_left_seed50020.mp4",
@@ -90,7 +110,7 @@ def main() -> None:
         repo_id=REPO_ID,
         repo_type="dataset",
         operations=operations,
-        commit_message="Publish release-verified 20K successes and collection videos",
+        commit_message="Add world-camera success examples for all 20 tasks",
     )
     info = api.repo_info(REPO_ID, repo_type="dataset")
     print(f"repo=https://huggingface.co/datasets/{REPO_ID}")

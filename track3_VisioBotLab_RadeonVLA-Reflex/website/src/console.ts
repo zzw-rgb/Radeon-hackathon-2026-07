@@ -17,9 +17,16 @@ interface FruitResult {
   learned: number;
   final: number;
   tasks: Record<DestinationId, TaskResult>;
-  video?: string;
-  videoLabel?: string;
+  exampleEpisodeBase: number;
+  exampleSeedBase: number;
 }
+
+const destinationOffset: Record<DestinationId, number> = {
+  "blue-left": 0,
+  "blue-right": 1,
+  "white-left": 2,
+  "white-right": 3,
+};
 
 const results: FruitResult[] = [
   {
@@ -28,6 +35,8 @@ const results: FruitResult[] = [
     label: { en: "Apple", zh: "苹果" },
     learned: 8,
     final: 20,
+    exampleEpisodeBase: 0,
+    exampleSeedBase: 21000,
     tasks: {
       "white-left": { learned: 2, final: 5 },
       "blue-left": { learned: 3, final: 5 },
@@ -41,14 +50,14 @@ const results: FruitResult[] = [
     label: { en: "Banana", zh: "香蕉" },
     learned: 9,
     final: 19,
+    exampleEpisodeBase: 192,
+    exampleSeedBase: 22000,
     tasks: {
       "white-left": { learned: 3, final: 4 },
       "blue-left": { learned: 2, final: 5 },
       "white-right": { learned: 1, final: 5 },
       "blue-right": { learned: 3, final: 5 },
     },
-    video: "videos/eval-20k-banana-white-left.mp4",
-    videoLabel: "20K checkpoint · banana → white-left · seed 53001 · released and settled",
   },
   {
     id: "lemon",
@@ -56,14 +65,14 @@ const results: FruitResult[] = [
     label: { en: "Lemon", zh: "柠檬" },
     learned: 5,
     final: 19,
+    exampleEpisodeBase: 384,
+    exampleSeedBase: 23000,
     tasks: {
       "white-left": { learned: 0, final: 5 },
       "blue-left": { learned: 2, final: 5 },
       "white-right": { learned: 2, final: 5 },
       "blue-right": { learned: 1, final: 4 },
     },
-    video: "videos/eval-20k-lemon-blue-right.mp4",
-    videoLabel: "20K checkpoint · lemon → blue-right · scene 54000 · episode 54006 · released and settled",
   },
   {
     id: "orange",
@@ -71,6 +80,8 @@ const results: FruitResult[] = [
     label: { en: "Orange", zh: "橙子" },
     learned: 7,
     final: 17,
+    exampleEpisodeBase: 576,
+    exampleSeedBase: 24000,
     tasks: {
       "white-left": { learned: 2, final: 5 },
       "blue-left": { learned: 2, final: 5 },
@@ -84,6 +95,8 @@ const results: FruitResult[] = [
     label: { en: "Plum", zh: "李子" },
     learned: 7,
     final: 16,
+    exampleEpisodeBase: 768,
+    exampleSeedBase: 25000,
     tasks: {
       "white-left": { learned: 2, final: 3 },
       "blue-left": { learned: 1, final: 3 },
@@ -99,7 +112,7 @@ const labels = {
     kicker: "INTERACTIVE EVIDENCE CONSOLE",
     title: "Inspect the result behind the headline.",
     intro:
-      "Explore the released 100-rollout benchmark by fruit and replay successful policy executions. Every attached video reaches the requested bowl and shows the settled result.",
+      "Explore the released 100-rollout benchmark by exact task. All twenty fruit-and-destination selections include a certified Physical-2K world-camera success example.",
     fruit: "Select fruit",
     destination: "Destination",
     run: "Load evidence",
@@ -111,16 +124,16 @@ const labels = {
     outOf: "out of five fixed-seed rollouts for this exact task",
     trace: "Execution trace",
     traceItems: ["task slice selected", "five fixed seeds loaded", "first attempts counted", "final results verified"],
-    video: "Verified successful replay",
-    unavailable: "No replay is attached to this selection. Its complete numerical result remains available above.",
+    video: "Certified world-camera success",
     release: "Release endpoints",
-    scope: "This console is a read-only explorer of published evidence, not a live robot controller.",
+    scope:
+      "Benchmark numbers come from formal evaluation. The attached examples are certified Physical-2K collection trajectories, not substitutes for benchmark rollouts.",
   },
   zh: {
     back: "返回项目首页",
     kicker: "交互式证据控制台",
     title: "查看总分背后的真实结果。",
-    intro: "按水果浏览已发布的 100 次评测并回放成功模型执行。每段视频都完成指定目标，并显示水果稳定落碗的结果。",
+    intro: "按精确任务浏览已发布的 100 次评测。20 个“水果 × 目标碗”选择均附一段经认证的 Physical-2K 世界相机成功样例。",
     fruit: "选择水果",
     destination: "目标盘位",
     run: "载入证据",
@@ -132,10 +145,9 @@ const labels = {
     outOf: "该精确任务共 5 次固定 seed 评测",
     trace: "执行轨迹",
     traceItems: ["选择任务切片", "载入五个固定 seed", "统计首次执行", "核验最终结果"],
-    video: "已核验成功回放",
-    unavailable: "当前选择未附展示回放，完整数值结果仍显示在上方。",
+    video: "严格物理世界相机成功示例",
     release: "公开发布地址",
-    scope: "本页面是已发布证据的只读浏览器，不是实时机械臂控制器。",
+    scope: "数值来自正式评测；附带视频是经认证的 Physical-2K 数据采集轨迹，不替代正式评测回合。",
   },
 } as const;
 
@@ -153,6 +165,14 @@ function render(): void {
   const selected = results.find((item) => item.id === selectedFruit) ?? results[0];
   const task = selected.tasks[destination];
   const recovered = task.final - task.learned;
+  const offset = destinationOffset[destination];
+  const exampleTaskId = `${selected.id}_${destination.replace("-", "_")}`;
+  const exampleEpisode = selected.exampleEpisodeBase + offset;
+  const exampleSeed = selected.exampleSeedBase + offset;
+  const exampleLabel =
+    locale === "zh"
+      ? `Physical-2K 严格物理采集成功 · ${exampleTaskId} · episode ${String(exampleEpisode).padStart(4, "0")} · seed ${exampleSeed} · 世界相机`
+      : `Physical-2K strict-physics collection success · ${exampleTaskId} · episode ${String(exampleEpisode).padStart(4, "0")} · seed ${exampleSeed} · world camera`;
   document.documentElement.lang = locale === "zh" ? "zh-CN" : "en";
 
   app!.innerHTML = `
@@ -228,12 +248,8 @@ function render(): void {
             </article>
           </div>
           <article class="replay-panel">
-            <div class="replay-copy"><small>02 / REPLAY</small><h2>${l.video}</h2><p>${selected.videoLabel ?? l.unavailable}</p></div>
-            ${
-              selected.video
-                ? `<video controls muted playsinline preload="metadata" src="${base}${selected.video}"></video>`
-                : `<div class="replay-unavailable"><span>NO ATTACHED REPLAY</span><strong>${l.unavailable}</strong></div>`
-            }
+            <div class="replay-copy"><small>02 / REPLAY</small><h2>${l.video}</h2><p>${exampleLabel}</p></div>
+            <video controls muted playsinline preload="metadata" poster="${base}videos/task-success-world/${exampleTaskId}.webp" src="${base}videos/task-success-world/${exampleTaskId}.mp4"></video>
           </article>
         </div>
       </section>

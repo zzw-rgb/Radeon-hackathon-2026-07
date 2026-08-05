@@ -60,6 +60,7 @@ artifacts/*.mp4
 !artifacts/evaluation_20k_banana_success.json
 !artifacts/evaluation_20k_banana_success.csv
 !artifacts/probe_20k_lemon_success.json
+!artifacts/world_success_examples.json
 docs/environment.*.json
 # Simulation assets ARE tracked for contest reproducibility (~42MB).
 # Do not ignore assets/ycb or assets/robots.

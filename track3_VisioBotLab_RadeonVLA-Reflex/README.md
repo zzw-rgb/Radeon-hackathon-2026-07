@@ -39,7 +39,7 @@ Design focus of this codebase:
 | [Physical-2K dataset](https://huggingface.co/datasets/a3124371940/radeonvla_reflex_physical_2k) — 2,000 episodes / 468,889 frames | `2779b7c5566df9072bb9a7c43335d6203ea97887` |
 | [Cumulative 50K SmolVLA checkpoint](https://huggingface.co/a3124371940/radeonvla_reflex_smolvla_1k_50k) | `59f6f0ad720054505667a652fe07e03d65e82915` |
 | [Cumulative 200K SmolVLA checkpoint](https://huggingface.co/a3124371940/radeonvla_reflex_smolvla_2k_200k) | `1ea32da3d59ce0905d0f1331bc3c6643e42beb7e` |
-| [Evaluation videos and evidence](https://huggingface.co/datasets/a3124371940/radeonvla_reflex_evaluation_videos) | `4bad005772064daafb52ab3ee2e279d465f18656` |
+| [Evaluation videos and evidence](https://huggingface.co/datasets/a3124371940/radeonvla_reflex_evaluation_videos) | `7f39fb95e72b017c51cbaaf83b7c90c047f486be` |
 
 Live showcase: **https://zzw-rgb.github.io/Radeon-hackathon-2026-07/**  
 Interactive evidence console: **https://zzw-rgb.github.io/Radeon-hackathon-2026-07/console.html**
@@ -607,13 +607,13 @@ The final release revision requires no private account, unpublished file, or sou
 | Technical report PDF | A4, 5 pages, final audit input | [Technical report PDF](reports/RadeonVLA-Reflex-Technical-Report.pdf) |
 | Public showcase | GitHub Pages deployment verified | [RadeonVLA-Reflex website](https://zzw-rgb.github.io/Radeon-hackathon-2026-07/) |
 | 3+ minute narrated demo | 200.0 s, 1080p30 H.264/AAC, natural English narration and burned English/Chinese captions | [Play public video](https://zzw-rgb.github.io/Radeon-hackathon-2026-07/videos/radeonvla-reflex-3min.mp4) |
-| Successful 20K policy replays | Banana and lemon, first try; commanded/measured gripper open; 2.0 s post-release dwell | [Hugging Face evidence](https://huggingface.co/datasets/a3124371940/radeonvla_reflex_evaluation_videos) |
-| Successful collection replays | Apple, banana, and plum with full grasp, release, and settled ending | [Hugging Face evidence](https://huggingface.co/datasets/a3124371940/radeonvla_reflex_evaluation_videos) |
+| Successful 20K policy replays | Banana and lemon, first try; world-camera view; commanded/measured gripper open; 2.0 s post-release dwell | [Hugging Face evidence](https://huggingface.co/datasets/a3124371940/radeonvla_reflex_evaluation_videos) |
+| 20-task collection success library | One certified world-camera success for every fruit × destination task, with exact episode, seed, certificate, and checksum provenance | [Hugging Face evidence](https://huggingface.co/datasets/a3124371940/radeonvla_reflex_evaluation_videos/tree/7f39fb95e72b017c51cbaaf83b7c90c047f486be/videos/task_success_world) |
 | Primary model checkpoint | Public 20K checkpoint, revision `abcca9f2…016fe` | [Hugging Face 20K model](https://huggingface.co/a3124371940/radeonvla_reflex_smolvla_1k) |
 | Additional model checkpoints | Public 50K and 200K revisions | [50K](https://huggingface.co/a3124371940/radeonvla_reflex_smolvla_1k_50k) · [200K](https://huggingface.co/a3124371940/radeonvla_reflex_smolvla_2k_200k) |
 | Datasets | Physical-1K and Physical-2K | [1K](https://huggingface.co/datasets/a3124371940/radeonvla_reflex_physical_1k) · [2K](https://huggingface.co/datasets/a3124371940/radeonvla_reflex_physical_2k) |
-| Evaluation video library | Successful replay videos, walkthrough, machine-readable evidence, and checksums | [Hugging Face evidence](https://huggingface.co/datasets/a3124371940/radeonvla_reflex_evaluation_videos) |
-| Interactive evidence console | Read-only task explorer for the released benchmark | [Launch console](https://zzw-rgb.github.io/Radeon-hackathon-2026-07/console.html) |
+| Evaluation video library | World-camera success replays, walkthrough, machine-readable evidence, and checksums | [Hugging Face evidence](https://huggingface.co/datasets/a3124371940/radeonvla_reflex_evaluation_videos) |
+| Interactive evidence console | Read-only benchmark explorer with a task-matched Physical-2K success example for all 20 tasks | [Launch console](https://zzw-rgb.github.io/Radeon-hackathon-2026-07/console.html) |
 | Raw evaluation results | 100/100 episodes retained | `artifacts/evaluation.json`, `.csv`, `summary.md` |
 | SHA256 checksums | Final release bundle | `artifacts/SHA256SUMS` |
 | Docker image definition | Self-contained runtime definition | docker/Dockerfile |
