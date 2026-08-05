@@ -34,6 +34,11 @@ POST_SUCCESS_SECONDS = 0.6
 INSTRUCTION_SOURCES = ("collected", "heldout")
 
 
+def _device_display_name(device: torch.device) -> str:
+    """Return a result label without querying CUDA for a CPU evaluation."""
+    return torch.cuda.get_device_name(device) if device.type == "cuda" else str(device)
+
+
 def select_instruction(task: TaskSpec, source: str, variation: int = 0) -> str:
     """Select language without silently paraphrasing the collected commands."""
     if source == "collected":
@@ -744,7 +749,9 @@ def main(argv: list[str] | None = None) -> int:
         raise ValueError("--git-commit must be 40 hexadecimal characters")
     commit = commit.lower()
 
-    gpu_name = torch.cuda.get_device_name(pb.device) if torch.cuda.is_available() else str(pb.device)
+    # A CUDA-capable host may deliberately run evaluation on CPU so training can
+    # keep exclusive use of the GPU.
+    gpu_name = _device_display_name(pb.device)
     payload = {
         "experiment_id": f"eval_{stamp}",
         "git_commit": commit,

@@ -1,8 +1,16 @@
 from dataclasses import asdict
 from pathlib import Path
 
+import torch
+
 from radeonvla.artifact_io import validate_evaluation_payload
-from radeonvla.evaluate import EpisodeResult, parse_args, select_instruction, summarize
+from radeonvla.evaluate import (
+    EpisodeResult,
+    _device_display_name,
+    parse_args,
+    select_instruction,
+    summarize,
+)
 from radeonvla.tasks import get_task
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -92,3 +100,11 @@ def test_heldout_language_is_explicit_opt_in() -> None:
     args = parse_args(["--policy-path", "dummy", "--instruction-source", "heldout"])
     task = get_task("plum_white_right")
     assert select_instruction(task, args.instruction_source) in task.evaluation_instructions
+
+
+def test_cpu_device_name_does_not_query_cuda(monkeypatch) -> None:
+    def fail_if_called(_device):
+        raise AssertionError("CUDA must not be queried for a CPU evaluation")
+
+    monkeypatch.setattr(torch.cuda, "get_device_name", fail_if_called)
+    assert _device_display_name(torch.device("cpu")) == "cpu"
