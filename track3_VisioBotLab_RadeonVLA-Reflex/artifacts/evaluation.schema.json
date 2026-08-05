@@ -127,6 +127,12 @@
           },
           "recovery_success": {
             "type": "boolean"
+          },
+          "precision_recovery_attempted": {
+            "type": "boolean"
+          },
+          "precision_recovery_success": {
+            "type": "boolean"
           }
         },
         "additionalProperties": true

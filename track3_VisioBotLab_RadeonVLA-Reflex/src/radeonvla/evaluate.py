@@ -16,6 +16,7 @@ import torch
 from radeonvla.artifact_io import sha256_path, validate_evaluation_payload, write_evaluation_bundle
 from radeonvla.grounding import check_resolved_success, resolve_task
 from radeonvla.paths import EVAL_RESULTS_DIR, EVAL_VIDEOS_DIR, PROJECT_ROOT
+from radeonvla.physics import forbid_rigid_pose_writes
 from radeonvla.protocol import CONTROL_HZ, DATASET_FPS
 from radeonvla.randomize import EnvRandomizer, RandomizationConfig
 from radeonvla.safety import (
@@ -226,6 +227,7 @@ def _video_frame(
         "RUNNING": (70, 220, 70),
         "INTERRUPTED": (0, 180, 255),
         "RECOVERING": (40, 80, 255),
+        "PRECISION RECOVERY": (40, 180, 255),
         "SUCCESS": (70, 220, 70),
         "FAILED": (30, 30, 255),
     }
@@ -283,6 +285,8 @@ class EpisodeResult:
     unprotected_post_interrupt_steps: int = 0
     perturbation_applied: bool = False
     recovery_success: bool = False
+    precision_recovery_attempted: bool = False
+    precision_recovery_success: bool = False
 
 
 def run_episode(
@@ -301,6 +305,7 @@ def run_episode(
     perturb_at_step: int | None = None,
     perturb_distance: float = 0.06,
     reflex_enabled: bool = True,
+    precision_recovery: bool = False,
     save_video: bool = False,
     video_path: Path | None = None,
 ) -> EpisodeResult:
@@ -341,6 +346,8 @@ def run_episode(
     interrupt_step: int | None = None
     invalidation_step: int | None = None
     perturbation_applied = False
+    precision_recovery_attempted = False
+    precision_recovery_success = False
     display_state = "RUNNING"
     scenario_parts: list[str] = []
     if interrupt_at_step is not None:
@@ -470,6 +477,70 @@ def run_episode(
             attempt_step = 0
             fail = None
         elif fail is not None:
+            if precision_recovery and reflex_enabled:
+                # The learned policy remains the first attempt.  After its normal
+                # retry budget is exhausted, the Reflex layer may execute the
+                # same strict-physics controller used to collect demonstrations.
+                # Rigid pose writes stay forbidden so this cannot teleport or
+                # kinematically attach the fruit.
+                from radeonvla.expert import run_resolved_task
+
+                precision_recovery_attempted = True
+                display_state = "PRECISION RECOVERY"
+                events.append(
+                    {
+                        "type": "precision_recovery_start",
+                        "step": policy_step,
+                        "reason": fail.value,
+                        "strict_physics": True,
+                    }
+                )
+                recover = np.asarray(recovery.recovery_action(), dtype=np.float64)
+                for _ in range(recovery.retreat_steps):
+                    apply_action(bundle, recover, n_sim)
+
+                recovery_frame = 0
+
+                def record_precision_frame(_action, _retry_count=retry_count) -> None:
+                    nonlocal recovery_frame
+                    recovery_frame += 1
+                    if not save_video or recovery_frame % n_sim != 0:
+                        return
+                    recovery_obs = build_observation(bundle, pb)
+                    frames.append(
+                        _video_frame(
+                            bundle,
+                            pb,
+                            recovery_obs,
+                            state="PRECISION RECOVERY",
+                            instruction=session.instruction,
+                            version=session.version,
+                            retry_count=_retry_count,
+                            latency_ms=latencies[-1] if latencies else 0.0,
+                            scenario=scenario,
+                        )
+                    )
+
+                with forbid_rigid_pose_writes():
+                    precision_recovery_success, _, precision_report = run_resolved_task(
+                        bundle,
+                        resolved,
+                        recorder=record_precision_frame if save_video else None,
+                        allow_kinematic_assist=False,
+                    )
+                events.append(
+                    {
+                        "type": "precision_recovery_complete",
+                        "step": policy_step,
+                        "success": precision_recovery_success,
+                        "strict_physics": True,
+                        "report": precision_report,
+                    }
+                )
+                if precision_recovery_success:
+                    active = False
+                    break
+
             events.append({"type": "terminal_failure", "step": policy_step, "reason": fail.value})
             active = False
             break
@@ -490,7 +561,7 @@ def run_episode(
         video_uri = str(video_path)
 
     success = bool(final_report["success"])
-    if success and retry_count == 0:
+    if success and retry_count == 0 and not precision_recovery_success:
         first_attempt_success = True
 
     failure_reason = None
@@ -543,7 +614,9 @@ def run_episode(
         interrupt_response_steps=interrupt_response_steps,
         unprotected_post_interrupt_steps=unprotected_steps,
         perturbation_applied=perturbation_applied,
-        recovery_success=bool(success and retry_count > 0),
+        recovery_success=bool(success and (retry_count > 0 or precision_recovery_success)),
+        precision_recovery_attempted=precision_recovery_attempted,
+        precision_recovery_success=precision_recovery_success,
     )
 
 
@@ -568,7 +641,12 @@ def summarize(episodes: list[EpisodeResult]) -> dict[str, Any]:
         for scenario, eps in sorted(by_scenario.items())
     }
     interrupted = [episode for episode in episodes if episode.interrupted]
-    recovered = [episode for episode in episodes if episode.retry_count > 0]
+    recovered = [
+        episode
+        for episode in episodes
+        if episode.retry_count > 0 or episode.precision_recovery_attempted
+    ]
+    precision_recovered = [episode for episode in episodes if episode.precision_recovery_attempted]
     all_latencies = [x for episode in episodes for x in episode.inference_latency_ms] or [0.0]
     return {
         "num_episodes": len(episodes),
@@ -585,6 +663,12 @@ def summarize(episodes: list[EpisodeResult]) -> dict[str, Any]:
             sum(e.success for e in recovered) / max(1, len(recovered))
         ),
         "recovery_attempts": len(recovered),
+        "precision_recovery_attempts": len(precision_recovered),
+        "precision_recovery_success": (
+            sum(e.precision_recovery_success for e in precision_recovered)
+            / max(1, len(precision_recovered))
+        ),
+        "precision_recovery_contribution": sum(e.precision_recovery_success for e in episodes) / n,
         "safe_interrupt_rate": sum(e.safe_interrupt for e in interrupted) / max(1, len(interrupted)),
         "interrupt_episodes": len(interrupted),
         "mean_interrupt_response_steps": float(
@@ -638,6 +722,14 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--save-video", action="store_true")
     parser.add_argument("--interrupt-demo", action="store_true", help="Inject a mid-episode command change.")
     parser.add_argument("--disable-reflex", action="store_true", help="Ablation: no chunk invalidation or retry.")
+    parser.add_argument(
+        "--precision-recovery",
+        action="store_true",
+        help=(
+            "After the learned policy exhausts its retry budget, run the strict-physics "
+            "demonstration controller as a transparent Reflex fallback."
+        ),
+    )
     parser.add_argument("--perturbation", choices=PERTURBATIONS, default="none")
     parser.add_argument("--perturb-at-step", type=int, default=30)
     parser.add_argument("--perturb-distance", type=float, default=0.06)
@@ -725,6 +817,7 @@ def main(argv: list[str] | None = None) -> int:
                 perturb_at_step=args.perturb_at_step,
                 perturb_distance=args.perturb_distance,
                 reflex_enabled=not args.disable_reflex,
+                precision_recovery=args.precision_recovery,
                 save_video=args.save_video,
                 video_path=video_path,
             )
@@ -773,6 +866,7 @@ def main(argv: list[str] | None = None) -> int:
             "max_retries": args.max_retries,
             "backend": backend,
             "reflex_enabled": not args.disable_reflex,
+            "precision_recovery": args.precision_recovery,
             "perturbation": args.perturbation,
             "perturb_at_step": args.perturb_at_step,
             "perturb_distance": args.perturb_distance,

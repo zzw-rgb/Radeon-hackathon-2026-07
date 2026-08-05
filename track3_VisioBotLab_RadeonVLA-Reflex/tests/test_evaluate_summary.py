@@ -102,6 +102,41 @@ def test_heldout_language_is_explicit_opt_in() -> None:
     assert select_instruction(task, args.instruction_source) in task.evaluation_instructions
 
 
+def test_precision_recovery_is_explicit_and_reported_separately() -> None:
+    assert parse_args(["--policy-path", "dummy"]).precision_recovery is False
+    assert parse_args(["--policy-path", "dummy", "--precision-recovery"]).precision_recovery is True
+
+    results = [
+        episode(),
+        episode(
+            episode_id="banana_white_left_2",
+            seed=2,
+            first_attempt_success=False,
+            recovery_success=True,
+            precision_recovery_attempted=True,
+            precision_recovery_success=True,
+        ),
+    ]
+    summary = summarize(results)
+    assert summary["first_attempt_success"] == 0.5
+    assert summary["final_success"] == 1.0
+    assert summary["precision_recovery_attempts"] == 1
+    assert summary["precision_recovery_success"] == 1.0
+    assert summary["precision_recovery_contribution"] == 0.5
+
+
+def test_precision_recovery_does_not_count_as_first_attempt() -> None:
+    recovered = episode(
+        first_attempt_success=False,
+        recovery_success=True,
+        precision_recovery_attempted=True,
+        precision_recovery_success=True,
+    )
+    summary = summarize([recovered])
+    assert summary["first_attempt_success"] == 0.0
+    assert summary["final_success"] == 1.0
+
+
 def test_cpu_device_name_does_not_query_cuda(monkeypatch) -> None:
     def fail_if_called(_device):
         raise AssertionError("CUDA must not be queried for a CPU evaluation")
