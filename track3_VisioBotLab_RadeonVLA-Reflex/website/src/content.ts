@@ -53,6 +53,8 @@ export const projectLinks = {
   source:
     "https://github.com/zzw-rgb/Radeon-hackathon-2026-07/tree/submission/track3-visiobotlab-radeonvla-reflex/track3_VisioBotLab_RadeonVLA-Reflex",
   pages: "https://zzw-rgb.github.io/Radeon-hackathon-2026-07/",
+  bilibili: "https://www.bilibili.com/video/BV1B4M26SEZg/",
+  submission: "https://github.com/AMD-DEV-CONTEST/Radeon-hackathon-2026-07/pull/110",
   contest: "https://modelscope.cn/events/299/比赛介绍",
   baseModel: "https://huggingface.co/lerobot/smolvla_base",
   technicalReport:
@@ -200,8 +202,8 @@ export const copy = {
     zh: "动作分块可以提升吞吐，但旧动作块可能比生成它的指令活得更久。Reflex 是学习控制与 Genesis 之间的确定性边界。",
   },
   architectureDiagramAlt: {
-    en: "System architecture diagram: world and wrist RGB plus robot state feed SmolVLA; action chunks pass through the execution safety monitor into Genesis Franka dual-bowl simulation",
-    zh: "系统架构图：世界/腕部 RGB 与机器人状态输入 SmolVLA；动作块经执行安全监视器进入 Genesis Franka 双碗仿真",
+    en: "RadeonVLA-Reflex architecture: language command, world RGB, wrist RGB, and proprioception feed SmolVLA; actions cross SafetyMonitor before Genesis, supervised by CommandSession and FailureDetector plus RecoveryPolicy",
+    zh: "RadeonVLA-Reflex 架构：语言指令、World RGB、Wrist RGB 与本体状态输入 SmolVLA；动作在 CommandSession 和 FailureDetector 加 RecoveryPolicy 监督下经 SafetyMonitor 进入 Genesis",
   },
   architectureDiagramCaption: {
     en: "Closed loop — perception → SmolVLA → Reflex safety monitor → Genesis dual-bowl sim → next observation.",

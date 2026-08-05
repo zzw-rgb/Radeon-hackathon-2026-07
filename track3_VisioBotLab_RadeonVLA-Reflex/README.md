@@ -41,8 +41,10 @@ Design focus of this codebase:
 | [Cumulative 200K SmolVLA checkpoint](https://huggingface.co/a3124371940/radeonvla_reflex_smolvla_2k_200k) | `1ea32da3d59ce0905d0f1331bc3c6643e42beb7e` |
 | [Evaluation videos and evidence](https://huggingface.co/datasets/a3124371940/radeonvla_reflex_evaluation_videos) | `6de24191322c76c53405d6686b9ae74989073414` |
 
-Live showcase: **https://zzw-rgb.github.io/Radeon-hackathon-2026-07/**  
-Interactive evidence console: **https://zzw-rgb.github.io/Radeon-hackathon-2026-07/console.html**
+- Live showcase: **https://zzw-rgb.github.io/Radeon-hackathon-2026-07/**
+- Interactive evidence console: **https://zzw-rgb.github.io/Radeon-hackathon-2026-07/console.html**
+- Official Bilibili film: **https://www.bilibili.com/video/BV1B4M26SEZg/**
+- Official Track 3 submission: **https://github.com/AMD-DEV-CONTEST/Radeon-hackathon-2026-07/pull/110**
 
 This directory is the self-contained project unit. From the repository root, open
 `track3_VisioBotLab_RadeonVLA-Reflex/` and follow this README to reproduce the system.
@@ -98,7 +100,7 @@ episode start by `radeonvla.grounding` after pose randomization.
 
 ## System architecture
 
-![RadeonVLA-Reflex system architecture: dual RGB cameras and robot state condition a SmolVLA policy; action chunks pass through an execution safety monitor with command invalidation, failure detection, bounded strict-physics recovery, and latency telemetry before Genesis Franka dual-bowl simulation](docs/figures/architecture-en.jpg)
+![RadeonVLA-Reflex architecture framework: language command, world RGB, wrist RGB, and proprioception condition SmolVLA; actions cross SafetyMonitor with CommandSession and FailureDetector plus RecoveryPolicy before Genesis](docs/figures/architecture-framework-en.svg)
 
 The closed loop is:
 
@@ -112,7 +114,8 @@ vision. Interrupt invalidation and recovery are **deterministic safety layers ar
 policy** (they do not retrain the VLA). Evaluation can inject a repeatable target or bowl
 shift and renders `RUNNING / INTERRUPTED / RECOVERING / PRECISION RECOVERY / SUCCESS` directly on demo video.
 
-Chinese diagram: [`docs/figures/architecture-zh.jpg`](docs/figures/architecture-zh.jpg).
+The release report and website use this English vector framework so the architecture remains
+sharp in browser and PDF rendering.
 
 ## Repository layout
 
@@ -690,6 +693,8 @@ file, or source modification.
 | Technical report (MD) | Maintained source | reports/RadeonVLA-Reflex-Technical-Report.md |
 | Technical report PDF | A4, 5 pages, final audit input | [Technical report PDF](reports/RadeonVLA-Reflex-Technical-Report.pdf) |
 | Public showcase | GitHub Pages deployment verified | [RadeonVLA-Reflex website](https://zzw-rgb.github.io/Radeon-hackathon-2026-07/) |
+| Official Bilibili film | Published project narration and demonstration | [Watch RadeonVLA-Reflex on Bilibili](https://www.bilibili.com/video/BV1B4M26SEZg/) |
+| Official Track 3 submission | Competition Pull Request | [AMD-DEV-CONTEST PR #110](https://github.com/AMD-DEV-CONTEST/Radeon-hackathon-2026-07/pull/110) |
 | 3+ minute narrated demo | 200.0 s, 1080p30 H.264/AAC, natural English narration and burned English/Chinese captions | [Play public video](https://zzw-rgb.github.io/Radeon-hackathon-2026-07/videos/radeonvla-reflex-3min.mp4) |
 | Successful 20K policy replays | Banana and lemon, first try; commanded/measured gripper open; 2.0 s post-release dwell | [Hugging Face evidence](https://huggingface.co/datasets/a3124371940/radeonvla_reflex_evaluation_videos) |
 | 20-task collection success library | One certified success for every fruit × destination task, with exact episode, seed, certificate, and checksum provenance | [Hugging Face evidence](https://huggingface.co/datasets/a3124371940/radeonvla_reflex_evaluation_videos/tree/6de24191322c76c53405d6686b9ae74989073414/videos/task_success_world) |

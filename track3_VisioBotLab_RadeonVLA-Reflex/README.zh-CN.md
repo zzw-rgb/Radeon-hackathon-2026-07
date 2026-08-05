@@ -36,8 +36,10 @@ Track 3 基准使用 Genesis、Franka Panda、LeRobot 和 SmolVLA，把 5 种水
 | [SmolVLA 累计 200K 权重](https://huggingface.co/a3124371940/radeonvla_reflex_smolvla_2k_200k) | `1ea32da3d59ce0905d0f1331bc3c6643e42beb7e` |
 | [评测视频与证据](https://huggingface.co/datasets/a3124371940/radeonvla_reflex_evaluation_videos) | `6de24191322c76c53405d6686b9ae74989073414` |
 
-公开项目网站：**https://zzw-rgb.github.io/Radeon-hackathon-2026-07/**  
-交互式证据控制台：**https://zzw-rgb.github.io/Radeon-hackathon-2026-07/console.html**
+- 公开项目网站：**https://zzw-rgb.github.io/Radeon-hackathon-2026-07/**
+- 交互式证据控制台：**https://zzw-rgb.github.io/Radeon-hackathon-2026-07/console.html**
+- B 站正式成片：**https://www.bilibili.com/video/BV1B4M26SEZg/**
+- Track 3 正式提交：**https://github.com/AMD-DEV-CONTEST/Radeon-hackathon-2026-07/pull/110**
 
 本目录为完整、自包含的项目单元。从仓库根目录进入
 `track3_VisioBotLab_RadeonVLA-Reflex/`，可按本文档复现系统。
@@ -88,11 +90,11 @@ Physical-2K 每项任务保存两条确定性的采集原文。主控制器基�
 
 ## 系统架构
 
-![RadeonVLA-Reflex 系统架构：世界/腕部 RGB 与机器人状态输入 SmolVLA；动作块经带指令失效、失败检测、有界严格物理恢复和延迟遥测的执行安全监视器后进入 Genesis Franka 双碗仿真](docs/figures/architecture-zh.jpg)
+![RadeonVLA-Reflex 英文架构框架：语言指令、World RGB、Wrist RGB 与本体状态输入 SmolVLA；动作经 SafetyMonitor、CommandSession 和 FailureDetector 加 RecoveryPolicy 后进入 Genesis](docs/figures/architecture-framework-en.svg)
 
 闭环流程：
 
-1. **感知与状态** — 世界相机 RGB、腕部相机 RGB，以及机器人与夹爪状态（关节角 \(q\)、关节速度 \(\dot q\)、夹爪开度 \(g\)、末端位姿 \(T\)）。
+1. **感知与状态** — World RGB、Wrist RGB，以及机器人与夹爪状态（关节角 \(q\)、关节速度 \(\dot q\)、夹爪开度 \(g\)、末端位姿 \(T\)）。
 2. **SmolVLA 策略** — 视觉-语言-动作模型输出动作块（\(\Delta q\)、\(\Delta g\)、\(\Delta T\) 等）。
 3. **执行安全监视器（Reflex）** — 关节限幅/速率限制、指令版本变更、空抓检测与确定性撤回；显式 `--precision-recovery` 模式在学习策略失败后调用严格物理几何恢复，并单独记录其贡献。
 4. **Genesis Franka 双碗仿真** — 只执行安全指令；下一帧观测回馈闭环。
@@ -101,7 +103,7 @@ Physical-2K 每项任务保存两条确定性的采集原文。主控制器基�
 指令作废与恢复为策略外的**确定性安全层**（不重新训练 VLA）。评测可确定性注入水果或盘位
 移动，并把 `RUNNING / INTERRUPTED / RECOVERING / PRECISION RECOVERY / SUCCESS` 直接叠加到演示视频。
 
-英文架构图见 [`docs/figures/architecture-en.jpg`](docs/figures/architecture-en.jpg)。PNG 原图备份：[`architecture-zh.png`](docs/figures/architecture-zh.png)。
+技术报告与项目网站统一使用这张英文矢量框架图，浏览器和 PDF 放大后仍保持清晰。
 
 ## 仓库结构
 
@@ -647,6 +649,8 @@ python -m radeonvla.evaluate \
 | 技术报告（MD） | 持续维护的源文档 | reports/RadeonVLA-Reflex-Technical-Report.md |
 | 技术报告 PDF | A4、5 页、最终审计输入 | [技术报告 PDF](reports/RadeonVLA-Reflex-Technical-Report.pdf) |
 | 公开项目网站 | GitHub Pages 部署已核验 | [RadeonVLA-Reflex 网站](https://zzw-rgb.github.io/Radeon-hackathon-2026-07/) |
+| B 站正式成片 | 已发布的项目解说与完整演示 | [在 B 站观看 RadeonVLA-Reflex](https://www.bilibili.com/video/BV1B4M26SEZg/) |
+| Track 3 正式提交 | 比赛 Pull Request | [AMD-DEV-CONTEST PR #110](https://github.com/AMD-DEV-CONTEST/Radeon-hackathon-2026-07/pull/110) |
 | 3 分钟以上解说成片 | 200.0 秒、1080p30 H.264/AAC、自然英文旁白与内嵌中英双语字幕 | [播放公开视频](https://zzw-rgb.github.io/Radeon-hackathon-2026-07/videos/radeonvla-reflex-3min.mp4) |
 | 20K 模型成功回放 | 香蕉与柠檬均首次执行成功；命令/实测夹爪已张开；释放后继续仿真 2.0 秒 | [Hugging Face 证据](https://huggingface.co/datasets/a3124371940/radeonvla_reflex_evaluation_videos) |
 | 20 任务采集成功库 | 每个“水果 × 目标碗”任务各一条认证成功轨迹，附 episode、seed、证书和校验和来源 | [Hugging Face 证据](https://huggingface.co/datasets/a3124371940/radeonvla_reflex_evaluation_videos/tree/6de24191322c76c53405d6686b9ae74989073414/videos/task_success_world) |

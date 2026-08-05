@@ -51,14 +51,11 @@ combining VLA generalization with deterministic execution safety.
 
 ## 4. System Architecture
 
-```text
-Language command ──┐
-World RGB ─────────┤
-Wrist RGB ─────────┤──► SmolVLA ──► action ──► SafetyMonitor ──► Genesis
-Proprioception ────┘                              │
-                                      CommandSession (version)
-                                      FailureDetector + RecoveryPolicy
-```
+![RadeonVLA-Reflex architecture framework](../docs/figures/architecture-framework-en.svg)
+
+The architecture keeps learned control and deterministic execution governance explicit:
+multimodal inputs condition SmolVLA, while every proposed action crosses SafetyMonitor before
+Genesis execution. CommandSession and FailureDetector + RecoveryPolicy supervise that boundary.
 
 1. Inputs: natural-language instruction, world/wrist RGB, 9-D qpos.
 2. SmolVLA (LeRobot) produces absolute joint-position actions / chunks.
@@ -77,8 +74,8 @@ as learned first-attempt successes.
 
 The simulation uses Genesis 1.1.2 with a Franka Emika Panda MJCF, five YCB fruits
 (banana / lemon / plum / apple / orange), and four fixed upright bowl instances
-(white/blue on each side). World and wrist RGB cameras feed the policy at 320×240; an
-optional third camera is reserved for evaluation video. Simulation runs at 100 Hz control
+(white/blue on each side). World and wrist RGB streams feed the policy at 320×240; an
+independent RGB stream is reserved for evaluation video. Simulation runs at 100 Hz control
 with dataset capture at 20 Hz. Pose resets use non-overlapping slot jitter. Asset details
 are documented in `docs/DATASET_CARD.md` and `assets/README.md`.
 
@@ -223,12 +220,12 @@ Learned control (SmolVLA) is separate from deterministic safety/recovery logic.
 
 | Deliverable | Location or release state | Revision source |
 |---|---|---|
-| Source repository | Project repository branch | Bound by release commit |
-| Model | `a3124371940/radeonvla_reflex_smolvla_2k_200k` | Bound by checkpoint digest |
-| Dataset/documentation | `docs/DATASET_CARD.md` | Bound by dataset revision |
+| Project gateway | [Live bilingual website](https://zzw-rgb.github.io/Radeon-hackathon-2026-07/) | GitHub Pages |
+| Official narrated film | [Bilibili BV1B4M26SEZg](https://www.bilibili.com/video/BV1B4M26SEZg/) | 200 s, 1080p30 |
+| Source repository | [Public release branch](https://github.com/zzw-rgb/Radeon-hackathon-2026-07/tree/submission/track3-visiobotlab-radeonvla-reflex/track3_VisioBotLab_RadeonVLA-Reflex) | Bound by release commit |
+| Model / dataset | [Hugging Face releases](https://huggingface.co/a3124371940) | Bound by immutable revisions |
 | Raw evaluation | `artifacts/evaluation.json`, `.csv`, `summary.md` | Seeds 52000–52099 |
 | Interrupt evidence | `artifacts/interrupt_evaluation.*` + website clip | Seed 60000 |
-| Demo video | `website/public/videos/radeonvla-reflex-3min.mp4` (200.0 s, English) | SHA256 `d3ec94d6…533c0` |
 | Technical report | This document; PDF accompanies the release | Bound by release commit |
 
 ## 16. Reproducibility
@@ -261,9 +258,6 @@ failure modes and any unmeasured features are recorded from the final remote eva
 
 ## 19. References
 
-- Genesis World
-- Hugging Face LeRobot and SmolVLA
-- AMD ROCm / Radeon developer documentation
-- YCB Object and Model Set
-- AMD Track 3 contest repository and Radeon Cloud user guide
-- Track 3 Franka fruit-pick demo (workflow reference only)
+Genesis World; Hugging Face LeRobot and SmolVLA; AMD ROCm and Radeon documentation;
+YCB Object and Model Set; AMD Track 3 repository and Radeon Cloud guide; Track 3
+Franka fruit-pick demo (workflow reference only).

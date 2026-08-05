@@ -14,6 +14,7 @@ from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
 from reportlab.lib.units import mm
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
+from reportlab.graphics.shapes import Drawing, Group, Line, Polygon, Rect, String
 from reportlab.platypus import (
     LongTable,
     Paragraph,
@@ -50,9 +51,13 @@ def _register_fonts() -> None:
 
 
 def _inline(text: str) -> str:
-    text = re.sub(r"\[([^]]+)]\(([^)]+)\)", r"\1 (\2)", text)
     text = text.replace("**", "").replace("`", "")
-    return html.escape(text, quote=False)
+    escaped = html.escape(text, quote=False)
+    return re.sub(
+        r"\[([^]]+)]\(([^)]+)\)",
+        r'<link href="\2" color="#455b08">\1</link>',
+        escaped,
+    )
 
 
 def _styles() -> dict[str, ParagraphStyle]:
@@ -85,7 +90,7 @@ def _styles() -> dict[str, ParagraphStyle]:
             fontSize=14,
             leading=18,
             textColor=colors.HexColor("#263300"),
-            spaceBefore=4.5 * mm,
+            spaceBefore=4 * mm,
             spaceAfter=2 * mm,
             keepWithNext=True,
         ),
@@ -182,6 +187,84 @@ def _table(lines: list[str], styles: dict[str, ParagraphStyle], width: float) ->
     return table
 
 
+def _architecture_diagram(width: float) -> Drawing:
+    """Render the release architecture as vector artwork inside the PDF."""
+    nominal_width = 720.0
+    nominal_height = 190.0
+    scale = width / nominal_width
+    drawing = Drawing(width, nominal_height * scale)
+    group = Group()
+
+    ink = colors.HexColor("#20251a")
+    deep = colors.HexColor("#263300")
+    accent = colors.HexColor("#91ad35")
+    muted = colors.HexColor("#68705e")
+    line = colors.HexColor("#cbd1c0")
+    paper = colors.HexColor("#fbfcf8")
+
+    group.add(Rect(0, 0, nominal_width, nominal_height, rx=12, ry=12, fillColor=paper, strokeColor=None))
+
+    def label(x: float, y: float, text: str, size: float, *, color=ink, bold=False, anchor="start") -> None:
+        group.add(
+            String(
+                x,
+                y,
+                text,
+                fontName="RadeonSans-Bold" if bold else "RadeonSans",
+                fontSize=size,
+                fillColor=color,
+                textAnchor=anchor,
+            )
+        )
+
+    def arrow(x1: float, y: float, x2: float) -> None:
+        group.add(Line(x1, y, x2 - 7, y, strokeColor=ink, strokeWidth=2))
+        group.add(Polygon([x2 - 7, y - 4, x2, y, x2 - 7, y + 4], fillColor=ink, strokeColor=None))
+
+    label(8, 174, "MULTIMODAL INPUTS", 8, color=muted, bold=True)
+    label(235, 174, "LEARNED POLICY", 8, color=muted, bold=True)
+    label(410, 174, "EXECUTION BOUNDARY", 8, color=muted, bold=True)
+
+    inputs = [
+        (145, "Language command", colors.HexColor("#b7db28")),
+        (117, "World RGB", colors.HexColor("#6f9d20")),
+        (89, "Wrist RGB", colors.HexColor("#4f7cc2")),
+        (61, "Proprioception", colors.HexColor("#d1a51b")),
+    ]
+    for y, text, dot in inputs:
+        group.add(Rect(8, y, 170, 21, rx=5, ry=5, fillColor=colors.white, strokeColor=line, strokeWidth=0.7))
+        group.add(Rect(18, y + 7, 7, 7, rx=3.5, ry=3.5, fillColor=dot, strokeColor=None))
+        label(32, y + 6, text, 10, bold=True)
+        group.add(Line(178, y + 10.5, 191, y + 10.5, strokeColor=ink, strokeWidth=1.4))
+    group.add(Line(191, 71.5, 191, 155.5, strokeColor=ink, strokeWidth=1.4))
+    arrow(191, 113.5, 226)
+
+    group.add(Rect(235, 84, 118, 67, rx=9, ry=9, fillColor=deep, strokeColor=None))
+    label(294, 120, "SmolVLA", 16, color=colors.white, bold=True, anchor="middle")
+    label(294, 101, "VISION · LANGUAGE · ACTION", 6.8, color=colors.HexColor("#dcebb0"), bold=True, anchor="middle")
+
+    arrow(353, 117.5, 400)
+    label(376, 128, "action", 8, color=muted, bold=True, anchor="middle")
+
+    group.add(Rect(410, 84, 145, 67, rx=9, ry=9, fillColor=colors.white, strokeColor=accent, strokeWidth=1.6))
+    label(482.5, 120, "SafetyMonitor", 14, color=deep, bold=True, anchor="middle")
+    label(482.5, 101, "VALIDATE · INTERRUPT · RECOVER", 6.7, color=muted, bold=True, anchor="middle")
+
+    arrow(555, 117.5, 625)
+    group.add(Rect(634, 84, 78, 67, rx=9, ry=9, fillColor=colors.HexColor("#151811"), strokeColor=None))
+    label(673, 120, "Genesis", 13, color=colors.white, bold=True, anchor="middle")
+    label(673, 101, "SIMULATION", 6.8, color=colors.HexColor("#c9d995"), bold=True, anchor="middle")
+
+    group.add(Line(482.5, 84, 482.5, 72, strokeColor=accent, strokeWidth=1.8))
+    group.add(Rect(392, 12, 181, 60, rx=8, ry=8, fillColor=colors.HexColor("#f7f9f2"), strokeColor=accent, strokeWidth=1.1))
+    label(482.5, 46, "CommandSession (version)", 9.5, color=deep, bold=True, anchor="middle")
+    label(482.5, 27, "FailureDetector + RecoveryPolicy", 8.6, color=muted, bold=True, anchor="middle")
+
+    group.scale(scale, scale)
+    drawing.add(group)
+    return drawing
+
+
 def _story(markdown: str, styles: dict[str, ParagraphStyle], width: float) -> list[object]:
     lines = markdown.splitlines()
     story: list[object] = []
@@ -204,6 +287,10 @@ def _story(markdown: str, styles: dict[str, ParagraphStyle], width: float) -> li
                 code.append(lines[index])
                 index += 1
             story.append(Preformatted("\n".join(code), styles["code"], maxLineLength=110))
+        elif re.fullmatch(r"!\[[^]]*]\((?:\.\./)?docs/figures/architecture-framework-en\.svg\)", stripped):
+            flush()
+            story.append(_architecture_diagram(width))
+            story.append(Spacer(1, 2.5 * mm))
         elif stripped.startswith("|"):
             flush()
             rows: list[str] = []
@@ -267,8 +354,8 @@ def main() -> int:
         pagesize=A4,
         rightMargin=15 * mm,
         leftMargin=15 * mm,
-        topMargin=15 * mm,
-        bottomMargin=18 * mm,
+        topMargin=12 * mm,
+        bottomMargin=15 * mm,
         title="RadeonVLA-Reflex Technical Report",
         author="VisioBot Lab",
         subject="AMD AI DevMaster Track 3 Physical AI Challenge",

@@ -1,5 +1,4 @@
-import architectureEn from "./assets/architecture-en.jpg";
-import architectureZh from "./assets/architecture-zh.jpg";
+import architectureFramework from "../../docs/figures/architecture-framework-en.svg";
 import heroImage from "./assets/radeonvla-reflex-hero-v2.png";
 import {
   collectionClips,
@@ -196,7 +195,7 @@ function render(): void {
           </div>
           <figure class="architecture-diagram reveal">
             <img
-              src="${locale === "zh" ? architectureZh : architectureEn}"
+              src="${architectureFramework}"
               alt="${t(copy.architectureDiagramAlt, locale)}"
               loading="lazy"
               decoding="async"
@@ -352,10 +351,11 @@ function render(): void {
               <a href="${projectLinks.source}" target="_blank" rel="noreferrer">${locale === "zh" ? "打开源码" : "Open source"} ${iconArrow()}</a>
             </article>
             <article class="release-card release-target reveal">
-              <p class="eyebrow">${locale === "zh" ? "项目解说" : "Project walkthrough"}</p>
-              <h3>1080p · 200 s</h3>
-              <p>${locale === "zh" ? "英文演讲、中英双语字幕、仅成功执行与采集画面。" : "English narration, bilingual captions, and successful execution/collection footage only."}</p>
-              <a href="${publicAsset("videos/radeonvla-reflex-3min.mp4")}" target="_blank" rel="noreferrer">${locale === "zh" ? "下载视频" : "Download video"} ${iconArrow()}</a>
+              <p class="eyebrow">${locale === "zh" ? "官方项目成片" : "Official project film"}</p>
+              <h3>Bilibili · 200 s</h3>
+              <p>${locale === "zh" ? "1080p 英文演讲、中英双语字幕，完整呈现系统、数据、训练与成功执行。" : "A 1080p English-narrated film with bilingual captions, spanning the system, data, training, and successful execution."}</p>
+              <a href="${projectLinks.bilibili}" target="_blank" rel="noreferrer">${locale === "zh" ? "在 B 站观看" : "Watch on Bilibili"} ${iconArrow()}</a>
+              <a href="${publicAsset("videos/radeonvla-reflex-3min.mp4")}" target="_blank" rel="noreferrer">${locale === "zh" ? "下载原片" : "Download film"} ${iconArrow()}</a>
             </article>
           </div>
         </div>
@@ -479,6 +479,9 @@ function render(): void {
               </a>
               <a class="button button-outline-light" href="${projectLinks.source}" target="_blank" rel="noreferrer">
                 GitHub ${iconArrow()}
+              </a>
+              <a class="button button-outline-light" href="${projectLinks.submission}" target="_blank" rel="noreferrer">
+                ${locale === "zh" ? "比赛提交" : "Submission PR"} ${iconArrow()}
               </a>
             </div>
           </div>
