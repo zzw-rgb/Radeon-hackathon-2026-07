@@ -13,7 +13,7 @@ Track 3 基准使用 Genesis、Franka Panda、LeRobot 和 SmolVLA，把 5 种水
 1. **分级任务套件（L1–L4）** — 命名目标、空间指代、有序多物体序列、属性/规则分拣；
 2. **语言可区分的双碗** — 左/右容器需由自然语言消歧；
 3. **可中断指令执行** — 中途更改语言指令会使过期动作块失效；
-4. **失败感知恢复** — 空抓/超时检测，并允许一次确定性重试；
+4. **失败感知恢复** — 空抓/超时检测、确定性撤回重试，以及显式启用的严格物理精确恢复；
 5. **安全监视器** — 进入仿真前的关节限幅与速率限制；
 6. **单卡 ROCm 路径** — 在 AMD Radeon 上完成仿真、数据、训练、推理与评测；
 7. **多目标部分完成指标** — 按层级成功率与部分完成率统计长时序任务。
@@ -21,12 +21,16 @@ Track 3 基准使用 Genesis、Franka Panda、LeRobot 和 SmolVLA，把 5 种水
 9. **结构化证据** — 自动输出 JSON、CSV、摘要、真实 checkpoint 哈希和带实时状态的视频；
 10. **中断安全采集** — 未完成数据只保留在 staging，不会覆盖上一份有效数据。
 
-> 发布状态（2026-08-05）：严格物理的 20×50 Physical-1K 数据集和 20,000 步
-> SmolVLA checkpoint 已完成并公开。checkpoint 已通过 Hub 固定 revision 回下载与离线
-> 加载验证。正式闭环指标、报告 PDF 与最终视频仍在生成；当前不声称最终成功率。
+> 发布状态（2026-08-05）：严格物理的 20×100 Physical-2K 数据集和累计约 200K 步
+> SmolVLA 推理权重均已完成。固定 20 任务 × 5 seed 正式基准中，学习策略首次成功
+> **36/100**，显式启用严格物理 Precision-Reflex 后最终成功 **91/100**（Wilson 95%
+> 区间 **83.8–95.2%**）。全部 100 条 episode（包括 9 条失败）均保留在不可变结果文件中。
 
 | 公开产物 | 不可变 revision |
 |---|---|
+| [Physical-2K 数据集](https://huggingface.co/datasets/a3124371940/radeonvla_reflex_physical_2k) — 2,000 episodes / 468,889 frames | `2779b7c5566df9072bb9a7c43335d6203ea97887` |
+| [SmolVLA 累计 200K 权重](https://huggingface.co/a3124371940/radeonvla_reflex_smolvla_2k_200k) | `1ea32da3d59ce0905d0f1331bc3c6643e42beb7e` |
+| [SmolVLA 累计 50K 权重](https://huggingface.co/a3124371940/radeonvla_reflex_smolvla_1k_50k) | `59f6f0ad720054505667a652fe07e03d65e82915` |
 | [Physical-1K 数据集](https://huggingface.co/datasets/a3124371940/radeonvla_reflex_physical_1k) — 1,000 episodes / 232,658 frames | `b0f72c60e9100739fd82bd498c8f3d9bed7b75af` |
 | [SmolVLA-1K 权重](https://huggingface.co/a3124371940/radeonvla_reflex_smolvla_1k) — 20,000 steps | `abcca9f2b313e378b554449016b520b8117016fe` |
 
@@ -48,7 +52,7 @@ Track 3 基准使用 Genesis、Franka Panda、LeRobot 和 SmolVLA，把 5 种水
 
 目标应用为食品处理、实验室自动化与小批量物流中的语言可重配置分拣单元。
 操作员可以在机器人运动途中修改目标；运行层立即作废旧动作块、进入安全张爪保持，
-并能对检测到的空抓执行一次恢复重试。
+并能对检测到的空抓执行有界恢复；精确恢复模式继续禁止水果瞬移和抓取粘附。
 
 ### 任务层级
 
@@ -73,23 +77,24 @@ Track 3 基准使用 Genesis、Franka Panda、LeRobot 和 SmolVLA，把 5 种水
 | `advanced` | L2+L3+L4 |
 | `full` | 全部层级（显式启用的高级基准） |
 
-训练与评测使用**不相交**的自然语言表述。空间与规则任务在位姿随机化后，
-由 `radeonvla.grounding` 在 episode 开始时解析。
+Physical-2K 每项任务保存两条确定性的采集原文。主控制器基准使用相同原文但采用
+不相交 seed；`--instruction-source heldout` 单独用于改写泛化测试。空间与规则任务
+在位姿随机化后由 `radeonvla.grounding` 在 episode 开始时解析。
 
 ## 系统架构
 
-![RadeonVLA-Reflex 系统架构：世界/腕部 RGB 与机器人状态输入 SmolVLA；动作块经执行安全监视器（关节/速率限幅、指令版本、空抓检测、一次重试、延迟遥测）后进入 Genesis Franka 双碗仿真](docs/figures/architecture-zh.jpg)
+![RadeonVLA-Reflex 系统架构：世界/腕部 RGB 与机器人状态输入 SmolVLA；动作块经带指令失效、失败检测、有界严格物理恢复和延迟遥测的执行安全监视器后进入 Genesis Franka 双碗仿真](docs/figures/architecture-zh.jpg)
 
 闭环流程：
 
 1. **感知与状态** — 世界相机 RGB、腕部相机 RGB，以及机器人与夹爪状态（关节角 \(q\)、关节速度 \(\dot q\)、夹爪开度 \(g\)、末端位姿 \(T\)）。
 2. **SmolVLA 策略** — 视觉-语言-动作模型输出动作块（\(\Delta q\)、\(\Delta g\)、\(\Delta T\) 等）。
-3. **执行安全监视器（Reflex）** — 关节限幅/速率限制、限制在安全范围、指令版本变更与平滑、空抓检测、超时后**仅重试一次**、事件/延迟遥测。
+3. **执行安全监视器（Reflex）** — 关节限幅/速率限制、指令版本变更、空抓检测与确定性撤回；显式 `--precision-recovery` 模式在学习策略失败后调用严格物理几何恢复，并单独记录其贡献。
 4. **Genesis Franka 双碗仿真** — 只执行安全指令；下一帧观测回馈闭环。
 
 学习栈为语言与视觉条件下的端到端关节位置控制。
 指令作废与恢复为策略外的**确定性安全层**（不重新训练 VLA）。评测可确定性注入水果或盘位
-移动，并把 `RUNNING / INTERRUPTED / RECOVERING / SUCCESS` 直接叠加到演示视频。
+移动，并把 `RUNNING / INTERRUPTED / RECOVERING / PRECISION RECOVERY / SUCCESS` 直接叠加到演示视频。
 
 英文架构图见 [`docs/figures/architecture-en.jpg`](docs/figures/architecture-en.jpg)。PNG 原图备份：[`architecture-zh.png`](docs/figures/architecture-zh.png)。
 
@@ -428,12 +433,14 @@ python -m radeonvla.train_policy smolvla \
   --dataset-root datasets/radeonvla_reflex \
   --steps 10000 --device cuda
 
-# 闭环评测（中断 + 恢复）
+# 正式 100 条 Precision-Reflex 基础评测（20 tasks × 5 seeds）
 python -m radeonvla.evaluate \
-  --policy-path outputs/train/smolvla_radeonvla_reflex/checkpoints/last/pretrained_model \
-  --repo-id visiobot/radeonvla_reflex \
-  --dataset-root datasets/radeonvla_reflex \
-  --episodes-per-task 10 --save-video --backend amdgpu
+  --policy-path outputs/train/smolvla_radeonvla_reflex_physical_2k_continue_100k_to200k/checkpoints/100000/pretrained_model \
+  --repo-id a3124371940/radeonvla_reflex_physical_2k \
+  --dataset-root datasets/radeonvla_reflex_physical_2k \
+  --suite basic --episodes 100 --seed-start 52000 \
+  --instruction-source collected --max-retries 0 --precision-recovery \
+  --backend amdgpu --output artifacts/evaluation.precision_reflex_basic100.json
 
 # 可中断性演示（在第 0 局中途注入指令变更）
 python -m radeonvla.evaluate \
@@ -500,15 +507,16 @@ task                       # 自然语言指令
 | 划分 | 种子 |
 |---|---|
 | 严格冒烟 | 12000–12999 |
-| 训练 | 20000–29999 |
+| 训练来源 | 21000–26999、71000–76039 |
 | 验证 | 40000–40999 |
-| 正式评测 | 50000–59999 |
+| 正式 100 条评测 | 52000–52099 |
 | 中断 / 恢复 | 60000–60999 |
 
 ## 评测协议
 
-主协议为 20 个 L1 任务各 10 个 held-out episode，共 200 个。中断和目标移动
-压力测试使用代表性任务与独立 seed；L2–L4 只有在实际训练评测后才报告。
+正式主协议为 20 个 L1 任务各 5 个独立 seed episode，共 100 个，并使用数据集
+实际采集原文。held-out 改写泛化另行测试；中断和目标移动压力测试使用代表性任务
+与独立 seed；L2–L4 只有在实际训练评测后才报告。
 
 报告指标：
 
@@ -553,7 +561,8 @@ task                       # 自然语言指令
 | 可复现 README | 本文件 / 英文版 | README.md |
 | 技术报告（MD） | 持续维护的源文档 | reports/RadeonVLA-Reflex-Technical-Report.md |
 | 技术报告 PDF | 由发布流程生成 | `reports/RadeonVLA-Reflex-Technical-Report.pdf` |
-| 演示视频 | 由策略评测套件生成 | `outputs/eval_videos/` |
+| 3 分钟以上解说成片 | 216.858 秒、H.264/AAC、中英双语字幕 | `website/public/videos/radeonvla-reflex-3min.mp4` |
+| 原始恢复片段 | 由策略评测套件生成 | `outputs/eval_videos/` |
 | 模型权重 | 绑定最新且验证通过的数字 checkpoint | `outputs/train/*/checkpoints/*/pretrained_model` |
 | 数据集或数据文档 | 已实现 | docs/DATASET_CARD.md |
 | 原始评测结果 | 由独立评测生成 | `artifacts/evaluation.json` |

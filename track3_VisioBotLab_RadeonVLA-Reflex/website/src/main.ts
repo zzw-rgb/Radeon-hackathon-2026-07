@@ -5,6 +5,7 @@ import {
   collectionClips,
   copy,
   demos,
+  evaluationMetrics,
   features,
   navItems,
   projectLinks,
@@ -147,18 +148,24 @@ function render(): void {
           <h2 id="demo-title">${t(copy.sectionDemoTitle, locale)}</h2>
           <p>${t(copy.sectionDemoBody, locale)}</p>
         </div>
-        <div class="video-placeholder reveal" role="status">
-          <div class="video-grid" aria-hidden="true"></div>
-          <div class="video-status">
-            <span class="play-symbol" aria-hidden="true">▶</span>
-            <div>
-              <small>${t(copy.videoLabel, locale)}</small>
-              <strong>${t(copy.videoPending, locale)}</strong>
-              <p>${t(copy.videoBody, locale)}</p>
-            </div>
-          </div>
-          <span class="pending-pill">${t(copy.pending, locale)}</span>
-        </div>
+        <figure class="policy-video reveal">
+          <video
+            controls
+            playsinline
+            preload="metadata"
+            poster="${publicAsset("videos/precision-recovery-apple.webp")}"
+            aria-label="${t(copy.videoPending, locale)}"
+          >
+            <source src="${publicAsset("videos/radeonvla-reflex-3min.mp4")}" type="video/mp4" />
+            <track kind="subtitles" src="${publicAsset("videos/radeonvla-reflex-3min.vtt")}" srclang="zh" label="中文 / English" default />
+            ${t(copy.clipFallback, locale)}
+          </video>
+          <figcaption>
+            <small>${t(copy.videoLabel, locale)}</small>
+            <strong>${t(copy.videoPending, locale)}</strong>
+            <p>${t(copy.videoBody, locale)}</p>
+          </figcaption>
+        </figure>
         <div class="demo-grid">
           ${demos
             .map(
@@ -282,14 +289,14 @@ function render(): void {
             <p>${t(copy.evidenceBody, locale)}</p>
           </div>
           <div class="pending-results">
-            ${copy.resultLabels
+            ${evaluationMetrics
               .map(
-                (label, index) => `
+                (metric, index) => `
                   <article class="pending-result reveal">
                     <span>0${index + 1}</span>
-                    <h3>${t(label, locale)}</h3>
-                    <strong>${t(copy.pending, locale)}</strong>
-                    <p>${t(copy.resultPendingNote, locale)}</p>
+                    <h3>${t(metric.label, locale)}</h3>
+                    <strong>${metric.value}</strong>
+                    <p>${t(metric.detail, locale)}</p>
                   </article>`,
               )
               .join("")}
@@ -299,14 +306,16 @@ function render(): void {
               <p class="eyebrow">${t(copy.releaseTarget, locale)}</p>
               <h3>${t(copy.releaseTargetValue, locale)}</h3>
               <p>${t(copy.releaseTargetBody, locale)}</p>
-              <span class="pending-pill">${t(copy.pending, locale)}</span>
+              <a href="${projectLinks.dataset}" target="_blank" rel="noreferrer">
+                ${t(copy.datasetCta, locale)} ${iconArrow()}
+              </a>
             </article>
             <article class="release-card release-model reveal">
               <p class="eyebrow">${t(copy.modelLabel, locale)}</p>
               <h3>${t(copy.modelValue, locale)}</h3>
               <p>${t(copy.modelBody, locale)}</p>
-              <a href="${projectLinks.baseModel}" target="_blank" rel="noreferrer">
-                ${t(copy.baseModelCta, locale)} ${iconArrow()}
+              <a href="${projectLinks.finalModel}" target="_blank" rel="noreferrer">
+                ${t(copy.trainedModelCta, locale)} ${iconArrow()}
               </a>
             </article>
           </div>

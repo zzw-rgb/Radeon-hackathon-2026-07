@@ -15,7 +15,7 @@ Design focus of this codebase:
    sequences, and attribute/rule-based sorting;
 2. **Language-disambiguated dual bowls** — left vs right containers under free language;
 3. **Interruptible command execution** — mid-episode language changes invalidate stale action chunks;
-4. **Failure-aware recovery** — empty-grasp / timeout detection with one deterministic retry;
+4. **Failure-aware recovery** — empty-grasp / timeout detection, deterministic retreat/retry, and an explicit strict-physics precision fallback;
 5. **Safety monitor** — joint bounds and rate limiting before actions enter Genesis;
 6. **Single-GPU ROCm path** — simulation, data, training, inference, and evaluation on AMD Radeon;
 7. **Partial multi-goal metrics** — success-by-tier and partial completion rates for long-horizon tasks.
@@ -25,13 +25,17 @@ Design focus of this codebase:
 10. **Crash-safe collection** — incomplete runs remain in a staging directory and never replace the
     last validated dataset.
 
-> Release status (2026-08-05): the strict 20×50 Physical-1K dataset and 20,000-step
-> SmolVLA checkpoint are complete and publicly available. The checkpoint passed an immutable
-> Hub re-download and offline load test. Formal closed-loop metrics, the report PDF, and the
-> final policy video are still being produced; no final success rate is claimed yet.
+> Release status (2026-08-05): the strict 20×100 Physical-2K dataset and cumulative ~200K-step
+> SmolVLA inference tree are complete. On the fixed 20-task × 5-seed benchmark, learned
+> first-attempt success is **36/100** and the explicit strict-physics Precision-Reflex system
+> finishes **91/100** (Wilson 95% CI **83.8–95.2%**). All 100 episodes, including nine failures,
+> remain in the immutable result bundle.
 
 | Public artifact | Immutable revision |
 |---|---|
+| [Physical-2K dataset](https://huggingface.co/datasets/a3124371940/radeonvla_reflex_physical_2k) — 2,000 episodes / 468,889 frames | `2779b7c5566df9072bb9a7c43335d6203ea97887` |
+| [Cumulative 200K SmolVLA checkpoint](https://huggingface.co/a3124371940/radeonvla_reflex_smolvla_2k_200k) | `1ea32da3d59ce0905d0f1331bc3c6643e42beb7e` |
+| [Cumulative 50K SmolVLA checkpoint](https://huggingface.co/a3124371940/radeonvla_reflex_smolvla_1k_50k) | `59f6f0ad720054505667a652fe07e03d65e82915` |
 | [Physical-1K dataset](https://huggingface.co/datasets/a3124371940/radeonvla_reflex_physical_1k) — 1,000 episodes / 232,658 frames | `b0f72c60e9100739fd82bd498c8f3d9bed7b75af` |
 | [SmolVLA-1K checkpoint](https://huggingface.co/a3124371940/radeonvla_reflex_smolvla_1k) — 20,000 steps | `abcca9f2b313e378b554449016b520b8117016fe` |
 
@@ -55,7 +59,8 @@ The target application is a language-reconfigurable sorting cell for food handli
 laboratory automation, and small-batch logistics. An operator can change a destination
 while the robot is moving without waiting for a pre-generated action chunk to finish.
 The runtime invalidates stale actions, moves to a safe open-gripper hold, and can retry
-one detected empty grasp. This reduces the need for task-specific PLC reprogramming while
+detected failures with a bounded controller; precision mode still forbids object teleport and
+grasp glue. This reduces the need for task-specific PLC reprogramming while
 keeping operator intervention explicit and measurable.
 
 ### Task tiers
@@ -81,24 +86,26 @@ Suites (CLI `--suite`):
 | `advanced` | L2+L3+L4 |
 | `full` | All tiers (explicit opt-in advanced benchmark) |
 
-Training and evaluation use **disjoint** natural-language phrasings per task. Spatial and
-rule tasks are resolved at episode start by `radeonvla.grounding` after pose randomization.
+Physical-2K stores two deterministic collected phrasings per task. The primary controller
+benchmark reuses those exact strings with disjoint seeds; `--instruction-source heldout`
+is a separate paraphrase-generalization test. Spatial and rule tasks are resolved at
+episode start by `radeonvla.grounding` after pose randomization.
 
 ## System architecture
 
-![RadeonVLA-Reflex system architecture: dual RGB cameras and robot state condition a SmolVLA policy; action chunks pass through an execution safety monitor (joint/velocity limits, command versioning, empty-grasp detection, one-shot retry, latency telemetry) before Genesis Franka dual-bowl simulation](docs/figures/architecture-en.jpg)
+![RadeonVLA-Reflex system architecture: dual RGB cameras and robot state condition a SmolVLA policy; action chunks pass through an execution safety monitor with command invalidation, failure detection, bounded strict-physics recovery, and latency telemetry before Genesis Franka dual-bowl simulation](docs/figures/architecture-en.jpg)
 
 The closed loop is:
 
 1. **Perception + state** — world RGB, wrist RGB, and robot/gripper state (joint positions \(q\), velocities \(\dot q\), gripper opening \(g\), end-effector pose \(T\)).
 2. **SmolVLA policy** — vision-language-action model produces action chunks (\(\Delta q\), \(\Delta g\), \(\Delta T\)).
-3. **Execution safety monitor (Reflex)** — joint/velocity limits, safe region, command-version invalidation, empty-grasp detection, timeout + **one** recovery retry, event/latency telemetry.
+3. **Execution safety monitor (Reflex)** — joint/velocity limits, command-version invalidation, empty-grasp detection and deterministic retreat; explicit `--precision-recovery` invokes a strict-physics geometric fallback after learned-control failure and reports its contribution separately.
 4. **Genesis Franka dual-bowl simulation** — executes only the safe command; next observation feeds back into the loop.
 
 The learned stack is end-to-end joint-position control conditioned on language and
 vision. Interrupt invalidation and recovery are **deterministic safety layers around the
 policy** (they do not retrain the VLA). Evaluation can inject a repeatable target or bowl
-shift and renders `RUNNING / INTERRUPTED / RECOVERING / SUCCESS` directly on demo video.
+shift and renders `RUNNING / INTERRUPTED / RECOVERING / PRECISION RECOVERY / SUCCESS` directly on demo video.
 
 Chinese diagram: [`docs/figures/architecture-zh.jpg`](docs/figures/architecture-zh.jpg).
 
@@ -452,13 +459,14 @@ python -m radeonvla.train_policy smolvla \
   --dataset-root datasets/radeonvla_reflex \
   --steps 10000 --device cuda
 
-# Closed-loop evaluation (interrupt + recovery)
+# Formal 100-rollout Precision-Reflex benchmark (20 tasks × 5 seeds)
 python -m radeonvla.evaluate \
-  --policy-path outputs/train/smolvla_radeonvla_reflex/checkpoints/last/pretrained_model \
-  --repo-id visiobot/radeonvla_reflex \
-  --dataset-root datasets/radeonvla_reflex \
-  --suite basic --episodes-per-task 10 --save-video --backend amdgpu \
-  --output artifacts/evaluation.json
+  --policy-path outputs/train/smolvla_radeonvla_reflex_physical_2k_continue_100k_to200k/checkpoints/100000/pretrained_model \
+  --repo-id a3124371940/radeonvla_reflex_physical_2k \
+  --dataset-root datasets/radeonvla_reflex_physical_2k \
+  --suite basic --episodes 100 --seed-start 52000 \
+  --instruction-source collected --max-retries 0 --precision-recovery \
+  --backend amdgpu --output artifacts/evaluation.precision_reflex_basic100.json
 
 # Interruptibility demo (injects a mid-episode command change on ep0)
 python -m radeonvla.evaluate \
@@ -536,16 +544,17 @@ Seed splits:
 | Split | Seeds |
 |---|---|
 | Strict smoke | 12000–12999 |
-| Training | 20000–29999 |
+| Training sources | 21000–26999 and 71000–76039 |
 | Validation | 40000–40999 |
-| Formal evaluation | 50000–59999 |
+| Formal 100-rollout evaluation | 52000–52099 |
 | Interrupt / recovery | 60000–60999 |
 
 ## Evaluation protocol
 
-The primary protocol is 10 held-out episodes for each of the 20 L1 tasks (200 total,
-evaluation-only language). Additional interrupt and target-shift suites use representative
-tasks and disjoint seeds. L2–L4 results are reported only when trained and measured.
+The primary release protocol is five disjoint-seed episodes for each of the 20 L1 tasks
+(100 total) using the exact collected language. The held-out paraphrase suite is separate.
+Additional interrupt and target-shift suites use representative tasks and disjoint seeds.
+L2–L4 results are reported only when trained and measured.
 
 Reported metrics:
 
@@ -591,7 +600,8 @@ The final release revision requires no private account, unpublished file, or sou
 | Reproducibility README | This file | README.md |
 | Technical report (MD) | Maintained source | reports/RadeonVLA-Reflex-Technical-Report.md |
 | Technical report PDF | Produced by the release workflow | `reports/RadeonVLA-Reflex-Technical-Report.pdf` |
-| Demo video | Produced by the policy evaluation suite | `outputs/eval_videos/` |
+| 3+ minute narrated demo | 216.858 s, H.264/AAC, bilingual subtitles | `website/public/videos/radeonvla-reflex-3min.mp4` |
+| Raw recovery clips | Produced by the policy evaluation suite | `outputs/eval_videos/` |
 | Model checkpoint | Bound to the latest validated numeric checkpoint | `outputs/train/*/checkpoints/*/pretrained_model` |
 | Dataset or dataset documentation | Implemented | `docs/DATASET_CARD.md` |
 | Raw evaluation results | Produced by held-out evaluation | `artifacts/evaluation.json` |

@@ -55,6 +55,9 @@ export const projectLinks = {
   baseModel: "https://huggingface.co/lerobot/smolvla_base",
   technicalReport:
     "https://github.com/zzw-rgb/Radeon-hackathon-2026-07/blob/submission/track3-visiobotlab-radeonvla-reflex/track3_VisioBotLab_RadeonVLA-Reflex/reports/RadeonVLA-Reflex-Technical-Report.md",
+  dataset: "https://huggingface.co/datasets/a3124371940/radeonvla_reflex_physical_2k",
+  model50k: "https://huggingface.co/a3124371940/radeonvla_reflex_smolvla_1k_50k",
+  finalModel: "https://huggingface.co/a3124371940/radeonvla_reflex_smolvla_2k_200k",
 };
 
 export const navItems: Array<{ href: string; label: LocalizedText }> = [
@@ -84,8 +87,8 @@ export const copy = {
   heroTitleA: { en: "Actions that can", zh: "让机器人动作" },
   heroTitleB: { en: "change their mind.", zh: "随指令及时改变。" },
   heroBody: {
-    en: "RadeonVLA-Reflex wraps a vision-language-action policy with command invalidation, safe interruption, and one-shot recovery—so stale action chunks do not stay in control.",
-    zh: "RadeonVLA-Reflex 在视觉语言动作策略外加入指令失效、安全中断与单次恢复机制，避免过期动作块继续控制机械臂。",
+    en: "RadeonVLA-Reflex wraps a vision-language-action policy with command invalidation, safe interruption, and bounded strict-physics recovery—so stale or failed action chunks do not stay in control.",
+    zh: "RadeonVLA-Reflex 在视觉语言动作策略外加入指令失效、安全中断与有界严格物理恢复，避免过期或失败的动作块继续控制机械臂。",
   },
   sourceCta: { en: "Explore the source", zh: "查看项目源码" },
   demoCta: { en: "See the core demonstration", zh: "查看核心演示" },
@@ -141,10 +144,10 @@ export const copy = {
     zh: "核心演示使用同一 checkpoint 展示正常执行、中途改指令，以及检测到失败后的恢复；数据采集片段单独作为链路检查记录。",
   },
   videoLabel: { en: "3+ MIN POLICY WALKTHROUGH", zh: "3 分钟以上策略解说视频" },
-  videoPending: { en: "Evaluation recording scheduled", zh: "评测录制计划" },
+  videoPending: { en: "Narrated project walkthrough · 3+ min", zh: "项目解说成片 · 3 分钟以上" },
   videoBody: {
-    en: "The release recording covers interruption, recovery, and success with captions and synchronized runtime telemetry.",
-    zh: "发布版录制覆盖中断、恢复与成功流程，并包含字幕和同步运行遥测。",
+    en: "A narrated walkthrough of the Physical-2K data, Radeon training path, 200K checkpoint, real failed learned attempt, and strict-physics Precision Reflex recovery. Chinese narration includes bilingual subtitles.",
+    zh: "完整讲解 Physical-2K 数据、Radeon 训练链路、200K 权重、学习策略真实失败和严格物理 Precision Reflex 恢复；中文旁白配中英双语字幕。",
   },
   // Supporting appendix for local data-collection smoke clips.
   collectionKicker: { en: "DATA PIPELINE APPENDIX", zh: "数据链路附录" },
@@ -204,35 +207,25 @@ export const copy = {
   benchmarkKicker: { en: "PRIMARY BENCHMARK", zh: "主要基准" },
   benchmarkTitle: { en: "Five fruits. Four destinations. Twenty tasks.", zh: "五种水果，四个盘位，二十项任务。" },
   benchmarkBody: {
-    en: "L1 crosses every fruit with every language-addressable bowl. Baseline demos: 10 per task (200 total). Formal Physical-1K target: 50 per task (1,000 total) under strict physics.",
-    zh: "L1 将每种水果与每个语言可指定盘位交叉。基线演示：每任务 10 条（共 200）。正式 Physical-1K 目标：严格物理下每任务 50 条（共 1,000）。",
+    en: "L1 crosses every fruit with every language-addressable bowl. Physical-2K contains 100 strict-physics demonstrations per task—2,000 episodes and 468,889 dual-camera frames in total.",
+    zh: "L1 将每种水果与每个语言可指定盘位交叉。Physical-2K 每项任务包含 100 条严格物理演示，共 2,000 个 episode、468,889 帧双相机数据。",
   },
   targetLabel: { en: "Destination", zh: "目标盘位" },
   objectLabel: { en: "Object", zh: "物体" },
-  demosLabel: { en: "10 baseline · 50 formal", zh: "基线 10 · 正式 50" },
+  demosLabel: { en: "100 strict demos", zh: "100 条严格演示" },
   evidenceKicker: { en: "EVALUATION STATUS", zh: "评测状态" },
   evidenceTitle: { en: "Evidence organized by completion state.", zh: "按完成状态组织评测证据。" },
   evidenceBody: {
-    en: "The baseline dataset proves the recording path. Physical-1K collection, SmolVLA fine-tuning, latency, and Reflex ablations publish only from immutable evaluation artifacts.",
-    zh: "基线数据集证明采集链路可用。Physical-1K 采集、SmolVLA 微调、延迟与 Reflex 消融仅从不可变评测产物发布。",
+    en: "Physical-2K, the 200K checkpoint, latency, first-attempt success, and Reflex final success are reported from immutable evaluation artifacts with disjoint seeds.",
+    zh: "Physical-2K、200K checkpoint、推理延迟、首次成功率和 Reflex 最终成功率均来自独立 seed 的不可变评测产物。",
   },
-  resultLabels: [
-    { en: "Final policy success", zh: "最终策略成功率" },
-    { en: "P95 inference latency", zh: "P95 推理延迟" },
-    { en: "Baseline vs Reflex", zh: "Baseline 与 Reflex 对照" },
-    { en: "Final checkpoint", zh: "最终 checkpoint" },
-  ],
-  pending: { en: "Evaluation scheduled", zh: "待评测" },
-  resultPendingNote: {
-    en: "Published from held-out evaluation of the release checkpoint.",
-    zh: "由发布 checkpoint 的独立评测产物生成。",
-  },
-  releaseTarget: { en: "Formal training target", zh: "正式训练目标" },
-  releaseTargetValue: { en: "1,000 demos · 20 × 50", zh: "1,000 条演示 · 20 × 50" },
+  releaseTarget: { en: "Released training dataset", zh: "已发布训练数据集" },
+  releaseTargetValue: { en: "2,000 demos · 20 × 100", zh: "2,000 条演示 · 20 × 100" },
   releaseTargetBody: {
-    en: "Balanced strict-physics expert set with a disjoint validation seed range. Cloud collection runs in fruit shards then merges under certificate checks.",
-    zh: "均衡的严格物理专家集，验证 seed 与训练不相交。云端按水果分片采集，再经证书校验合并。",
+    en: "Balanced strict-physics expert set with 2,000 episode certificates, zero kinematic interventions, complete task coverage, and a fixed Hugging Face revision.",
+    zh: "均衡严格物理专家集，包含 2,000 份 episode 证书、零运动学干预、完整任务覆盖和固定 Hugging Face revision。",
   },
+  datasetCta: { en: "Open Physical-2K dataset", zh: "查看 Physical-2K 数据集" },
   modelLabel: { en: "Base policy", zh: "基础策略" },
   modelValue: { en: "LeRobot / SmolVLA", zh: "LeRobot / SmolVLA" },
   modelBody: {
@@ -240,6 +233,7 @@ export const copy = {
     zh: "使用双路 RGB 与语言输入，微调为 9 维绝对关节位置控制。",
   },
   baseModelCta: { en: "Open base model", zh: "查看基础模型" },
+  trainedModelCta: { en: "Open final 200K checkpoint", zh: "查看最终 200K 权重" },
   reproduceKicker: { en: "REPRODUCIBLE PIPELINE", zh: "可复现链路" },
   reproduceTitle: { en: "From command to checksum.", zh: "从指令到校验和，全链路可审阅。" },
   reproduceBody: {
@@ -281,24 +275,47 @@ export const copy = {
 
 export const verifiedMetrics: Metric[] = [
   {
-    value: "200",
-    label: { en: "local smoke demos", zh: "本机冒烟演示" },
-    detail: { en: "manifest complete · 20 × 10", zh: "manifest 完成 · 20 × 10" },
+    value: "2,000",
+    label: { en: "strict-physics demos", zh: "严格物理演示" },
+    detail: { en: "Physical-2K · 20 × 100", zh: "Physical-2K · 20 × 100" },
   },
   {
-    value: "1,000",
-    label: { en: "Physical-1K release target", zh: "Physical-1K 发布目标" },
-    detail: { en: "strict physics · 20 × 50", zh: "严格物理 · 20 × 50" },
+    value: "468,889",
+    label: { en: "dual-camera frames", zh: "双相机数据帧" },
+    detail: { en: "20 Hz · validator clean", zh: "20 Hz · 严格验证通过" },
   },
   {
-    value: "46,420",
-    label: { en: "local baseline frames", zh: "本机基线帧数" },
-    detail: { en: "20 Hz dual RGB smoke set", zh: "20 Hz 双路 RGB 冒烟集" },
+    value: "200K",
+    label: { en: "cumulative train steps", zh: "累计训练步数" },
+    detail: { en: "SmolVLA · Physical-2K", zh: "SmolVLA · Physical-2K" },
   },
   {
     value: "1× GPU",
     label: { en: "AMD Radeon path", zh: "AMD Radeon 路径" },
     detail: { en: "ROCm sim · train · eval", zh: "ROCm 仿真 · 训练 · 评测" },
+  },
+];
+
+export const evaluationMetrics: Metric[] = [
+  {
+    value: "91 / 100",
+    label: { en: "final system success", zh: "最终系统成功" },
+    detail: { en: "Wilson 95% CI · 83.8–95.2%", zh: "Wilson 95% 区间 · 83.8–95.2%" },
+  },
+  {
+    value: "36 / 100",
+    label: { en: "learned first attempt", zh: "学习策略首次成功" },
+    detail: { en: "reported separately from recovery", zh: "与恢复贡献分开报告" },
+  },
+  {
+    value: "+55",
+    label: { en: "precision recoveries", zh: "精确恢复贡献" },
+    detail: { en: "55 / 63 attempts · strict physics", zh: "55 / 63 次 · 严格物理" },
+  },
+  {
+    value: "37.27 ms",
+    label: { en: "P95 inference latency", zh: "P95 推理延迟" },
+    detail: { en: "P50 4.54 ms · shared-GPU run", zh: "P50 4.54 ms · 共享 GPU 评测" },
   },
 ];
 
@@ -398,13 +415,13 @@ export const demos: Demo[] = [
   },
   {
     index: "03",
-    state: "RECOVERING",
-    title: { en: "Detected failure", zh: "检测到失败" },
+    state: "PRECISION",
+    title: { en: "Strict-physics precision recovery", zh: "严格物理精确恢复" },
     body: {
-      en: "Empty-grasp or timeout detection can trigger one deterministic retreat and retry, with every event logged.",
-      zh: "空抓或超时检测可触发一次确定性撤回与重试，并完整记录事件。",
+      en: "After the learned retry budget is exhausted, a bounded geometry-aware recovery can finish the task while rigid pose writes remain forbidden.",
+      zh: "学习策略用尽重试预算后，有界几何恢复可在继续禁止刚体位姿写入的前提下完成任务。",
     },
-    event: { en: "retry 1 / 1 · telemetry recorded", zh: "重试 1 / 1 · 遥测已记录" },
+    event: { en: "strict physics · no teleport · logged", zh: "严格物理 · 无瞬移 · 全程留证" },
   },
 ];
 
@@ -427,10 +444,10 @@ export const features: Feature[] = [
   },
   {
     eyebrow: "03 / RECOVERY",
-    title: { en: "Retry once, visibly", zh: "一次可见、可审计的重试" },
+    title: { en: "Recover visibly and honestly", zh: "可见且诚实地恢复" },
     body: {
-      en: "A bounded recovery policy retreats, reopens, and retries at most once instead of looping indefinitely.",
-      zh: "有界恢复策略执行撤回、张爪，最多只重试一次，避免无限循环。",
+      en: "Evidence separates the learned first attempt from strict-physics recovery contribution instead of folding both into one opaque score.",
+      zh: "评测把学习策略首抓与严格物理恢复贡献分开报告，不把两者折叠成一个不透明分数。",
     },
   },
 ];

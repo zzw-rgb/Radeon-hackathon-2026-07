@@ -11,20 +11,21 @@ tags:
   - genesis
 ---
 
-# RadeonVLA-Reflex Physical-1K Dataset Card
+# RadeonVLA-Reflex Physical-2K Dataset Card
 
-> Release status: pre-release. Publication metadata is bound by the validated release workflow.
+> Release status: public, strictly validated, and fixed to an immutable Hub revision.
 
 ## Overview
 
-- Dataset name: RadeonVLA-Reflex Physical-1K
-- Version: Assigned by release workflow
-- Generator commit: Bound from the dataset manifest at release
+- Dataset name: RadeonVLA-Reflex Physical-2K
+- Version: `2779b7c5566df9072bb9a7c43335d6203ea97887`
+- Generator commits: `dbc12b69e88be787b679bb41cf2026ca43e0eda6`, `cbf07f9306cd175e82d1e60d1c02cc0b07d2f9d2`
 - Genesis version: 1.1.2
 - LeRobot version: 0.6.0
 - License: CC BY 4.0
-- Public URL: Published by release workflow
-- SHA256 or dataset revision: Computed at release
+- Public URL: https://huggingface.co/datasets/a3124371940/radeonvla_reflex_physical_2k
+- Dataset revision: `2779b7c5566df9072bb9a7c43335d6203ea97887`
+- Verified size: 2,000 episodes / 468,889 frames / 2,000 strict certificates
 
 ## Task coverage
 
@@ -32,11 +33,11 @@ The primary L1 dataset has 20 variations: five fruits × four bowl positions.
 
 | Fruit | Bowl positions | Training target | Validation | Held-out evaluation |
 |---|---|---:|---:|---:|
-| banana | white-left, blue-left, white-right, blue-right | 50 each | 5 each | 10 each |
-| lemon | white-left, blue-left, white-right, blue-right | 50 each | 5 each | 10 each |
-| plum | white-left, blue-left, white-right, blue-right | 50 each | 5 each | 10 each |
-| apple | white-left, blue-left, white-right, blue-right | 50 each | 5 each | 10 each |
-| orange | white-left, blue-left, white-right, blue-right | 50 each | 5 each | 10 each |
+| banana | white-left, blue-left, white-right, blue-right | 100 each | disjoint seeds | 5 each |
+| lemon | white-left, blue-left, white-right, blue-right | 100 each | disjoint seeds | 5 each |
+| plum | white-left, blue-left, white-right, blue-right | 100 each | disjoint seeds | 5 each |
+| apple | white-left, blue-left, white-right, blue-right | 100 each | disjoint seeds | 5 each |
+| orange | white-left, blue-left, white-right, blue-right | 100 each | disjoint seeds | 5 each |
 
 The release table is generated from the immutable dataset manifest. L2–L4 data are
 reported separately and are not implied by the primary L1 total.
@@ -79,8 +80,8 @@ Data collection uses the scripted multi-goal expert (`python -m radeonvla.record
 4. recording rate is 20 Hz (sim 100 Hz, decimated);
 5. formal collection disables kinematic attachment, placement nudges, and off-table
    respawns; a context guard aborts any rigid-body pose write during the episode;
-6. failed episodes are discarded and are not part of Physical-1K;
-7. `validate_dataset` checks schema, non-finite values, image statistics, exact 20×50
+6. failed episodes are discarded and are not part of Physical-2K;
+7. `validate_dataset` checks schema, non-finite values, image statistics, exact 20×100
    coverage, unique seeds, zero interventions, and certificate/episode correspondence;
 8. camera videos under `datasets/*/videos/` are spot-checked before training;
 9. Recording happens under `.inprogress`; the target path is replaced only after finalize,
@@ -91,9 +92,9 @@ Data collection uses the scripted multi-goal expert (`python -m radeonvla.record
 ## Split policy
 
 - Strict smoke seeds: 12000–12999
-- Training seeds: 20000–29999
+- Training source seed ranges: 21000–26999 and 71000–76039
 - Validation seeds: 40000–40999
-- Formal evaluation seeds: 50000–59999
+- Formal 100-rollout evaluation seeds: 52000–52099
 - Interruption/recovery seeds: 60000–60999
 
 No seed may occur in more than one split.
@@ -106,6 +107,7 @@ No seed may occur in more than one split.
 - task, object, and container agree;
 - episode success is independently verified;
 - random replay videos were manually inspected.
+- final validator result: `errors=[]`, `warnings=[]` across 2,000 certificates.
 
 ## Assets and limitations
 
@@ -117,7 +119,7 @@ build time. The Franka MJCF bundled by Genesis carries Apache-2.0 terms.
 
 This dataset is simulation-only; object and language coverage are limited to the
 registered fruit/bowl suite. Episode counts, frame counts, source revision, and checksums
-are bound to the published card only after the 1,000-episode validator passes.
+are bound to the published card and immutable revision after the 2,000-episode validator passes.
 
 ## YCB attribution
 
