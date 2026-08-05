@@ -187,9 +187,9 @@ export const copy = {
     zh: "视频库仅展示已核验成功片段；完整机器可读评测结果、权重版本和校验和仍可通过下方公开链接获取。",
   },
   collectionStats: [
-    { value: "5", label: { en: "successful clips", zh: "成功片段" } },
+    { value: "6", label: { en: "successful clips", zh: "成功片段" } },
     { value: "2", label: { en: "20K policy runs", zh: "20K 模型回放" } },
-    { value: "3", label: { en: "collection runs", zh: "数据采集回放" } },
+    { value: "4", label: { en: "collection runs", zh: "数据采集回放" } },
     { value: "2.0 s", label: { en: "settled ending", zh: "稳定结尾" } },
   ],
   plannedEvidence: { en: "Core policy moments", zh: "核心策略时刻" },
@@ -324,9 +324,9 @@ export const evaluationMetrics: Metric[] = [
     detail: { en: "banana + lemon · first attempt", zh: "香蕉 + 柠檬 · 首次执行" },
   },
   {
-    value: "3 / 3",
+    value: "4 / 4",
     label: { en: "published collection clips", zh: "公开采集成功片段" },
-    detail: { en: "apple + banana + plum", zh: "苹果 + 香蕉 + 李子" },
+    detail: { en: "apple + banana + orange + plum", zh: "苹果 + 香蕉 + 橙子 + 李子" },
   },
   {
     value: "5.35 ms",
@@ -438,6 +438,21 @@ export const collectionClips: CollectionClip[] = [
     instruction: {
       en: "A second successful collection example with the fruit settled before the clip ends.",
       zh: "另一段成功采集样例，视频结束前水果已稳定落碗。",
+    },
+    state: { en: "DATA COLLECTION · SUCCESS", zh: "数据采集 · 成功" },
+    camera: { en: "WORLD RGB · 20 FPS", zh: "世界相机 RGB · 20 FPS" },
+  },
+  {
+    index: "06",
+    episode: "0577",
+    duration: "10.50 s",
+    frames: { en: "210 frames · collection", zh: "210 帧 · 数据采集" },
+    video: "videos/task-success-world/orange_blue_right.mp4",
+    poster: "videos/task-success-world/orange_blue_right.webp",
+    title: { en: "Orange collection → blue bowl, right", zh: "橙子采集 → 右侧蓝碗" },
+    instruction: {
+      en: "A certified strict-physics trajectory with the orange released and settled in the requested bowl.",
+      zh: "严格物理认证成功轨迹，橙子已释放并稳定落入指定碗中。",
     },
     state: { en: "DATA COLLECTION · SUCCESS", zh: "数据采集 · 成功" },
     camera: { en: "WORLD RGB · 20 FPS", zh: "世界相机 RGB · 20 FPS" },
