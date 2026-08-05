@@ -9,6 +9,15 @@ and performs bounded strict-physics recovery before control reaches Genesis. The
 simulation, data collection, training, evaluation, and public evidence—runs on one AMD Radeon GPU
 through ROCm.
 
+## Project links
+
+- **Project website:** <https://zzw-rgb.github.io/Radeon-hackathon-2026-07/>
+- **Project source code:** <https://github.com/zzw-rgb/Radeon-hackathon-2026-07/tree/submission/track3-visiobotlab-radeonvla-reflex/track3_VisioBotLab_RadeonVLA-Reflex>
+- **Interactive evidence console:** <https://zzw-rgb.github.io/Radeon-hackathon-2026-07/console.html>
+- **Official Bilibili film:** <https://www.bilibili.com/video/BV1B4M26SEZg/>
+- **Five-page technical report:** <https://github.com/zzw-rgb/Radeon-hackathon-2026-07/blob/submission/track3-visiobotlab-radeonvla-reflex/track3_VisioBotLab_RadeonVLA-Reflex/reports/RadeonVLA-Reflex-Technical-Report.pdf>
+- **Hugging Face releases:** <https://huggingface.co/a3124371940>
+
 ## Team
 
 **VisioBot Lab · Nanjing University of Science and Technology**
