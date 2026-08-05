@@ -1,41 +1,112 @@
 WEBVTT
 
-00:00:00.000 --> 00:00:24.165
-当视觉语言动作模型一次预测一段动作时，环境可能已经变化，机器人却仍在执行过期动作。RadeonVLA-Reflex 让执行链能够及时中断、检测失败并恢复。
-When a VLA predicts an action chunk, the world may change while stale actions remain in control. RadeonVLA-Reflex makes execution interruptible, failure-aware, and recoverable.
+00:00:00.050 --> 00:00:05.859
+When a vision-language-action model predicts an action chunk, the world can change before it finishes.
 
-00:00:24.165 --> 00:00:44.564
-我们用五种水果、四个语言可指定碗、共二十项基础任务验证系统。水果分拣是测试台，核心贡献是可中断、可恢复、可审计的 VLA 执行层。
-We validate on five fruits and four language-addressable bowls: twenty basic tasks. Fruit sorting is the testbed; the contribution is an interruptible, recoverable, auditable VLA runtime.
+00:00:05.859 --> 00:00:10.212
+A missed grasp or a new command can make every remaining action stale.
 
-00:00:44.564 --> 00:01:08.729
-世界相机、腕部相机、九维状态和语言输入 SmolVLA。指令版本变化时，旧动作块立即失效；所有动作先经过安全检查，失败检测持续读取真实夹爪宽度和目标高度。
-World RGB, wrist RGB, 9-D state, and language condition SmolVLA. A command-version change invalidates stale chunks; safety and failure monitors inspect every action and measured gripper state.
+00:00:10.212 --> 00:00:16.227
+Radeon V L A Reflex makes execution interruptible, failure-aware, and recoverable.
 
-00:01:08.729 --> 00:01:30.697
-Physical-2K 包含两千条严格物理成功轨迹、二十乘一百任务覆盖和四十六万八千八百八十九帧。两千份证书全部通过验证，错误和警告均为零。
-Physical-2K contains 2,000 strict-physics successes, exact 20 × 100 coverage, and 468,889 frames. All 2,000 certificates pass with zero errors and zero warnings.
+00:00:16.227 --> 00:00:20.725
+Our testbed is language-guided fruit sorting with a Franka robot in Genesis.
 
-00:01:30.697 --> 00:01:52.352
-仿真、采集、训练和闭环推理均运行在 AMD Radeon 上。模型累计训练约二十万步，最后十万步耗时三小时四十五分钟，最终损失零点零五八。
-Simulation, collection, training, and closed-loop inference run on AMD Radeon. The model reaches about 200K cumulative steps; the final 100K continuation takes 3 h 45 min with loss 0.058.
+00:00:20.725 --> 00:00:27.834
+Five fruits and four language-addressable bowls form twenty registered tasks with exact, auditable instructions.
 
-00:01:52.352 --> 00:02:09.612
-正常闭环完成接近、物理夹持、抬升、搬运和释放。成功必须由水果稳定落入指定碗后的空间门禁确认，不对水果做后处理。
-Normal closed-loop execution approaches, physically grasps, lifts, transports, and releases. Success is verified only after stable placement in the requested bowl—without object post-processing.
+00:00:27.834 --> 00:00:34.140
+Smol V L A receives world and wrist cameras, nine-dimensional robot state, and natural language.
 
-00:02:09.612 --> 00:02:33.464
-学习策略空抓后，Precision Reflex 执行有界几何恢复。恢复期间仍禁止刚体位姿写入、抓取粘附和放置瞬移，恢复贡献会与纯模型首次成功分开统计。
-After a learned empty grasp, Precision Reflex runs bounded geometric recovery. Rigid pose writes, grasp glue, and placement teleports remain forbidden, and recovery is reported separately from learned first-attempt success.
+00:00:34.140 --> 00:00:37.477
+It predicts joint-position actions for the arm and gripper.
 
-00:02:33.464 --> 00:02:57.001
-正式一百次闭环中，纯模型首次成功率为 36%，精确恢复贡献为 55%，最终成功率为 91%。P50 为 4.54 毫秒，P95 为 37.27 毫秒。
-Across 100 formal rollouts, learned first-attempt success is 36%, precision-recovery contribution is 55%, and final success is 91%. Latency is 4.54 ms P50 and 37.27 ms P95.
+00:00:37.477 --> 00:00:41.651
+Every action passes joint-limit and rate checks before execution.
 
-00:02:57.001 --> 00:03:11.751
-中途改令时，新指令先让旧动作块失效，再安全停顿并执行新任务，避免机械臂继续完成已经撤销的意图。
-On a mid-execution command change, the new version invalidates stale actions before a safe hold and new task execution, preventing the robot from completing revoked intent.
+00:00:41.651 --> 00:00:43.917
+Each command carries a version number.
 
-00:03:11.751 --> 00:03:36.858
-代码、Physical-2K、模型权重、评测证据、技术报告、网站和复现命令全部公开。当前结果仅覆盖 Genesis 仿真，不声称真机或 sim-to-real。
-Source, Physical-2K, model weights, evaluation evidence, report, website, and reproduction commands are public. Results cover Genesis simulation only; no real-robot or sim-to-real claim is made.
+00:00:43.917 --> 00:00:48.604
+If the operator changes the destination, the old chunk is invalidated immediately.
+
+00:00:48.604 --> 00:00:55.301
+The robot holds safely, clears cached actions, and starts the new command without completing revoked intent.
+
+00:00:55.301 --> 00:01:03.861
+Training uses our Physical Two K release: two thousand successful episodes and four hundred sixty-eight thousand eight hundred eighty-nine frames.
+
+00:01:03.861 --> 00:01:09.843
+Each of the twenty tasks has one hundred demonstrations, independent seeds, and strict-physics certificates.
+
+00:01:09.843 --> 00:01:15.100
+Kinematic grasp attachment, object teleportation, and placement nudges are disabled.
+
+00:01:15.100 --> 00:01:18.270
+Runtime guards reject rigid-body pose writes.
+
+00:01:18.270 --> 00:01:22.522
+All two thousand certificates pass with zero errors and zero warnings.
+
+00:01:22.522 --> 00:01:28.649
+Simulation, collection, training, and evaluation run on one AMD Radeon GPU.
+
+00:01:28.649 --> 00:01:37.399
+The stack uses ROCm seven point two, PyTorch two point nine point one, Genesis one point one point two, and LeRobot zero point six.
+
+00:01:37.399 --> 00:01:40.781
+Training reaches about two hundred thousand cumulative steps.
+
+00:01:40.781 --> 00:01:47.946
+The final one-hundred-thousand-step continuation takes three hours and forty-five minutes at about thirty samples per second.
+
+00:01:47.946 --> 00:01:53.872
+Peak training memory is two point two two gigabytes, and final loss is zero point zero five eight.
+
+00:01:53.872 --> 00:01:59.207
+Watch the learned controller approach, grasp, lift, transport, and release.
+
+00:01:59.207 --> 00:02:03.638
+Success counts only when the correct fruit settles inside the requested bowl.
+
+00:02:03.638 --> 00:02:06.997
+No post-processing moves the object after release.
+
+00:02:06.997 --> 00:02:14.185
+After an empty grasp, Precision Reflex runs bounded geometric recovery under the same strict-physics restrictions.
+
+00:02:14.185 --> 00:02:19.207
+Learned first-attempt success and deterministic recovery are always reported separately.
+
+00:02:19.207 --> 00:02:25.580
+The formal benchmark freezes one model hash and tests all twenty tasks with five disjoint seeds each.
+
+00:02:25.580 --> 00:02:29.241
+Learned control succeeds first on thirty-six rollouts.
+
+00:02:29.241 --> 00:02:35.312
+Precision Reflex recovers fifty-five more, producing ninety-one successes out of one hundred.
+
+00:02:35.312 --> 00:02:40.948
+The ninety-five-percent Wilson interval is eighty-three point eight to ninety-five point two percent.
+
+00:02:40.948 --> 00:02:47.779
+Inference latency is four point five four milliseconds at the median and thirty-seven point two seven at P ninety-five.
+
+00:02:47.779 --> 00:02:49.866
+All nine failures remain public.
+
+00:02:49.866 --> 00:02:55.446
+An independent probe switches a banana from the white-left bowl to the blue-right bowl at step forty.
+
+00:02:55.446 --> 00:03:01.160
+The stale chunk stops with zero unprotected old-command actions, and the new target succeeds.
+
+00:03:01.160 --> 00:03:07.678
+Source, Physical Two K, weights, evaluations, checksums, report, and reproduction commands are public.
+
+00:03:07.678 --> 00:03:11.785
+Results cover Genesis simulation only, with no real-robot claim.
+
+00:03:11.785 --> 00:03:19.587
+Radeon V L A Reflex shows that a useful V L A system must know how to act, when to stop, and how to recover safely.

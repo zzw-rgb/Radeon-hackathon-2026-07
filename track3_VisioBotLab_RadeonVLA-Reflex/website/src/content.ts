@@ -146,8 +146,8 @@ export const copy = {
   videoLabel: { en: "3+ MIN POLICY WALKTHROUGH", zh: "3 分钟以上策略解说视频" },
   videoPending: { en: "Narrated project walkthrough · 3+ min", zh: "项目解说成片 · 3 分钟以上" },
   videoBody: {
-    en: "A narrated walkthrough of the Physical-2K data, Radeon training path, 200K checkpoint, real failed learned attempt, and strict-physics Precision Reflex recovery. Chinese narration includes bilingual subtitles.",
-    zh: "完整讲解 Physical-2K 数据、Radeon 训练链路、200K 权重、学习策略真实失败和严格物理 Precision Reflex 恢复；中文旁白配中英双语字幕。",
+    en: "A smooth 200-second English walkthrough of Physical-2K, the Radeon training path, the 200K checkpoint, a real learned miss, and strict-physics recovery. Enlarged camera layouts and burned captions keep every view readable.",
+    zh: "200 秒自然英文旁白完整讲解 Physical-2K、Radeon 训练、200K 权重、真实空抓和严格物理恢复；相机画面重新放大排版，英文字幕固定在独立底栏。",
   },
   comparisonLabel: { en: "15 SEC PAIRED EVIDENCE", zh: "15 秒同条件对照" },
   comparisonTitle: {

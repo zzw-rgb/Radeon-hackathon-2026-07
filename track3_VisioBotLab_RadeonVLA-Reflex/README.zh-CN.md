@@ -564,7 +564,7 @@ task                       # 自然语言指令
 | 技术报告（MD） | 持续维护的源文档 | reports/RadeonVLA-Reflex-Technical-Report.md |
 | 技术报告 PDF | A4、5 页、最终审计输入 | [技术报告 PDF](reports/RadeonVLA-Reflex-Technical-Report.pdf) |
 | 公开项目网站 | GitHub Pages 部署已核验 | [RadeonVLA-Reflex 网站](https://zzw-rgb.github.io/Radeon-hackathon-2026-07/) |
-| 3 分钟以上解说成片 | 216.858 秒、H.264/AAC、中英双语字幕 | [播放公开视频](https://zzw-rgb.github.io/Radeon-hackathon-2026-07/videos/radeonvla-reflex-3min.mp4) |
+| 3 分钟以上解说成片 | 200.0 秒、1080p30 H.264/AAC、自然英文旁白与内嵌英文字幕 | [播放公开视频](https://zzw-rgb.github.io/Radeon-hackathon-2026-07/videos/radeonvla-reflex-3min.mp4) |
 | 恢复同条件对照 | 15.0 秒、相同任务与 seed | `website/public/videos/normal-vs-reflex-15s.mp4` |
 | 途中改令证据 | 安全中断 1/1、旧指令未保护动作 0 步 | `artifacts/interrupt_evaluation.json` |
 | 模型权重 | 公开 200K 权重，revision `1ea32da3…beb7e` | [Hugging Face 模型](https://huggingface.co/a3124371940/radeonvla_reflex_smolvla_2k_200k) |

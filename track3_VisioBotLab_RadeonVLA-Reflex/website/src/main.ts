@@ -157,7 +157,7 @@ function render(): void {
             aria-label="${t(copy.videoPending, locale)}"
           >
             <source src="${publicAsset("videos/radeonvla-reflex-3min.mp4")}" type="video/mp4" />
-            <track kind="subtitles" src="${publicAsset("videos/radeonvla-reflex-3min.vtt")}" srclang="zh" label="中文 / English" default />
+            <track kind="subtitles" src="${publicAsset("videos/radeonvla-reflex-3min.vtt")}" srclang="en" label="English" />
             ${t(copy.clipFallback, locale)}
           </video>
           <figcaption>

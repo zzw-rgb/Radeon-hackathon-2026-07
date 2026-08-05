@@ -24,7 +24,7 @@ The canonical release files are populated in this repository:
 - `environment.remote.json`: exact Radeon/ROCm evaluation environment;
 - `SHA256SUMS`: hashes for the compact evidence, report, cards, and published website video.
 
-Large dataset shards and checkpoints remain on Hugging Face. The 216.858-second release video is
+Large dataset shards and checkpoints remain on Hugging Face. The 200-second English release video is
 tracked below `website/public/videos/` so GitHub Pages can serve it directly.
 
 The final `evaluation.json` validates against `evaluation.schema.json`. `evaluate.py`

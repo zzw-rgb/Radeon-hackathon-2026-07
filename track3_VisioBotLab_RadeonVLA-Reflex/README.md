@@ -603,7 +603,7 @@ The final release revision requires no private account, unpublished file, or sou
 | Technical report (MD) | Maintained source | reports/RadeonVLA-Reflex-Technical-Report.md |
 | Technical report PDF | A4, 5 pages, final audit input | [Technical report PDF](reports/RadeonVLA-Reflex-Technical-Report.pdf) |
 | Public showcase | GitHub Pages deployment verified | [RadeonVLA-Reflex website](https://zzw-rgb.github.io/Radeon-hackathon-2026-07/) |
-| 3+ minute narrated demo | 216.858 s, H.264/AAC, bilingual subtitles | [Play public video](https://zzw-rgb.github.io/Radeon-hackathon-2026-07/videos/radeonvla-reflex-3min.mp4) |
+| 3+ minute narrated demo | 200.0 s, 1080p30 H.264/AAC, natural English narration and burned English captions | [Play public video](https://zzw-rgb.github.io/Radeon-hackathon-2026-07/videos/radeonvla-reflex-3min.mp4) |
 | Paired recovery evidence | 15.0 s, same task and seed | `website/public/videos/normal-vs-reflex-15s.mp4` |
 | Mid-command change evidence | Safe interrupt 1/1; 0 unprotected stale steps | `artifacts/interrupt_evaluation.json` |
 | Model checkpoint | Public 200K checkpoint, revision `1ea32da3…beb7e` | [Hugging Face model](https://huggingface.co/a3124371940/radeonvla_reflex_smolvla_2k_200k) |

@@ -228,7 +228,7 @@ Learned control (SmolVLA) is separate from deterministic safety/recovery logic.
 | Dataset/documentation | `docs/DATASET_CARD.md` | Bound by dataset revision |
 | Raw evaluation | `artifacts/evaluation.json`, `.csv`, `summary.md` | Seeds 52000–52099 |
 | Interrupt evidence | `artifacts/interrupt_evaluation.*` + website clip | Seed 60000 |
-| Demo video | `website/public/videos/radeonvla-reflex-3min.mp4` (216.858 s) | SHA256 `c2bcb1ad…be57a` |
+| Demo video | `website/public/videos/radeonvla-reflex-3min.mp4` (200.0 s, English) | SHA256 `d3ec94d6…533c0` |
 | Technical report | This document; PDF accompanies the release | Bound by release commit |
 
 ## 16. Reproducibility

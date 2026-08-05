@@ -7,7 +7,7 @@ and evaluation path on one AMD Radeon GPU with ROCm.
 ## 60-second evaluator path
 
 1. Open the [live bilingual showcase](https://zzw-rgb.github.io/Radeon-hackathon-2026-07/).
-2. Play the [216.858-second narrated demo](https://zzw-rgb.github.io/Radeon-hackathon-2026-07/videos/radeonvla-reflex-3min.mp4).
+2. Play the [200-second English narrated demo](https://zzw-rgb.github.io/Radeon-hackathon-2026-07/videos/radeonvla-reflex-3min.mp4).
 3. Review the [five-page technical report](https://github.com/zzw-rgb/Radeon-hackathon-2026-07/blob/submission/track3-visiobotlab-radeonvla-reflex/track3_VisioBotLab_RadeonVLA-Reflex/reports/RadeonVLA-Reflex-Technical-Report.pdf).
 4. Inspect the public [Physical-2K dataset](https://huggingface.co/datasets/a3124371940/radeonvla_reflex_physical_2k)
    and [200K checkpoint](https://huggingface.co/a3124371940/radeonvla_reflex_smolvla_2k_200k).
